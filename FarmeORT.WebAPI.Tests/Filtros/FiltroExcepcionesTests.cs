@@ -36,6 +36,22 @@ public sealed class FiltroExcepcionesTests
         Assert.AreEqual("Email o contraseña incorrectos.", error.UserMessage);
     }
 
+    [TestMethod]
+    public void OnException_ExcepcionNoMapeada_Devuelve500ConMensajeFijo()
+    {
+        var contexto = CrearContexto(new InvalidOperationException("detalle interno con datos sensibles"));
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status500InternalServerError, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("INTERNAL_ERROR", error.ErrorCode);
+        Assert.AreEqual("Ocurrió un error inesperado.", error.UserMessage);
+    }
+
     private static ExceptionContext CrearContexto(Exception excepcion)
     {
         var contextoAccion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
