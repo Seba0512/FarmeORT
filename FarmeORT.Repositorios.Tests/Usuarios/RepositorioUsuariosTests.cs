@@ -41,4 +41,16 @@ public sealed class RepositorioUsuariosTests
         Assert.AreEqual(Rol.Jugador, resultado.Rol);
         Assert.AreEqual("hash-jugador", resultado.ContrasenaHash);
     }
+
+    [TestMethod]
+    public void ObtenerPorEmail_EmailInexistente_DevuelveNull()
+    {
+        var otroUsuario = new Usuario { Email = "otro@farmeort.com", Rol = Rol.Organizador, ContrasenaHash = "hash-otro" };
+        _baseDeDatos.Contexto.Usuarios.Add(otroUsuario);
+        _baseDeDatos.Contexto.SaveChanges();
+
+        var resultado = _repositorio.ObtenerPorEmail(Email);
+
+        Assert.IsNull(resultado);
+    }
 }
