@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\FarmeORT.IServicios\FarmeORT.IServicios.csproj" />
+    <ProjectReference Include="..\FarmeORT.Dominio\FarmeORT.Dominio.csproj" />
+    <ProjectReference Include="..\FarmeORT.IRepositorios\FarmeORT.IRepositorios.csproj" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
