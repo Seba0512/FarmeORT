@@ -22,7 +22,12 @@ internal sealed class ServicioSesiones(
         }
 
         _ = repositorioSesiones;
-        _ = generadorTokens;
-        throw new NotImplementedException();
+        var token = generadorTokens.Generar();
+        return new SesionResponse
+        {
+            Token = token.ToString(),
+            UsuarioId = usuario.Id,
+            Rol = usuario.Rol.ToString(),
+        };
     }
 }
