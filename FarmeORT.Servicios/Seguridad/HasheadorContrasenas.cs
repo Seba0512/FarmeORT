@@ -22,10 +22,23 @@ internal sealed class HasheadorContrasenas : IHasheadorContrasenas
     public bool Verificar(string contrasena, string hash)
     {
         var partes = hash.Split(Separador);
-        var sal = Convert.FromBase64String(partes[0]);
-        var hashEsperado = Convert.FromBase64String(partes[1]);
+        if(partes.Length != 2
+            || !IntentarDecodificar(partes[0], out var sal)
+            || !IntentarDecodificar(partes[1], out var hashEsperado))
+        {
+            return false;
+        }
+
         var hashCalculado = Derivar(contrasena, sal);
         return CryptographicOperations.FixedTimeEquals(hashCalculado, hashEsperado);
+    }
+
+    private static bool IntentarDecodificar(string base64, out byte[] bytes)
+    {
+        var buffer = new byte[base64.Length];
+        var decodificado = Convert.TryFromBase64String(base64, buffer, out var cantidadBytes);
+        bytes = buffer[..cantidadBytes];
+        return decodificado;
     }
 
     private static byte[] Derivar(string contrasena, byte[] sal)
