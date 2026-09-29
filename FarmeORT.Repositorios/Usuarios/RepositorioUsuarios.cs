@@ -7,7 +7,6 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 {
     public Usuario? ObtenerPorEmail(string email)
     {
-        _ = contexto;
-        throw new NotImplementedException();
+        return contexto.Usuarios.FirstOrDefault(u => u.Email == email);
     }
 }
