@@ -6,6 +6,6 @@ internal sealed class GeneradorTokens : IGeneradorTokens
 {
     public Guid Generar()
     {
-        throw new NotImplementedException();
+        return Guid.NewGuid();
     }
 }
