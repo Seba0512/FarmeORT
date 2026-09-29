@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Sesiones;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Sesiones;
 
@@ -8,8 +9,12 @@ internal sealed class ServicioSesiones(IRepositorioUsuarios repositorioUsuarios)
 {
     public SesionResponse IniciarSesion(LoginRequest request)
     {
-        _ = repositorioUsuarios;
-        _ = request;
+        var usuario = repositorioUsuarios.ObtenerPorEmail(request.Email);
+        if(usuario is null)
+        {
+            throw new CredencialesInvalidasException();
+        }
+
         throw new NotImplementedException();
     }
 }
