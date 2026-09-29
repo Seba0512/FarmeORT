@@ -7,7 +7,7 @@ internal sealed class RepositorioSesiones(FarmeORTContext contexto) : IRepositor
 {
     public void Agregar(Sesion sesion)
     {
-        _ = contexto;
-        throw new NotImplementedException();
+        contexto.Sesiones.Add(sesion);
+        contexto.SaveChanges();
     }
 }
