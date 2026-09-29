@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Sesiones;
 using FarmeORT.DTOs.Sesiones;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Sesiones;
@@ -21,8 +22,8 @@ internal sealed class ServicioSesiones(
             throw new CredencialesInvalidasException();
         }
 
-        _ = repositorioSesiones;
         var token = generadorTokens.Generar();
+        repositorioSesiones.Agregar(new Sesion(token, usuario));
         return new SesionResponse
         {
             Token = token.ToString(),
