@@ -11,8 +11,7 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
     [HttpPost]
     public IActionResult Crear([FromBody] LoginRequest request)
     {
-        _ = servicioSesiones;
-        _ = request;
-        throw new NotImplementedException();
+        var response = servicioSesiones.IniciarSesion(request);
+        return Created("/api/v1/sesiones/actual", response);
     }
 }
