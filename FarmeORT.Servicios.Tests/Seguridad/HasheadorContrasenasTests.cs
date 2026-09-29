@@ -36,6 +36,18 @@ public sealed class HasheadorContrasenasTests
     }
 
     [TestMethod]
+    [DataRow("")]
+    [DataRow("sin-separador")]
+    [DataRow("no-es-base64.tampoco-es-base64")]
+    [DataRow("c2FsLXZhbGlkYQ==.no-es-base64")]
+    public void Verificar_HashConFormatoInvalido_DevuelveFalse(string hashInvalido)
+    {
+        var resultado = _hasheador.Verificar(Contrasena, hashInvalido);
+
+        Assert.IsFalse(resultado);
+    }
+
+    [TestMethod]
     public void Hashear_MismaContrasenaDosVeces_DevuelveHashesDistintos()
     {
         var primero = _hasheador.Hashear(Contrasena);
