@@ -3,6 +3,11 @@
   <ItemGroup>
     <ProjectReference Include="..\FarmeORT.DTOs\FarmeORT.DTOs.csproj" />
     <ProjectReference Include="..\FarmeORT.IServicios\FarmeORT.IServicios.csproj" />
+    <ProjectReference Include="..\FarmeORT.Excepciones\FarmeORT.Excepciones.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FarmeORT.WebAPI.Tests" />
   </ItemGroup>
 
   <PropertyGroup>
