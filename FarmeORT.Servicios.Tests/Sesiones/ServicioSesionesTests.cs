@@ -73,12 +73,26 @@ public sealed class ServicioSesionesTests
         Assert.AreEqual("Jugador", response.Rol);
     }
 
-    private void ConfigurarCredencialesValidas()
+    [TestMethod]
+    public void IniciarSesion_CredencialesValidas_GuardaSesion()
+    {
+        var request = new LoginRequest { Email = Email, Contrasena = Contrasena };
+        var usuario = ConfigurarCredencialesValidas();
+
+        _servicio.IniciarSesion(request);
+
+        _repositorioSesiones.Verify(
+            r => r.Agregar(It.Is<Sesion>(s => s.Token == Token && s.Usuario == usuario)),
+            Times.Once);
+    }
+
+    private Usuario ConfigurarCredencialesValidas()
     {
         var usuario = new Usuario { Id = UsuarioId, Rol = Rol.Jugador, ContrasenaHash = ContrasenaHash };
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns(usuario);
         _hasheadorContrasenas.Setup(h => h.Verificar(Contrasena, ContrasenaHash)).Returns(true);
         _generadorTokens.Setup(g => g.Generar()).Returns(Token);
         _repositorioSesiones.Setup(r => r.Agregar(It.Is<Sesion>(s => s.Token == Token && s.Usuario == usuario)));
+        return usuario;
     }
 }
