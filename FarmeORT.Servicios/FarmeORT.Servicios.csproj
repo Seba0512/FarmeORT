@@ -4,6 +4,11 @@
     <ProjectReference Include="..\FarmeORT.IServicios\FarmeORT.IServicios.csproj" />
     <ProjectReference Include="..\FarmeORT.Dominio\FarmeORT.Dominio.csproj" />
     <ProjectReference Include="..\FarmeORT.IRepositorios\FarmeORT.IRepositorios.csproj" />
+    <ProjectReference Include="..\FarmeORT.Excepciones\FarmeORT.Excepciones.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="FarmeORT.Servicios.Tests" />
   </ItemGroup>
 
   <PropertyGroup>
