@@ -141,9 +141,12 @@ lanzar skill, fallar batalla, catálogo de skills, generar rondas / finalizar to
 
 ## 6. Arquitectura
 
-Cada paquete lógico es un **assembly independiente**: Dominio, IServicios, Servicios, DTOs,
-IRepositorios, Repositorios, WebAPI, Excepciones, Tests. Antes de crear algo, **buscar si ya existe**
-una clase, interfaz, DTO, excepción, mapper, filter o helper equivalente.
+Cada paquete lógico es un **assembly independiente** con prefijo `FarmeORT.`: Dominio, IServicios,
+Servicios, DTOs, IRepositorios, Repositorios, WebAPI, Excepciones (solución `ObligatorioDA2.slnx`).
+Los tests van en **un proyecto por assembly con lógica** (`FarmeORT.Dominio.Tests`,
+`FarmeORT.Servicios.Tests`, `FarmeORT.Repositorios.Tests`, `FarmeORT.WebAPI.Tests`), cada uno
+referenciando solo el assembly que prueba. Antes de crear algo, **buscar si ya existe** una clase,
+interfaz, DTO, excepción, mapper, filter o helper equivalente.
 
 ```text
 WebAPI       → DTOs, IServicios
