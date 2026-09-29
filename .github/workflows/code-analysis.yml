@@ -1,0 +1,17 @@
+name: Code Analysis
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+    paths:
+    - '**.cs'
+    - '**.csproj'
+
+jobs:
+  run:
+    name: Run
+    uses: IngSoft-DA2/workflows/.github/workflows/reusable-code-analysis.yml@self-hosted
+    permissions: write-all
+    with:
+      solution-name: ObligatorioDA2.slnx
