@@ -7,6 +7,9 @@ namespace FarmeORT.WebAPI.Filtros;
 
 internal sealed class FiltroExcepciones : IExceptionFilter
 {
+    private static readonly (int Status, string ErrorCode, string UserMessage) ErrorInesperado =
+        (StatusCodes.Status500InternalServerError, "INTERNAL_ERROR", "Ocurrió un error inesperado.");
+
     private static readonly Dictionary<Type, (int Status, string ErrorCode, string UserMessage)> Errores = new()
     {
         [typeof(CredencialesInvalidasException)] =
@@ -15,7 +18,12 @@ internal sealed class FiltroExcepciones : IExceptionFilter
 
     public void OnException(ExceptionContext context)
     {
-        var (status, errorCode, userMessage) = Errores[context.Exception.GetType()];
+        if(!Errores.TryGetValue(context.Exception.GetType(), out var errorMapeado))
+        {
+            errorMapeado = ErrorInesperado;
+        }
+
+        var (status, errorCode, userMessage) = errorMapeado;
         var error = new ErrorResponse { UserMessage = userMessage, ErrorCode = errorCode };
         context.Result = new ObjectResult(error) { StatusCode = status };
     }
