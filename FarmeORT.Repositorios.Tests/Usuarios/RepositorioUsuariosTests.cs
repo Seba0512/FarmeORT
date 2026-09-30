@@ -65,6 +65,23 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void ObtenerPorId_IdExistente_DevuelveElUsuario()
+    {
+        var otroUsuario = CrearUsuario("otro@farmeort.com", Rol.Organizador, "hash-otro");
+        var usuario = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
+        _baseDeDatos.Contexto.Usuarios.AddRange(otroUsuario, usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.ObtenerPorId(usuario.Id);
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(usuario.Id, resultado.Id);
+        Assert.AreEqual(Email, resultado.Email);
+        Assert.AreEqual(Rol.Jugador, resultado.Rol);
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameExistente_DevuelveTrue()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
