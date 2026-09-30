@@ -18,6 +18,11 @@ internal sealed class ServicioUsuarios(
             throw new EmailYaExisteException();
         }
 
+        if(repositorioUsuarios.ExistePorNickname(request.Nickname))
+        {
+            throw new NicknameYaExisteException();
+        }
+
         _ = hasheadorContrasenas;
         _ = reloj;
         throw new NotImplementedException();
