@@ -138,6 +138,22 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void Listar_FiltroPorNickname_DevuelveLosQueLoContienenSinDistinguirMayusculas()
+    {
+        _baseDeDatos.Contexto.Usuarios.AddRange(
+            CrearUsuario("carlossuarez@farmeort.com", Rol.Jugador, "hash-carlos"),
+            CrearUsuario("lauragomez@farmeort.com", Rol.Organizador, "hash-laura"),
+            CrearUsuario("oscarsuarez@farmeort.com", Rol.Jugador, "hash-oscar"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroUsuarios(null, null, "SUAREZ", 20, 0));
+
+        string[] nicknamesEsperados = ["carlossuarez", "oscarsuarez"];
+        CollectionAssert.AreEqual(nicknamesEsperados, resultado.Select(u => u.Nickname).ToArray());
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameExistente_DevuelveTrue()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
