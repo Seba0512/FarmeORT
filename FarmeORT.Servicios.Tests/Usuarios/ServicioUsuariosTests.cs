@@ -69,6 +69,24 @@ public sealed class ServicioUsuariosTests
             Times.Once);
     }
 
+    [TestMethod]
+    [DataRow(Roles.Organizador, null)]
+    [DataRow(Roles.Jugador, 1200)]
+    public void Crear_DatosValidos_DevuelveElUsuarioCreado(string rol, int? eloEsperado)
+    {
+        ConfigurarAltaValida();
+
+        var response = _servicio.Crear(CrearRequest(rol));
+
+        Assert.AreEqual("Ana", response.Nombre);
+        Assert.AreEqual("Pérez", response.Apellido);
+        Assert.AreEqual(Email, response.Email);
+        Assert.AreEqual(Nickname, response.Nickname);
+        Assert.AreEqual(new DateOnly(2000, 1, 15), response.FechaNacimiento);
+        Assert.AreEqual(rol, response.Rol);
+        Assert.AreEqual(eloEsperado, response.Elo);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
@@ -79,7 +97,7 @@ public sealed class ServicioUsuariosTests
         _repositorioUsuarios.Setup(r => r.Agregar(It.Is<Usuario>(u => u.Email == Email)));
     }
 
-    private static UsuarioAdminRequest CrearRequest()
+    private static UsuarioAdminRequest CrearRequest(string rol = Roles.Organizador)
     {
         return new UsuarioAdminRequest
         {
@@ -89,7 +107,7 @@ public sealed class ServicioUsuariosTests
             Nickname = Nickname,
             Contrasena = Contrasena,
             FechaNacimiento = new DateOnly(2000, 1, 15),
-            Rol = Roles.Organizador,
+            Rol = rol,
         };
     }
 }
