@@ -133,7 +133,7 @@ public sealed class ServicioSesionesTests
 
     private static Usuario CrearUsuario()
     {
-        return new Usuario("Ana", "Pérez", Email, "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, ContrasenaHash)
+        return new Usuario("Ana", "Pérez", Email, "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, ContrasenaHash, new DateOnly(2026, 9, 30))
         {
             Id = UsuarioId,
         };

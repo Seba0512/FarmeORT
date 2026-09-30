@@ -17,8 +17,10 @@ public sealed partial class Usuario
         string nickname,
         DateOnly fechaNacimiento,
         Rol rol,
-        string contrasenaHash)
+        string contrasenaHash,
+        DateOnly fechaActual)
     {
+        _ = fechaActual;
         ValidarNombre(nombre);
         ValidarApellido(apellido);
         ValidarEmail(email);

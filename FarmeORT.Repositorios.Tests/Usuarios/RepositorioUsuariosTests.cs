@@ -67,6 +67,6 @@ public sealed class RepositorioUsuariosTests
     private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
     {
         var nickname = email.Split('@')[0];
-        return new Usuario("Nombre", "Apellido", email, nickname, new DateOnly(2000, 1, 15), rol, contrasenaHash);
+        return new Usuario("Nombre", "Apellido", email, nickname, new DateOnly(2000, 1, 15), rol, contrasenaHash, new DateOnly(2026, 9, 30));
     }
 }
