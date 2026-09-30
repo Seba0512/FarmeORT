@@ -10,6 +10,11 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         return contexto.Usuarios.FirstOrDefault(u => u.Email == email);
     }
 
+    public Usuario? ObtenerPorId(int id)
+    {
+        throw new NotImplementedException();
+    }
+
     public bool ExistePorNickname(string nickname)
     {
         return contexto.Usuarios.Any(u => u.Nickname == nickname);

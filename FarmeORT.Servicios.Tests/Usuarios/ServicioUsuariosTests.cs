@@ -105,6 +105,14 @@ public sealed class ServicioUsuariosTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(request));
     }
 
+    [TestMethod]
+    public void ObtenerPorId_UsuarioInexistente_LanzaUsuarioNoEncontrado()
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(99)).Returns((Usuario?)null);
+
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(() => _servicio.ObtenerPorId(99));
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
