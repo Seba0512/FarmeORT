@@ -12,6 +12,7 @@ namespace FarmeORT.Servicios.Tests.Usuarios;
 public sealed class ServicioUsuariosTests
 {
     private const string Email = "ana@farmeort.com";
+    private const string Nickname = "anaperez";
 
     private static readonly DateOnly FechaActual = new(2026, 9, 30);
 
@@ -38,6 +39,15 @@ public sealed class ServicioUsuariosTests
         Assert.ThrowsExactly<EmailYaExisteException>(() => _servicio.Crear(CrearRequest()));
     }
 
+    [TestMethod]
+    public void Crear_NicknameExistente_LanzaNicknameYaExiste()
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
+        _repositorioUsuarios.Setup(r => r.ExistePorNickname(Nickname)).Returns(true);
+
+        Assert.ThrowsExactly<NicknameYaExisteException>(() => _servicio.Crear(CrearRequest()));
+    }
+
     private static UsuarioAdminRequest CrearRequest()
     {
         return new UsuarioAdminRequest
@@ -45,7 +55,7 @@ public sealed class ServicioUsuariosTests
             Nombre = "Ana",
             Apellido = "Pérez",
             Email = Email,
-            Nickname = "anaperez",
+            Nickname = Nickname,
             Contrasena = "ClaveSegura123!!",
             FechaNacimiento = new DateOnly(2000, 1, 15),
             Rol = Roles.Organizador,

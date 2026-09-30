@@ -9,4 +9,9 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
     {
         return contexto.Usuarios.FirstOrDefault(u => u.Email == email);
     }
+
+    public bool ExistePorNickname(string nickname)
+    {
+        throw new NotImplementedException();
+    }
 }
