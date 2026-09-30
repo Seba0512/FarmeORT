@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.Servicios.Usuarios;
@@ -53,6 +54,24 @@ public sealed class ServicioRegistroJugadorTests
         Assert.AreEqual(new DateOnly(2000, 1, 15), response.FechaNacimiento);
         Assert.AreEqual(Roles.Jugador, response.Rol);
         Assert.AreEqual(1200, response.Elo);
+    }
+
+    [TestMethod]
+    public void RegistrarJugador_FechaNacimientoAusente_LanzaDatosInvalidosSinGuardar()
+    {
+        ConfigurarAltaValida();
+        var request = new RegistroJugadorRequest
+        {
+            Nombre = "Ana",
+            Apellido = "Pérez",
+            Email = Email,
+            Nickname = Nickname,
+            Contrasena = Contrasena,
+        };
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.RegistrarJugador(request));
+        _repositorio.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+        _hasheador.Verify(h => h.Hashear(Contrasena), Times.Never);
     }
 
     private void ConfigurarAltaValida()
