@@ -89,6 +89,12 @@ public sealed class UsuarioTests
         Assert.AreEqual(cumple13Hoy, usuario.FechaNacimiento);
     }
 
+    [TestMethod]
+    public void Constructor_FechaNacimientoMaxima_LanzaDatosInvalidos()
+    {
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(fechaNacimiento: DateOnly.MaxValue));
+    }
+
     private static Usuario CrearUsuario(
         string nombre = "Ana",
         string apellido = "Pérez",
