@@ -52,4 +52,13 @@ public sealed class SesionesControllerTests
         Assert.IsInstanceOfType<NoContentResult>(resultado);
         _servicioSesiones.Verify(s => s.CerrarSesion(token), Times.Once);
     }
+
+    [TestMethod]
+    public void Eliminar_RequiereAutenticacion()
+    {
+        var metodo = typeof(SesionesController).GetMethod(nameof(SesionesController.Eliminar));
+
+        Assert.IsNotNull(metodo);
+        Assert.IsNotNull(metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault());
+    }
 }
