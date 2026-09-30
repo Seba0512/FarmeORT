@@ -37,6 +37,22 @@ public sealed class FiltroExcepcionesTests
     }
 
     [TestMethod]
+    public void OnException_UsuarioNoEncontrado_Devuelve404ConUserNotFound()
+    {
+        var contexto = CrearContexto(new UsuarioNoEncontradoException());
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status404NotFound, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("USER_NOT_FOUND", error.ErrorCode);
+        Assert.AreEqual("No existe un usuario con ese id.", error.UserMessage);
+    }
+
+    [TestMethod]
     public void OnException_DatosInvalidos_Devuelve400ConElMensajeDeLaRegla()
     {
         var contexto = CrearContexto(new DatosInvalidosException("El usuario debe tener 13 años o más."));
