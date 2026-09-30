@@ -5,6 +5,8 @@ namespace FarmeORT.Dominio.Usuarios;
 public sealed class Usuario
 {
     private const int EloInicial = 1200;
+    private const int LargoMinimoApellido = 3;
+    private const int LargoMaximoApellido = 25;
 
     public Usuario(
         string nombre,
@@ -18,6 +20,11 @@ public sealed class Usuario
         if(string.IsNullOrWhiteSpace(nombre))
         {
             throw new DatosInvalidosException("El nombre es obligatorio.");
+        }
+
+        if(apellido.Length is < LargoMinimoApellido or > LargoMaximoApellido)
+        {
+            throw new DatosInvalidosException("El apellido debe tener entre 3 y 25 caracteres.");
         }
 
         Nombre = nombre;
