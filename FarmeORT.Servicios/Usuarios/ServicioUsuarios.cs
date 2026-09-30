@@ -44,12 +44,8 @@ internal sealed class ServicioUsuarios(
 
     public UsuarioResponse ObtenerPorId(int id)
     {
-        if(repositorioUsuarios.ObtenerPorId(id) is null)
-        {
-            throw new UsuarioNoEncontradoException();
-        }
-
-        throw new NotImplementedException();
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        return CrearResponse(usuario);
     }
 
     private static Rol ConvertirRol(string rol)
