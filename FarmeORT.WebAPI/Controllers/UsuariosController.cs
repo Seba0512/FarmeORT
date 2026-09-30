@@ -20,8 +20,7 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
     [HttpGet]
     public IActionResult Listar([FromQuery] FiltroUsuariosRequest filtro)
     {
-        _ = filtro;
-        throw new NotImplementedException();
+        return Ok(servicioUsuarios.Listar(filtro));
     }
 
     [HttpGet("{id:int}")]
