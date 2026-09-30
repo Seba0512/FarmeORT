@@ -113,6 +113,27 @@ public sealed class ServicioUsuariosTests
         Assert.ThrowsExactly<UsuarioNoEncontradoException>(() => _servicio.ObtenerPorId(99));
     }
 
+    [TestMethod]
+    public void ObtenerPorId_UsuarioExistente_DevuelveSusDatos()
+    {
+        var jugador = new Usuario("Carlos", "Suarez", "carlos@farmeort.com", "carlossuarez", new DateOnly(2001, 8, 2), Rol.Jugador, "hash", FechaActual)
+        {
+            Id = 3,
+        };
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(3)).Returns(jugador);
+
+        var response = _servicio.ObtenerPorId(3);
+
+        Assert.AreEqual(3, response.Id);
+        Assert.AreEqual("Carlos", response.Nombre);
+        Assert.AreEqual("Suarez", response.Apellido);
+        Assert.AreEqual("carlos@farmeort.com", response.Email);
+        Assert.AreEqual("carlossuarez", response.Nickname);
+        Assert.AreEqual(new DateOnly(2001, 8, 2), response.FechaNacimiento);
+        Assert.AreEqual(Roles.Jugador, response.Rol);
+        Assert.AreEqual(1200, response.Elo);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
