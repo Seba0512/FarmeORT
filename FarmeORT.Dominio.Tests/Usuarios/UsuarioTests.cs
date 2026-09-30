@@ -31,8 +31,17 @@ public sealed class UsuarioTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(nombre: nombre));
     }
 
-    private static Usuario CrearUsuario(string nombre = "Ana")
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("Pe")]
+    [DataRow("ApellidoDeVeintiseisLetras")]
+    public void Constructor_ApellidoFueraDeRango_LanzaDatosInvalidos(string apellido)
     {
-        return new Usuario(nombre, "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana");
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(apellido: apellido));
+    }
+
+    private static Usuario CrearUsuario(string nombre = "Ana", string apellido = "Pérez")
+    {
+        return new Usuario(nombre, apellido, "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana");
     }
 }
