@@ -2,6 +2,8 @@ namespace FarmeORT.Dominio.Usuarios;
 
 public sealed class Usuario
 {
+    private const int EloInicial = 1200;
+
     public Usuario(
         string nombre,
         string apellido,
@@ -11,14 +13,14 @@ public sealed class Usuario
         Rol rol,
         string contrasenaHash)
     {
-        _ = nombre;
-        _ = apellido;
-        _ = email;
-        _ = nickname;
-        _ = fechaNacimiento;
-        _ = rol;
-        _ = contrasenaHash;
-        throw new NotImplementedException();
+        Nombre = nombre;
+        Apellido = apellido;
+        Email = email;
+        Nickname = nickname;
+        FechaNacimiento = fechaNacimiento;
+        Rol = rol;
+        ContrasenaHash = contrasenaHash;
+        Elo = EloInicial;
     }
 
     public Usuario()
