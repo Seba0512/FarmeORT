@@ -7,6 +7,20 @@ namespace FarmeORT.WebAPI.Tests.Validaciones;
 public sealed class UsuarioAdminRequestTests
 {
     [TestMethod]
+    [DataRow("A", "Pérez", "anaperez", "ClaveSegura123!!", Roles.Organizador)]
+    [DataRow("Ana", "Paz", "abc", "ClaveSegura12!!", Roles.Jugador)]
+    [DataRow("Ana", "ApellidoDeVeinticincoLetr", "NicknameDeVeinteXXXX", "ClaveMuySegura12345!!Abcd", Roles.Administrador)]
+    public void Validar_DatosValidos_EsValido(string nombre, string apellido, string nickname, string contrasena, string rol)
+    {
+        var request = CrearRequest(nombre: nombre, apellido: apellido, nickname: nickname, contrasena: contrasena, rol: rol);
+        var errores = new List<ValidationResult>();
+
+        var esValido = Validator.TryValidateObject(request, new ValidationContext(request), errores, validateAllProperties: true);
+
+        Assert.IsTrue(esValido, string.Join(" ", errores.Select(e => e.ErrorMessage)));
+    }
+
+    [TestMethod]
     [DataRow("")]
     public void Validar_NombreInvalido_EsInvalido(string nombre)
     {
