@@ -247,6 +247,19 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void Agregar_NicknameOcupadoDespuesDeConsultar_LanzaNicknameYaExisteSinDuplicar()
+    {
+        Assert.IsFalse(_repositorio.ExistePorNickname("jugador"));
+        _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-existente"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var nuevo = new Usuario("Ana", "Pérez", "otro@farmeort.com", "jugador", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-nuevo", new DateOnly(2026, 9, 30));
+
+        Assert.ThrowsExactly<NicknameYaExisteException>(() => _repositorio.Agregar(nuevo));
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Usuarios.Count(u => u.Nickname == "jugador"));
+    }
+
+    [TestMethod]
     public void Agregar_ErrorDeBaseSinDuplicados_PropagaDbUpdateException()
     {
         var nuevo = new Usuario("Ana", "Pérez", "otro@farmeort.com", "otronickname", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-nuevo", new DateOnly(2026, 9, 30))
