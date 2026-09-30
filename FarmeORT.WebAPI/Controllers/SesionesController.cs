@@ -17,6 +17,7 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
     }
 
     [HttpDelete("actual")]
+    [Autenticacion]
     public IActionResult Eliminar()
     {
         var sesion = (SesionAutenticada)HttpContext.Items[ClavesContexto.SesionAutenticada]!;
