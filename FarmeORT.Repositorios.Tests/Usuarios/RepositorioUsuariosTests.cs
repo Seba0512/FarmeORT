@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Repositorios.Usuarios;
 
@@ -229,6 +230,19 @@ public sealed class RepositorioUsuariosTests
         Assert.AreEqual(Rol.Jugador, guardado.Rol);
         Assert.AreEqual("hash-ana", guardado.ContrasenaHash);
         Assert.AreEqual(1200, guardado.Elo);
+    }
+
+    [TestMethod]
+    public void Agregar_EmailOcupadoDespuesDeConsultar_LanzaEmailYaExisteSinDuplicar()
+    {
+        Assert.IsNull(_repositorio.ObtenerPorEmail(Email));
+        _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-existente"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var nuevo = new Usuario("Ana", "Pérez", Email, "otronickname", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-nuevo", new DateOnly(2026, 9, 30));
+
+        Assert.ThrowsExactly<EmailYaExisteException>(() => _repositorio.Agregar(nuevo));
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Usuarios.Count(u => u.Email == Email));
     }
 
     private static Usuario CrearUsuario(
