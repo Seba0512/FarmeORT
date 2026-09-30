@@ -4,10 +4,18 @@
     <ProjectReference Include="..\FarmeORT.DTOs\FarmeORT.DTOs.csproj" />
     <ProjectReference Include="..\FarmeORT.IServicios\FarmeORT.IServicios.csproj" />
     <ProjectReference Include="..\FarmeORT.Excepciones\FarmeORT.Excepciones.csproj" />
+    <ProjectReference Include="..\FarmeORT.Repositorios\FarmeORT.Repositorios.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <InternalsVisibleTo Include="FarmeORT.WebAPI.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="10.0.11">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <PropertyGroup>
