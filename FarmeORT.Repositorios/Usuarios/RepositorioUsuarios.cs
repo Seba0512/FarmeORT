@@ -30,6 +30,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
             consulta = consulta.Where(u => u.Apellido.ToLower().Contains(apellido));
         }
 
+        if(!string.IsNullOrWhiteSpace(filtro.Nickname))
+        {
+            var nickname = filtro.Nickname.ToLower();
+            consulta = consulta.Where(u => u.Nickname.ToLower().Contains(nickname));
+        }
+
         return consulta.OrderBy(u => u.Id).ToList();
     }
 
