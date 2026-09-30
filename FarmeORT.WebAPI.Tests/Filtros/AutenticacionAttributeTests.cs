@@ -40,10 +40,33 @@ public sealed class AutenticacionAttributeTests
         Assert.AreEqual("La sesión no es válida o expiró.", error.UserMessage);
     }
 
-    private AuthorizationFilterContext CrearContexto()
+    [TestMethod]
+    [DataRow("Basic dXN1YXJpbzpjbGF2ZQ==")]
+    [DataRow("Bearer")]
+    [DataRow("Bearer no-es-un-guid")]
+    public void OnAuthorization_HeaderConFormatoInvalido_Devuelve401ConInvalidToken(string encabezado)
+    {
+        var contexto = CrearContexto(encabezado);
+
+        _filtro.OnAuthorization(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status401Unauthorized, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("INVALID_TOKEN", error.ErrorCode);
+    }
+
+    private AuthorizationFilterContext CrearContexto(string? encabezadoAuthorization = null)
     {
         var servicios = new ServiceCollection().AddSingleton(_servicioSesiones.Object).BuildServiceProvider();
         var contextoHttp = new DefaultHttpContext { RequestServices = servicios };
+        if(encabezadoAuthorization is not null)
+        {
+            contextoHttp.Request.Headers.Authorization = encabezadoAuthorization;
+        }
+
         var contextoAccion = new ActionContext(contextoHttp, new RouteData(), new ActionDescriptor());
         return new AuthorizationFilterContext(contextoAccion, []);
     }
