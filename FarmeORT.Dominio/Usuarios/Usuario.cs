@@ -23,25 +23,26 @@ public sealed class Usuario
         Elo = EloInicial;
     }
 
-    public Usuario()
+    // EF Core materializa el usuario con este constructor y completa las propiedades después.
+    private Usuario()
     {
     }
 
     public int Id { get; init; }
 
-    public string Nombre { get; init; } = string.Empty;
+    public string Nombre { get; private set; } = string.Empty;
 
-    public string Apellido { get; init; } = string.Empty;
+    public string Apellido { get; private set; } = string.Empty;
 
-    public string Email { get; init; } = string.Empty;
+    public string Email { get; private set; } = string.Empty;
 
-    public string Nickname { get; init; } = string.Empty;
+    public string Nickname { get; private set; } = string.Empty;
 
-    public DateOnly FechaNacimiento { get; init; }
+    public DateOnly FechaNacimiento { get; private set; }
 
-    public Rol Rol { get; init; }
+    public Rol Rol { get; private set; }
 
-    public string ContrasenaHash { get; init; } = string.Empty;
+    public string ContrasenaHash { get; private set; } = string.Empty;
 
-    public int Elo { get; init; }
+    public int Elo { get; private set; }
 }

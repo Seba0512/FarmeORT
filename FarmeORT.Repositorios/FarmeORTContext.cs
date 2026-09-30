@@ -10,13 +10,19 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     private const int LargoMaximoContrasenaHash = 128;
     private const int LargoMaximoRol = 20;
 
+    // Objeto anónimo porque HasData necesita fijar el Id, que el constructor de Usuario no recibe.
     // Hash PBKDF2 (formato de HasheadorContrasenas) calculado una sola vez, para que la migración no cambie en cada build.
-    private static readonly Usuario AdministradorPrecargado = new()
+    private static readonly object AdministradorPrecargado = new
     {
         Id = 1,
+        Nombre = "Administrador",
+        Apellido = "FarmeORT",
         Email = "admin@farmeort.com",
+        Nickname = "admin",
+        FechaNacimiento = new DateOnly(2000, 1, 1),
         Rol = Rol.Administrador,
         ContrasenaHash = "3LS7NmeR5ARDHCPv9u/dfA==.SXnTh+G3L29NXz1uN1cIe0KKW2S7Mpxc1vmT7g1RKw0=",
+        Elo = 1200,
     };
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();

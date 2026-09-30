@@ -27,8 +27,8 @@ public sealed class RepositorioUsuariosTests
     [TestMethod]
     public void ObtenerPorEmail_EmailExistente_DevuelveUsuario()
     {
-        var otroUsuario = new Usuario { Email = "otro@farmeort.com", Rol = Rol.Organizador, ContrasenaHash = "hash-otro" };
-        var usuario = new Usuario { Email = Email, Rol = Rol.Jugador, ContrasenaHash = "hash-jugador" };
+        var otroUsuario = CrearUsuario("otro@farmeort.com", Rol.Organizador, "hash-otro");
+        var usuario = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
         _baseDeDatos.Contexto.Usuarios.AddRange(otroUsuario, usuario);
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
@@ -55,12 +55,18 @@ public sealed class RepositorioUsuariosTests
     [TestMethod]
     public void ObtenerPorEmail_EmailInexistente_DevuelveNull()
     {
-        var otroUsuario = new Usuario { Email = "otro@farmeort.com", Rol = Rol.Organizador, ContrasenaHash = "hash-otro" };
+        var otroUsuario = CrearUsuario("otro@farmeort.com", Rol.Organizador, "hash-otro");
         _baseDeDatos.Contexto.Usuarios.Add(otroUsuario);
         _baseDeDatos.Contexto.SaveChanges();
 
         var resultado = _repositorio.ObtenerPorEmail(Email);
 
         Assert.IsNull(resultado);
+    }
+
+    private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
+    {
+        var nickname = email.Split('@')[0];
+        return new Usuario("Nombre", "Apellido", email, nickname, new DateOnly(2000, 1, 15), rol, contrasenaHash);
     }
 }
