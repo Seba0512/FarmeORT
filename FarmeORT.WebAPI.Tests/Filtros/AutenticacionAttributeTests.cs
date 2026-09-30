@@ -14,6 +14,8 @@ namespace FarmeORT.WebAPI.Tests.Filtros;
 [TestClass]
 public sealed class AutenticacionAttributeTests
 {
+    private static readonly Guid Token = Guid.Parse("3f2b8c1e-5d4a-4e7b-9c6f-1a2b3c4d5e6f");
+
     private Mock<IServicioSesiones> _servicioSesiones = null!;
     private AutenticacionAttribute _filtro = null!;
 
@@ -47,6 +49,22 @@ public sealed class AutenticacionAttributeTests
     public void OnAuthorization_HeaderConFormatoInvalido_Devuelve401ConInvalidToken(string encabezado)
     {
         var contexto = CrearContexto(encabezado);
+
+        _filtro.OnAuthorization(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status401Unauthorized, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("INVALID_TOKEN", error.ErrorCode);
+    }
+
+    [TestMethod]
+    public void OnAuthorization_TokenInexistente_Devuelve401ConInvalidToken()
+    {
+        var contexto = CrearContexto($"Bearer {Token}");
+        _servicioSesiones.Setup(s => s.ObtenerSesionAutenticada(Token)).Returns((SesionAutenticada?)null);
 
         _filtro.OnAuthorization(contexto);
 

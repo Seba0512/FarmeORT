@@ -36,4 +36,9 @@ internal sealed class ServicioSesiones(
     {
         repositorioSesiones.Eliminar(token);
     }
+
+    public SesionAutenticada? ObtenerSesionAutenticada(Guid token)
+    {
+        throw new NotImplementedException();
+    }
 }
