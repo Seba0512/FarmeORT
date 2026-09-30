@@ -12,12 +12,17 @@ internal sealed class AutenticacionAttribute : Attribute, IAuthorizationFilter
 
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        if(!IntentarObtenerToken(context.HttpContext.Request.Headers.Authorization, out var token)
-            || ObtenerSesion(context, token) is null)
+        var sesion = IntentarObtenerToken(context.HttpContext.Request.Headers.Authorization, out var token)
+            ? ObtenerSesion(context, token)
+            : null;
+        if(sesion is null)
         {
             var error = new ErrorResponse { UserMessage = "La sesión no es válida o expiró.", ErrorCode = "INVALID_TOKEN" };
             context.Result = new ObjectResult(error) { StatusCode = StatusCodes.Status401Unauthorized };
+            return;
         }
+
+        context.HttpContext.Items[ClavesContexto.SesionAutenticada] = sesion;
     }
 
     private static bool IntentarObtenerToken(string? encabezado, out Guid token)
