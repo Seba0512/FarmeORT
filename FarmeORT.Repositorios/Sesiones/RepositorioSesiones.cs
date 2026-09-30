@@ -19,6 +19,8 @@ internal sealed class RepositorioSesiones(FarmeORTContext contexto) : IRepositor
 
     public Sesion? ObtenerPorToken(Guid token)
     {
-        throw new NotImplementedException();
+        return contexto.Sesiones
+            .Include(s => s.Usuario)
+            .SingleOrDefault(s => s.Token == token);
     }
 }
