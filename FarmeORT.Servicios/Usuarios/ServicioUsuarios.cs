@@ -12,6 +12,12 @@ internal sealed class ServicioUsuarios(
     IHasheadorContrasenas hasheadorContrasenas,
     TimeProvider reloj) : IServicioUsuarios
 {
+    public UsuarioResponse RegistrarJugador(RegistroJugadorRequest request)
+    {
+        _ = request;
+        throw new NotImplementedException();
+    }
+
     public UsuarioResponse Crear(UsuarioAdminRequest request)
     {
         ReglaContrasena.Validar(request.Contrasena);
