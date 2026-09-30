@@ -16,4 +16,9 @@ internal sealed class RepositorioSesiones(FarmeORTContext contexto) : IRepositor
     {
         contexto.Sesiones.Where(s => s.Token == token).ExecuteDelete();
     }
+
+    public Sesion? ObtenerPorToken(Guid token)
+    {
+        throw new NotImplementedException();
+    }
 }

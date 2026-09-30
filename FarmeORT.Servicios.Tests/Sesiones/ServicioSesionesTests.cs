@@ -96,6 +96,16 @@ public sealed class ServicioSesionesTests
         _repositorioSesiones.Verify(r => r.Eliminar(Token), Times.Once);
     }
 
+    [TestMethod]
+    public void ObtenerSesionAutenticada_TokenSinSesion_DevuelveNull()
+    {
+        _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns((Sesion?)null);
+
+        var resultado = _servicio.ObtenerSesionAutenticada(Token);
+
+        Assert.IsNull(resultado);
+    }
+
     private Usuario ConfigurarCredencialesValidas()
     {
         var usuario = new Usuario { Id = UsuarioId, Rol = Rol.Jugador, ContrasenaHash = ContrasenaHash };

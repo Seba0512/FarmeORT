@@ -7,4 +7,6 @@ public interface IRepositorioSesiones
     void Agregar(Sesion sesion);
 
     void Eliminar(Guid token);
+
+    Sesion? ObtenerPorToken(Guid token);
 }
