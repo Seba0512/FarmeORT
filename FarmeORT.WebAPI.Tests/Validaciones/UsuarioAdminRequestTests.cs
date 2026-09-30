@@ -22,6 +22,7 @@ public sealed class UsuarioAdminRequestTests
 
     [TestMethod]
     [DataRow("")]
+    [DataRow("NombreDeCincuentaYUnCaracteresParaProbarElLimiteXYZ")]
     public void Validar_NombreInvalido_EsInvalido(string nombre)
     {
         var request = CrearRequest(nombre: nombre);

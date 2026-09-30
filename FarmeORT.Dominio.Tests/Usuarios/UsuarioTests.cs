@@ -34,6 +34,14 @@ public sealed class UsuarioTests
     }
 
     [TestMethod]
+    public void Constructor_NombreDeMasDe50Caracteres_LanzaDatosInvalidos()
+    {
+        var nombre = "NombreDeCincuentaYUnCaracteresParaProbarElLimiteXYZ";
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(nombre: nombre));
+    }
+
+    [TestMethod]
     [DataRow("")]
     [DataRow("Pe")]
     [DataRow("ApellidoDeVeintiseisLetras")]
