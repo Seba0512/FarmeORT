@@ -95,6 +95,16 @@ public sealed class ServicioUsuariosTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(request));
     }
 
+    [TestMethod]
+    [DataRow("Superusuario")]
+    [DataRow("5")]
+    public void Crear_RolInexistente_LanzaDatosInvalidosSinConsultarLaBase(string rol)
+    {
+        var request = CrearRequest(rol);
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(request));
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
