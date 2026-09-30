@@ -50,6 +50,8 @@ public sealed class FiltroExcepcionesTests
         Assert.IsNotNull(error);
         Assert.AreEqual("INTERNAL_ERROR", error.ErrorCode);
         Assert.AreEqual("Ocurrió un error inesperado.", error.UserMessage);
+        Assert.IsNull(error.MoreInfo);
+        Assert.IsNull(error.Detalles);
     }
 
     private static ExceptionContext CrearContexto(Exception excepcion)
