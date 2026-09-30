@@ -357,6 +357,141 @@ comportamiento del filtro en sí ya está cubierto por sus propios tests.
 
 ---
 
+### D-16 — Validación de usuarios en el borde y en el dominio
+
+**Problema:** las reglas del usuario (nombre, apellido, email, nickname, contraseña, edad) tienen que
+cumplirse siempre, pero también conviene rechazar datos inválidos lo antes posible.
+
+**Alternativas consideradas:** validar solo en el DTO; validar solo en el dominio; validar en los dos.
+
+**Decisión adoptada:** anotaciones en `UsuarioAdminRequest` (400 `VALIDATION_ERROR`, con un detalle
+por campo) **y** reglas en el constructor de `Usuario` y en `ReglaContrasena` (400 `INVALID_DATA`,
+con el mensaje de la regla). La duplicación es deliberada: el borde corta temprano y el dominio queda
+consistente aunque lo use otra entrada. Para eso Dominio pasa a referenciar a Excepciones, que no
+depende de nada, así que no se forma ningún ciclo.
+
+**Justificación:** el dominio es el experto en sus datos (Information Expert) y no puede quedar en un
+estado inválido. `ReglaContrasena` usa las mismas clases de caracteres ASCII que la expresión regular
+del DTO, para que las dos capas acepten y rechacen exactamente lo mismo.
+
+**Conceptos del curso:** Information Expert, encapsulamiento, validación en el borde.
+
+**Evidencia:** `Usuario`, `ReglaContrasena`, `UsuarioAdminRequest` y sus tests; prueba manual del
+alta (400 con siete detalles en español y 400 `INVALID_DATA` para un menor de 13).
+
+**Participación de IA:** propuesta de la IA; el equipo eligió validar en las dos capas.
+
+---
+
+### D-17 — Un solo `Usuario` con rol y ELO, creado por constructor
+
+**Problema:** el ELO solo tiene sentido para los jugadores, y un usuario no debe poder quedar con datos
+inválidos.
+
+**Alternativas consideradas:** subclase `Jugador` con el ELO (obliga a cambiar de tipo si el
+administrador cambia el rol, y a usar herencia en EF); una sola clase `Usuario` con rol y ELO.
+
+**Decisión adoptada:** una sola clase, con un constructor que valida y setters privados; el
+constructor sin parámetros queda privado y solo lo usa EF. Todo usuario arranca con ELO 1200;
+`UsuarioResponse` incluye el ELO solo si el rol es Jugador.
+
+**Justificación:** respeta "un solo rol por usuario" sin jerarquías, y nadie puede modificar un usuario
+salteando sus reglas. El administrador precargado se carga con un objeto anónimo en `HasData`, porque
+el constructor no recibe el `Id`.
+
+**Evidencia:** `FarmeORT.Dominio/Usuarios/Usuario.cs`, `FarmeORTContext`, `ServicioUsuarios.CrearResponse`.
+
+**Participación de IA:** la IA planteó las dos alternativas; el equipo eligió la clase única.
+
+---
+
+### D-18 — La fecha actual se inyecta
+
+**Problema:** la regla de edad mínima depende de la fecha de hoy, y un test que usa el reloj real da
+resultados distintos según el día en que corre.
+
+**Alternativas consideradas:** `DateTime.Now` dentro del dominio; una interfaz propia de reloj;
+`TimeProvider` de .NET.
+
+**Decisión adoptada:** el constructor de `Usuario` recibe la fecha actual como parámetro; el servicio
+la obtiene de `TimeProvider` (registrado como `TimeProvider.System`) usando la hora **local**, porque
+en Uruguay la fecha UTC ya es la del día siguiente a partir de las 21:00. La edad se calcula como
+"la fecha en que cumple 13 todavía no llegó", sin restar años a mano.
+
+**Justificación:** el dominio no depende de infraestructura y los tests son repetibles. `TimeProvider`
+viene en .NET, así que no se agrega ninguna tecnología nueva, y se puede mockear con Moq.
+
+**Conceptos del curso:** DIP, tests FIRST (repetibles), dobles de prueba.
+
+**Evidencia:** `Usuario.ValidarEdad`, `ServicioUsuarios`, tests `Constructor_MenorDe13Anios_…` y
+`Constructor_Cumple13AniosHoy_EsValido`.
+
+**Participación de IA:** propuesta de la IA, aprobada por el equipo.
+
+---
+
+### D-19 — Supuesto: el nombre tiene como máximo 50 caracteres
+
+**Problema:** la letra solo pide "mínimo un carácter" para el nombre, pero AGENTS.md pide largos máximos
+en las columnas. Sin un máximo validado, un nombre largo pasaría las validaciones y fallaría recién al
+guardar, con un 500.
+
+**Alternativas consideradas:** columna sin límite (`nvarchar(max)`); asumir un máximo y validarlo.
+
+**Decisión adoptada:** máximo de 50 caracteres, validado en el DTO y en el dominio, igual que la columna.
+
+**Justificación:** cubre cualquier nombre real y evita un error del servidor por culpa del cliente. Es
+un supuesto propio y se documenta como tal.
+
+**Evidencia:** `Constructor_NombreDeMasDe50Caracteres_LanzaDatosInvalidos`, `UsuarioAdminRequestTests`.
+
+**Participación de IA:** la IA detectó el hueco y propuso las dos opciones; el equipo eligió el máximo.
+
+---
+
+### D-20 — Orden de los pasos del alta de usuario
+
+**Problema:** el alta valida datos, consulta la base y hashea una contraseña con PBKDF2, que es costoso a
+propósito.
+
+**Decisión adoptada:** primero la contraseña y el rol (sin tocar la base), después email y nickname
+únicos (409), recién después el hash, y por último el constructor de `Usuario` y el guardado. El rol se
+convierte con `Enum.TryParse` más `Enum.IsDefined`, para que un texto como `"5"` no se acepte como rol.
+
+**Justificación:** no se consulta la base con datos que ya se sabe que son inválidos, y no se paga el
+hash si el email ya existe. Los tests lo verifican con mocks estrictos sin configurar: si el servicio
+consultara la base antes, fallarían. El índice único de email y nickname en la base cubre el caso de
+dos altas simultáneas.
+
+**Evidencia:** `ServicioUsuarios.Crear` y sus tests `…SinConsultarLaBase`.
+
+**Participación de IA:** propuesta de la IA, aprobada por el equipo.
+
+---
+
+### D-21 — Listado de usuarios: filtros, orden y paginación
+
+**Problema:** `GET /usuarios` admite filtros por nombre, apellido y nickname, y paginación con `limit` y
+`offset`.
+
+**Decisión adoptada:**
+- Los filtros buscan por **contenido** y sin distinguir mayúsculas, y se combinan con un Y lógico.
+- Se comparan las dos partes en minúscula (`ToLower`), porque en SQL Server la comparación no distingue
+  mayúsculas por defecto pero en el SQLite de los tests sí; así el resultado es el mismo en los dos.
+- El orden es siempre por `Id`, explícito, para que la paginación sea estable y no dependa del orden
+  accidental de SQL.
+- `limit` vale 20 por defecto y va de 1 a 100; `offset` desde 0. Fuera de rango, 400.
+- El repositorio recibe un record `FiltroUsuarios` definido en IRepositorios, porque no conoce los DTOs.
+  Al ser un record, el test del servicio configura el mock con el valor exacto esperado.
+- Los tres filtros quedan como tres `if` de dos líneas: extraerlos obligaría a armar el árbol de
+  expresiones a mano para que EF los traduzca, y eso se lee peor.
+
+**Evidencia:** `RepositorioUsuarios.Listar` y sus tests con SQLite; prueba manual del listado.
+
+**Participación de IA:** propuesta de la IA, aprobada por el equipo.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -381,3 +516,11 @@ comportamiento del filtro en sí ya está cubierto por sus propios tests.
   mensaje del 401 dice "o expiró". Decidir si se agrega un vencimiento o se ajusta el mensaje.
 - Cuando más controllers lean la sesión del contexto, extraer esa lectura a un solo lugar (por ejemplo,
   un método de extensión `HttpContext.ObtenerSesionAutenticada()`), para no repetir el cast.
+- Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
+  enrutamiento antes de los filtros. Igual con los errores de conversión de la query
+  (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
+- Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
+  eliminar si tiene batallas sin resolver o si organiza un torneo que no está Finalizado ni Cancelado.
+- Si dos altas con el mismo email o nickname llegan al mismo tiempo, el índice único de la base rechaza
+  la segunda, pero hoy esa `DbUpdateException` terminaría en 500 en lugar de 409.
+- Registrar en AGENTS.md que Dominio referencia a Excepciones (D-16).

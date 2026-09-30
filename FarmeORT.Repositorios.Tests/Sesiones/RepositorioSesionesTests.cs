@@ -28,7 +28,7 @@ public sealed class RepositorioSesionesTests
     [TestMethod]
     public void Agregar_SesionNueva_QuedaGuardadaConSuUsuario()
     {
-        var usuario = new Usuario { Email = "jugador@farmeort.com", Rol = Rol.Jugador, ContrasenaHash = "hash-jugador" };
+        var usuario = CrearUsuario("jugador@farmeort.com", Rol.Jugador, "hash-jugador");
         _baseDeDatos.Contexto.Usuarios.Add(usuario);
         _baseDeDatos.Contexto.SaveChanges();
 
@@ -44,7 +44,7 @@ public sealed class RepositorioSesionesTests
     public void Eliminar_TokenExistente_BorraSoloEsaSesion()
     {
         var otroToken = Guid.Parse("9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d");
-        var usuario = new Usuario { Email = "jugador@farmeort.com", Rol = Rol.Jugador, ContrasenaHash = "hash-jugador" };
+        var usuario = CrearUsuario("jugador@farmeort.com", Rol.Jugador, "hash-jugador");
         _baseDeDatos.Contexto.Usuarios.Add(usuario);
         _baseDeDatos.Contexto.Sesiones.AddRange(new Sesion(Token, usuario), new Sesion(otroToken, usuario));
         _baseDeDatos.Contexto.SaveChanges();
@@ -60,7 +60,7 @@ public sealed class RepositorioSesionesTests
     public void Eliminar_TokenInexistente_NoBorraNingunaSesion()
     {
         var otroToken = Guid.Parse("9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d");
-        var usuario = new Usuario { Email = "jugador@farmeort.com", Rol = Rol.Jugador, ContrasenaHash = "hash-jugador" };
+        var usuario = CrearUsuario("jugador@farmeort.com", Rol.Jugador, "hash-jugador");
         _baseDeDatos.Contexto.Usuarios.Add(usuario);
         _baseDeDatos.Contexto.Sesiones.Add(new Sesion(otroToken, usuario));
         _baseDeDatos.Contexto.SaveChanges();
@@ -73,7 +73,7 @@ public sealed class RepositorioSesionesTests
     [TestMethod]
     public void ObtenerPorToken_TokenExistente_DevuelveSesionConSuUsuario()
     {
-        var usuario = new Usuario { Email = "organizador@farmeort.com", Rol = Rol.Organizador, ContrasenaHash = "hash-organizador" };
+        var usuario = CrearUsuario("organizador@farmeort.com", Rol.Organizador, "hash-organizador");
         _baseDeDatos.Contexto.Usuarios.Add(usuario);
         _baseDeDatos.Contexto.Sesiones.Add(new Sesion(Token, usuario));
         _baseDeDatos.Contexto.SaveChanges();
@@ -94,5 +94,11 @@ public sealed class RepositorioSesionesTests
         var resultado = _repositorio.ObtenerPorToken(Token);
 
         Assert.IsNull(resultado);
+    }
+
+    private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
+    {
+        var nickname = email.Split('@')[0];
+        return new Usuario("Nombre", "Apellido", email, nickname, new DateOnly(2000, 1, 15), rol, contrasenaHash, new DateOnly(2026, 9, 30));
     }
 }

@@ -37,6 +37,57 @@ public sealed class FiltroExcepcionesTests
     }
 
     [TestMethod]
+    public void OnException_UsuarioNoEncontrado_Devuelve404ConUserNotFound()
+    {
+        var contexto = CrearContexto(new UsuarioNoEncontradoException());
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status404NotFound, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("USER_NOT_FOUND", error.ErrorCode);
+        Assert.AreEqual("No existe un usuario con ese id.", error.UserMessage);
+    }
+
+    [TestMethod]
+    public void OnException_DatosInvalidos_Devuelve400ConElMensajeDeLaRegla()
+    {
+        var contexto = CrearContexto(new DatosInvalidosException("El usuario debe tener 13 años o más."));
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status400BadRequest, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("INVALID_DATA", error.ErrorCode);
+        Assert.AreEqual("El usuario debe tener 13 años o más.", error.UserMessage);
+    }
+
+    [TestMethod]
+    [DataRow(typeof(EmailYaExisteException), "EMAIL_ALREADY_EXISTS", "Ya existe un usuario con ese email.")]
+    [DataRow(typeof(NicknameYaExisteException), "NICKNAME_ALREADY_EXISTS", "Ya existe un usuario con ese nickname.")]
+    public void OnException_DatoDuplicado_Devuelve409ConSuCodigo(Type tipoExcepcion, string codigo, string mensaje)
+    {
+        var excepcion = (Exception)Activator.CreateInstance(tipoExcepcion)!;
+        var contexto = CrearContexto(excepcion);
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status409Conflict, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual(codigo, error.ErrorCode);
+        Assert.AreEqual(mensaje, error.UserMessage);
+    }
+
+    [TestMethod]
     public void OnException_ExcepcionNoMapeada_Devuelve500ConMensajeFijo()
     {
         var contexto = CrearContexto(new InvalidOperationException("detalle interno con datos sensibles"));

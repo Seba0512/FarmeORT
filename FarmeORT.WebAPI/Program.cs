@@ -12,6 +12,7 @@ builder.Services
     .AddControllers(opciones => opciones.Filters.Add<FiltroExcepciones>())
     .ConfigureApiBehaviorOptions(opciones => opciones.InvalidModelStateResponseFactory = RespuestaValidacion.Crear);
 builder.Services
+    .AddSingleton(TimeProvider.System)
     .AgregarServicios()
     .AgregarRepositorios(connectionString);
 

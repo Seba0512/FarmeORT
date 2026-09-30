@@ -54,7 +54,7 @@ public sealed class ServicioSesionesTests
     public void IniciarSesion_ContrasenaIncorrecta_LanzaCredencialesInvalidas()
     {
         var request = new LoginRequest { Email = Email, Contrasena = "ClaveIncorrecta" };
-        var usuario = new Usuario { ContrasenaHash = ContrasenaHash };
+        var usuario = CrearUsuario();
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns(usuario);
         _hasheadorContrasenas.Setup(h => h.Verificar("ClaveIncorrecta", ContrasenaHash)).Returns(false);
 
@@ -110,7 +110,7 @@ public sealed class ServicioSesionesTests
     [TestMethod]
     public void ObtenerSesionAutenticada_TokenConSesion_DevuelveTokenUsuarioYRol()
     {
-        var usuario = new Usuario { Id = UsuarioId, Rol = Rol.Jugador, ContrasenaHash = ContrasenaHash };
+        var usuario = CrearUsuario();
         _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns(new Sesion(Token, usuario));
 
         var resultado = _servicio.ObtenerSesionAutenticada(Token);
@@ -123,11 +123,19 @@ public sealed class ServicioSesionesTests
 
     private Usuario ConfigurarCredencialesValidas()
     {
-        var usuario = new Usuario { Id = UsuarioId, Rol = Rol.Jugador, ContrasenaHash = ContrasenaHash };
+        var usuario = CrearUsuario();
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns(usuario);
         _hasheadorContrasenas.Setup(h => h.Verificar(Contrasena, ContrasenaHash)).Returns(true);
         _generadorTokens.Setup(g => g.Generar()).Returns(Token);
         _repositorioSesiones.Setup(r => r.Agregar(It.Is<Sesion>(s => s.Token == Token && s.Usuario == usuario)));
         return usuario;
+    }
+
+    private static Usuario CrearUsuario()
+    {
+        return new Usuario("Ana", "Pérez", Email, "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, ContrasenaHash, new DateOnly(2026, 9, 30))
+        {
+            Id = UsuarioId,
+        };
     }
 }
