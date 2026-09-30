@@ -87,4 +87,12 @@ public sealed class RepositorioSesionesTests
         Assert.AreEqual(usuario.Id, resultado.Usuario.Id);
         Assert.AreEqual(Rol.Organizador, resultado.Usuario.Rol);
     }
+
+    [TestMethod]
+    public void ObtenerPorToken_TokenInexistente_DevuelveNull()
+    {
+        var resultado = _repositorio.ObtenerPorToken(Token);
+
+        Assert.IsNull(resultado);
+    }
 }
