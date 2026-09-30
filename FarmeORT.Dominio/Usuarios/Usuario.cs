@@ -1,9 +1,10 @@
 using System.Net.Mail;
+using System.Text.RegularExpressions;
 using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Usuarios;
 
-public sealed class Usuario
+public sealed partial class Usuario
 {
     private const int EloInicial = 1200;
     private const int LargoMinimoApellido = 3;
@@ -21,6 +22,7 @@ public sealed class Usuario
         ValidarNombre(nombre);
         ValidarApellido(apellido);
         ValidarEmail(email);
+        ValidarNickname(nickname);
 
         Nombre = nombre;
         Apellido = apellido;
@@ -78,4 +80,15 @@ public sealed class Usuario
             throw new DatosInvalidosException("El email no tiene un formato válido.");
         }
     }
+
+    private static void ValidarNickname(string nickname)
+    {
+        if(!PatronNickname().IsMatch(nickname))
+        {
+            throw new DatosInvalidosException("El nickname debe ser alfanumérico, sin espacios, de 3 a 20 caracteres.");
+        }
+    }
+
+    [GeneratedRegex("^[a-zA-Z0-9]{3,20}$")]
+    private static partial Regex PatronNickname();
 }
