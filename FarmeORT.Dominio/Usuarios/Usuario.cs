@@ -18,20 +18,9 @@ public sealed class Usuario
         Rol rol,
         string contrasenaHash)
     {
-        if(string.IsNullOrWhiteSpace(nombre))
-        {
-            throw new DatosInvalidosException("El nombre es obligatorio.");
-        }
-
-        if(apellido.Length is < LargoMinimoApellido or > LargoMaximoApellido)
-        {
-            throw new DatosInvalidosException("El apellido debe tener entre 3 y 25 caracteres.");
-        }
-
-        if(!MailAddress.TryCreate(email, out var direccion) || direccion.Address != email)
-        {
-            throw new DatosInvalidosException("El email no tiene un formato válido.");
-        }
+        ValidarNombre(nombre);
+        ValidarApellido(apellido);
+        ValidarEmail(email);
 
         Nombre = nombre;
         Apellido = apellido;
@@ -65,4 +54,28 @@ public sealed class Usuario
     public string ContrasenaHash { get; private set; } = string.Empty;
 
     public int Elo { get; private set; }
+
+    private static void ValidarNombre(string nombre)
+    {
+        if(string.IsNullOrWhiteSpace(nombre))
+        {
+            throw new DatosInvalidosException("El nombre es obligatorio.");
+        }
+    }
+
+    private static void ValidarApellido(string apellido)
+    {
+        if(apellido.Length is < LargoMinimoApellido or > LargoMaximoApellido)
+        {
+            throw new DatosInvalidosException("El apellido debe tener entre 3 y 25 caracteres.");
+        }
+    }
+
+    private static void ValidarEmail(string email)
+    {
+        if(!MailAddress.TryCreate(email, out var direccion) || direccion.Address != email)
+        {
+            throw new DatosInvalidosException("El email no tiene un formato válido.");
+        }
+    }
 }
