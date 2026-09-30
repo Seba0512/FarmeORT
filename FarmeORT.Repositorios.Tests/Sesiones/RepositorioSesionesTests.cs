@@ -55,4 +55,18 @@ public sealed class RepositorioSesionesTests
         Assert.IsFalse(_baseDeDatos.Contexto.Sesiones.Any(s => s.Token == Token));
         Assert.IsTrue(_baseDeDatos.Contexto.Sesiones.Any(s => s.Token == otroToken));
     }
+
+    [TestMethod]
+    public void Eliminar_TokenInexistente_NoBorraNingunaSesion()
+    {
+        var otroToken = Guid.Parse("9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d");
+        var usuario = new Usuario { Email = "jugador@farmeort.com", Rol = Rol.Jugador, ContrasenaHash = "hash-jugador" };
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.Sesiones.Add(new Sesion(otroToken, usuario));
+        _baseDeDatos.Contexto.SaveChanges();
+
+        _repositorio.Eliminar(Token);
+
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Sesiones.Count());
+    }
 }
