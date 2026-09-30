@@ -1,3 +1,4 @@
+using System.Net.Mail;
 using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Usuarios;
@@ -25,6 +26,11 @@ public sealed class Usuario
         if(apellido.Length is < LargoMinimoApellido or > LargoMaximoApellido)
         {
             throw new DatosInvalidosException("El apellido debe tener entre 3 y 25 caracteres.");
+        }
+
+        if(!MailAddress.TryCreate(email, out var direccion) || direccion.Address != email)
+        {
+            throw new DatosInvalidosException("El email no tiene un formato válido.");
         }
 
         Nombre = nombre;
