@@ -233,6 +233,34 @@ el contrato exige `ErrorResponse`.
 
 ---
 
+### D-11 — Administrador precargado con hash fijo en la migración
+
+**Problema:** el alta de usuarios es solo para administradores, así que la base necesita al menos un
+administrador desde el inicio para poder usar la API (y para que los docentes puedan probarla).
+
+**Alternativas consideradas:** script `.sql` aparte que inserte el usuario; alta al arrancar la API
+(código en `Program.cs` que hashee la contraseña en cada ejecución); `HasData` en el contexto con el
+hash calculado una sola vez.
+
+**Decisión adoptada:** `HasData` con `Id = 1`, `admin@farmeort.com`, rol `Administrador` y un hash
+PBKDF2 fijo, calculado aparte con los mismos parámetros que `HasheadorContrasenas`. La migración
+`CreaUsuariosYSesiones` crea las tablas e inserta al administrador.
+
+**Justificación:** el administrador queda versionado junto con el esquema y se crea con
+`dotnet ef database update`, sin pasos manuales. El hash es fijo porque si se generara en cada build
+la sal cambiaría y EF detectaría un cambio de modelo en cada migración. En el repositorio solo está el
+hash; la contraseña inicial se documenta en la guía de instalación.
+
+**Evidencia:** `FarmeORT.Repositorios/FarmeORTContext.cs`,
+`Migrations/20260930041829_CreaUsuariosYSesiones.cs`,
+`RepositorioUsuariosTests.ObtenerPorEmail_AdministradorPrecargado_DevuelveAdministrador` y la prueba
+manual de login (201 con la contraseña correcta, 401 con otra).
+
+**Participación de IA:** la IA propuso `HasData` con hash fijo y calculó el hash; el equipo definió la
+contraseña inicial.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -249,6 +277,7 @@ el contrato exige `ErrorResponse`.
 ### Otros
 
 - Documentar en `AGENTS.md` la convención de D-05 y la excepción de D-08.
-- Reemplazar la migración `InitialCreate` por una con nombre descriptivo después de agregar el
-  administrador precargado.
-- Explicar en la guía de instalación cómo crear `.env` y `appsettings.Development.json` (D-09).
+- ~~Reemplazar la migración `InitialCreate` por una con nombre descriptivo después de agregar el
+  administrador precargado.~~ Resuelto: `CreaUsuariosYSesiones` (D-11).
+- Explicar en la guía de instalación cómo crear `.env` y `appsettings.Development.json` (D-09) y cuál
+  es la contraseña inicial del administrador (D-11).
