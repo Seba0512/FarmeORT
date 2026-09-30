@@ -69,4 +69,22 @@ public sealed class RepositorioSesionesTests
 
         Assert.AreEqual(1, _baseDeDatos.Contexto.Sesiones.Count());
     }
+
+    [TestMethod]
+    public void ObtenerPorToken_TokenExistente_DevuelveSesionConSuUsuario()
+    {
+        var usuario = new Usuario { Email = "organizador@farmeort.com", Rol = Rol.Organizador, ContrasenaHash = "hash-organizador" };
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.Sesiones.Add(new Sesion(Token, usuario));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.ObtenerPorToken(Token);
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(Token, resultado.Token);
+        Assert.IsNotNull(resultado.Usuario);
+        Assert.AreEqual(usuario.Id, resultado.Usuario.Id);
+        Assert.AreEqual(Rol.Organizador, resultado.Usuario.Rol);
+    }
 }
