@@ -106,6 +106,22 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void Listar_FiltroPorNombre_DevuelveLosQueLoContienenSinDistinguirMayusculas()
+    {
+        _baseDeDatos.Contexto.Usuarios.AddRange(
+            CrearUsuario("carlos@farmeort.com", Rol.Jugador, "hash-carlos", nombre: "Carlos"),
+            CrearUsuario("laura@farmeort.com", Rol.Organizador, "hash-laura", nombre: "Laura"),
+            CrearUsuario("oscar@farmeort.com", Rol.Jugador, "hash-oscar", nombre: "Oscar"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroUsuarios("CAR", null, null, 20, 0));
+
+        string[] nombresEsperados = ["Carlos", "Oscar"];
+        CollectionAssert.AreEqual(nombresEsperados, resultado.Select(u => u.Nombre).ToArray());
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameExistente_DevuelveTrue()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
@@ -150,9 +166,14 @@ public sealed class RepositorioUsuariosTests
         Assert.AreEqual(1200, guardado.Elo);
     }
 
-    private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
+    private static Usuario CrearUsuario(
+        string email,
+        Rol rol,
+        string contrasenaHash,
+        string nombre = "Nombre",
+        string apellido = "Apellido")
     {
         var nickname = email.Split('@')[0];
-        return new Usuario("Nombre", "Apellido", email, nickname, new DateOnly(2000, 1, 15), rol, contrasenaHash, new DateOnly(2026, 9, 30));
+        return new Usuario(nombre, apellido, email, nickname, new DateOnly(2000, 1, 15), rol, contrasenaHash, new DateOnly(2026, 9, 30));
     }
 }
