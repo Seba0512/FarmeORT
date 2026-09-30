@@ -36,7 +36,11 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
             consulta = consulta.Where(u => u.Nickname.ToLower().Contains(nickname));
         }
 
-        return consulta.OrderBy(u => u.Id).ToList();
+        return consulta
+            .OrderBy(u => u.Id)
+            .Skip(filtro.Desplazamiento)
+            .Take(filtro.Limite)
+            .ToList();
     }
 
     public bool ExistePorNickname(string nickname)
