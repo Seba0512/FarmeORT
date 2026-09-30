@@ -56,6 +56,19 @@ public sealed class UsuariosControllerTests
     }
 
     [TestMethod]
+    public void ObtenerPorId_UsuarioExistente_Devuelve200ConElUsuario()
+    {
+        var usuario = new UsuarioResponse { Id = 5, Nombre = "Ana", Email = "ana@farmeort.com", Rol = Roles.Organizador };
+        _servicioUsuarios.Setup(s => s.ObtenerPorId(5)).Returns(usuario);
+
+        var resultado = _controller.ObtenerPorId(5) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(usuario, resultado.Value);
+    }
+
+    [TestMethod]
     public void UsuariosController_TodosLosEndpoints_RequierenRolAdministrador()
     {
         var atributo = typeof(UsuariosController)

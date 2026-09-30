@@ -16,4 +16,11 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
         var response = servicioUsuarios.Crear(request);
         return Created($"/api/v1/usuarios/{response.Id}", response);
     }
+
+    [HttpGet("{id:int}")]
+    public IActionResult ObtenerPorId(int id)
+    {
+        _ = id;
+        throw new NotImplementedException();
+    }
 }
