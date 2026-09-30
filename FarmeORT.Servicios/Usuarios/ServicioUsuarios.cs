@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
@@ -23,8 +24,19 @@ internal sealed class ServicioUsuarios(
             throw new NicknameYaExisteException();
         }
 
-        _ = hasheadorContrasenas;
-        _ = reloj;
-        throw new NotImplementedException();
+        var rol = Enum.Parse<Rol>(request.Rol);
+        var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
+        var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
+        var usuario = new Usuario(
+            request.Nombre,
+            request.Apellido,
+            request.Email,
+            request.Nickname,
+            request.FechaNacimiento,
+            rol,
+            contrasenaHash,
+            fechaActual);
+        repositorioUsuarios.Agregar(usuario);
+        return new UsuarioResponse();
     }
 }
