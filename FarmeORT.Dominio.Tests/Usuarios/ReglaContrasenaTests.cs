@@ -18,4 +18,12 @@ public sealed class ReglaContrasenaTests
     {
         Assert.ThrowsExactly<DatosInvalidosException>(() => ReglaContrasena.Validar(contrasena));
     }
+
+    [TestMethod]
+    [DataRow("ClaveSegura12!!")]
+    [DataRow("ClaveMuySegura12345!!Abcd")]
+    public void Validar_ContrasenaValidaEnLosLimites_NoLanza(string contrasena)
+    {
+        ReglaContrasena.Validar(contrasena);
+    }
 }
