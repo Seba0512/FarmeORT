@@ -82,6 +82,14 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void ObtenerPorId_IdInexistente_DevuelveNull()
+    {
+        var resultado = _repositorio.ObtenerPorId(99);
+
+        Assert.IsNull(resultado);
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameExistente_DevuelveTrue()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
