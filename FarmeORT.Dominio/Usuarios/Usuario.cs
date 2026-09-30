@@ -9,6 +9,7 @@ public sealed partial class Usuario
     private const int EloInicial = 1200;
     private const int LargoMinimoApellido = 3;
     private const int LargoMaximoApellido = 25;
+    private const int EdadMinima = 13;
 
     public Usuario(
         string nombre,
@@ -20,11 +21,11 @@ public sealed partial class Usuario
         string contrasenaHash,
         DateOnly fechaActual)
     {
-        _ = fechaActual;
         ValidarNombre(nombre);
         ValidarApellido(apellido);
         ValidarEmail(email);
         ValidarNickname(nickname);
+        ValidarEdad(fechaNacimiento, fechaActual);
 
         Nombre = nombre;
         Apellido = apellido;
@@ -88,6 +89,14 @@ public sealed partial class Usuario
         if(!PatronNickname().IsMatch(nickname))
         {
             throw new DatosInvalidosException("El nickname debe ser alfanumérico, sin espacios, de 3 a 20 caracteres.");
+        }
+    }
+
+    private static void ValidarEdad(DateOnly fechaNacimiento, DateOnly fechaActual)
+    {
+        if(fechaNacimiento.AddYears(EdadMinima) > fechaActual)
+        {
+            throw new DatosInvalidosException("El usuario debe tener 13 años o más.");
         }
     }
 
