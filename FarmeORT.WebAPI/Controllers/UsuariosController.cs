@@ -11,8 +11,7 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
     [HttpPost]
     public IActionResult Crear([FromBody] UsuarioAdminRequest request)
     {
-        _ = servicioUsuarios;
-        _ = request;
-        throw new NotImplementedException();
+        var response = servicioUsuarios.Crear(request);
+        return Created($"/api/v1/usuarios/{response.Id}", response);
     }
 }
