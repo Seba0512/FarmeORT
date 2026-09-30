@@ -71,6 +71,16 @@ public sealed class UsuarioTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(fechaNacimiento: cumple13Maniana));
     }
 
+    [TestMethod]
+    public void Constructor_Cumple13AniosHoy_EsValido()
+    {
+        var cumple13Hoy = FechaActual.AddYears(-13);
+
+        var usuario = CrearUsuario(fechaNacimiento: cumple13Hoy);
+
+        Assert.AreEqual(cumple13Hoy, usuario.FechaNacimiento);
+    }
+
     private static Usuario CrearUsuario(
         string nombre = "Ana",
         string apellido = "Pérez",
