@@ -15,6 +15,7 @@ internal sealed class ServicioUsuarios(
     public UsuarioResponse Crear(UsuarioAdminRequest request)
     {
         ReglaContrasena.Validar(request.Contrasena);
+        var rol = ConvertirRol(request.Rol);
 
         if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
         {
@@ -26,7 +27,6 @@ internal sealed class ServicioUsuarios(
             throw new NicknameYaExisteException();
         }
 
-        var rol = Enum.Parse<Rol>(request.Rol);
         var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
         var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
         var usuario = new Usuario(
@@ -40,6 +40,16 @@ internal sealed class ServicioUsuarios(
             fechaActual);
         repositorioUsuarios.Agregar(usuario);
         return CrearResponse(usuario);
+    }
+
+    private static Rol ConvertirRol(string rol)
+    {
+        if(!Enum.TryParse<Rol>(rol, out var rolConvertido) || !Enum.IsDefined(rolConvertido))
+        {
+            throw new DatosInvalidosException("El rol debe ser Jugador, Organizador o Administrador.");
+        }
+
+        return rolConvertido;
     }
 
     private static UsuarioResponse CrearResponse(Usuario usuario)
