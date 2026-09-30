@@ -134,6 +134,23 @@ public sealed class ServicioUsuariosTests
         Assert.AreEqual(1200, response.Elo);
     }
 
+    [TestMethod]
+    public void Listar_ConFiltro_DevuelveLosUsuariosDelRepositorio()
+    {
+        var carlos = new Usuario("Carlos", "Suarez", "carlos@farmeort.com", "carlossuarez", new DateOnly(2001, 8, 2), Rol.Jugador, "hash", FechaActual)
+        {
+            Id = 3,
+        };
+        _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios("car", null, null, 10, 0))).Returns([carlos]);
+
+        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Nombre = "car", Limit = 10, Offset = 0 });
+
+        Assert.HasCount(1, usuarios);
+        Assert.AreEqual(3, usuarios[0].Id);
+        Assert.AreEqual("Carlos", usuarios[0].Nombre);
+        Assert.AreEqual(1200, usuarios[0].Elo);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);

@@ -8,6 +8,8 @@ public interface IRepositorioUsuarios
 
     Usuario? ObtenerPorId(int id);
 
+    IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro);
+
     bool ExistePorNickname(string nickname);
 
     void Agregar(Usuario usuario);

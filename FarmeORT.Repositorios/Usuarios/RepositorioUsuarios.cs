@@ -15,6 +15,11 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         return contexto.Usuarios.Find(id);
     }
 
+    public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
+    {
+        throw new NotImplementedException();
+    }
+
     public bool ExistePorNickname(string nickname)
     {
         return contexto.Usuarios.Any(u => u.Nickname == nickname);
