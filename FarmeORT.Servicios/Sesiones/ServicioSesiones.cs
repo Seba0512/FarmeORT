@@ -34,6 +34,6 @@ internal sealed class ServicioSesiones(
 
     public void CerrarSesion(Guid token)
     {
-        throw new NotImplementedException();
+        repositorioSesiones.Eliminar(token);
     }
 }
