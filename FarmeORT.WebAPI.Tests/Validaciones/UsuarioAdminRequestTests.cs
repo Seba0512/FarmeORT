@@ -10,6 +10,7 @@ public sealed class UsuarioAdminRequestTests
     [DataRow("A", "Pérez", "anaperez", "ClaveSegura123!!", Roles.Organizador)]
     [DataRow("Ana", "Paz", "abc", "ClaveSegura12!!", Roles.Jugador)]
     [DataRow("Ana", "ApellidoDeVeinticincoLetr", "NicknameDeVeinteXXXX", "ClaveMuySegura12345!!Abcd", Roles.Administrador)]
+    [DataRow("NombreDeCincuentaYUnCaracteresParaProbarElLimiteXY", "Pérez", "anaperez", "ClaveSegura123!!", Roles.Jugador)]
     public void Validar_DatosValidos_EsValido(string nombre, string apellido, string nickname, string contrasena, string rol)
     {
         var request = CrearRequest(nombre: nombre, apellido: apellido, nickname: nickname, contrasena: contrasena, rol: rol);
