@@ -1,3 +1,5 @@
+using FarmeORT.Excepciones;
+
 namespace FarmeORT.Dominio.Usuarios;
 
 public sealed class Usuario
@@ -13,6 +15,11 @@ public sealed class Usuario
         Rol rol,
         string contrasenaHash)
     {
+        if(string.IsNullOrWhiteSpace(nombre))
+        {
+            throw new DatosInvalidosException("El nombre es obligatorio.");
+        }
+
         Nombre = nombre;
         Apellido = apellido;
         Email = email;
