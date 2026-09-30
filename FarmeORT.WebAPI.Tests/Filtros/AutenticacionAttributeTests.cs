@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Errores;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
@@ -74,6 +75,19 @@ public sealed class AutenticacionAttributeTests
         var error = resultado.Value as ErrorResponse;
         Assert.IsNotNull(error);
         Assert.AreEqual("INVALID_TOKEN", error.ErrorCode);
+    }
+
+    [TestMethod]
+    public void OnAuthorization_TokenValido_GuardaLaSesionYNoCortaElRequest()
+    {
+        var contexto = CrearContexto($"Bearer {Token}");
+        var sesion = new SesionAutenticada { Token = Token, UsuarioId = 7, Rol = Roles.Jugador };
+        _servicioSesiones.Setup(s => s.ObtenerSesionAutenticada(Token)).Returns(sesion);
+
+        _filtro.OnAuthorization(contexto);
+
+        Assert.IsNull(contexto.Result);
+        Assert.AreSame(sesion, contexto.HttpContext.Items[ClavesContexto.SesionAutenticada]);
     }
 
     private AuthorizationFilterContext CrearContexto(string? encabezadoAuthorization = null)
