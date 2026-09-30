@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Tests.Usuarios;
 
@@ -20,5 +21,18 @@ public sealed class UsuarioTests
         Assert.AreEqual(Rol.Jugador, usuario.Rol);
         Assert.AreEqual("hash-ana", usuario.ContrasenaHash);
         Assert.AreEqual(1200, usuario.Elo);
+    }
+
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("   ")]
+    public void Constructor_NombreVacio_LanzaDatosInvalidos(string nombre)
+    {
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(nombre: nombre));
+    }
+
+    private static Usuario CrearUsuario(string nombre = "Ana")
+    {
+        return new Usuario(nombre, "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana");
     }
 }

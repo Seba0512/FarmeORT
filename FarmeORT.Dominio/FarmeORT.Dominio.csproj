@@ -6,4 +6,8 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FarmeORT.Excepciones\FarmeORT.Excepciones.csproj" />
+  </ItemGroup>
+
 </Project>
