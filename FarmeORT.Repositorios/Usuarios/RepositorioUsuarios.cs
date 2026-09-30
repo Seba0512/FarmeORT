@@ -1,5 +1,7 @@
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Usuarios;
 
@@ -51,6 +53,13 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
     public void Agregar(Usuario usuario)
     {
         contexto.Usuarios.Add(usuario);
-        contexto.SaveChanges();
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateException) when (contexto.Usuarios.Any(u => u.Email == usuario.Email))
+        {
+            throw new EmailYaExisteException();
+        }
     }
 }
