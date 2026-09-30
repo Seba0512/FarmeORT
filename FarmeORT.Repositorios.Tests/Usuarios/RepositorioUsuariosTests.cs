@@ -154,6 +154,22 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void Listar_VariosFiltros_DevuelveLosQueCumplenTodos()
+    {
+        _baseDeDatos.Contexto.Usuarios.AddRange(
+            CrearUsuario("carlossuarez@farmeort.com", Rol.Jugador, "hash-carlos", nombre: "Carlos", apellido: "Suarez"),
+            CrearUsuario("carlosgomez@farmeort.com", Rol.Jugador, "hash-carlos2", nombre: "Carlos", apellido: "Gomez"),
+            CrearUsuario("laurasuarez@farmeort.com", Rol.Organizador, "hash-laura", nombre: "Laura", apellido: "Suarez"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroUsuarios("carlos", "suarez", null, 20, 0));
+
+        Assert.HasCount(1, resultado);
+        Assert.AreEqual("carlossuarez", resultado[0].Nickname);
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameExistente_DevuelveTrue()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
