@@ -50,7 +50,9 @@ internal sealed class ServicioUsuarios(
 
     public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
     {
-        throw new NotImplementedException();
+        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, filtro.Limit, filtro.Offset);
+        var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
+        return [.. usuarios.Select(CrearResponse)];
     }
 
     private static Rol ConvertirRol(string rol)
