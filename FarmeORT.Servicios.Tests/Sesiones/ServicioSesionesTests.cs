@@ -86,6 +86,16 @@ public sealed class ServicioSesionesTests
             Times.Once);
     }
 
+    [TestMethod]
+    public void CerrarSesion_Token_EliminaLaSesion()
+    {
+        _repositorioSesiones.Setup(r => r.Eliminar(Token));
+
+        _servicio.CerrarSesion(Token);
+
+        _repositorioSesiones.Verify(r => r.Eliminar(Token), Times.Once);
+    }
+
     private Usuario ConfigurarCredencialesValidas()
     {
         var usuario = new Usuario { Id = UsuarioId, Rol = Rol.Jugador, ContrasenaHash = ContrasenaHash };

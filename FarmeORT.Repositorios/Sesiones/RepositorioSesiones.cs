@@ -10,4 +10,9 @@ internal sealed class RepositorioSesiones(FarmeORTContext contexto) : IRepositor
         contexto.Sesiones.Add(sesion);
         contexto.SaveChanges();
     }
+
+    public void Eliminar(Guid token)
+    {
+        throw new NotImplementedException();
+    }
 }
