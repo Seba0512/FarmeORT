@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Usuarios;
@@ -12,7 +13,11 @@ internal sealed class ServicioUsuarios(
 {
     public UsuarioResponse Crear(UsuarioAdminRequest request)
     {
-        _ = repositorioUsuarios;
+        if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
+        {
+            throw new EmailYaExisteException();
+        }
+
         _ = hasheadorContrasenas;
         _ = reloj;
         throw new NotImplementedException();
