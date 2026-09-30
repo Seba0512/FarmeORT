@@ -1,6 +1,8 @@
 using FarmeORT.DTOs.Sesiones;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.WebAPI.Controllers;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -34,5 +36,29 @@ public sealed class SesionesControllerTests
         Assert.AreEqual("/api/v1/sesiones/actual", resultado.Location);
         Assert.AreSame(sesion, resultado.Value);
         _servicioSesiones.Verify(s => s.IniciarSesion(request), Times.Once);
+    }
+
+    [TestMethod]
+    public void Eliminar_SesionAutenticada_Devuelve204YCierraLaSesion()
+    {
+        var token = Guid.Parse("3f2b8c1e-5d4a-4e7b-9c6f-1a2b3c4d5e6f");
+        var sesion = new SesionAutenticada { Token = token, UsuarioId = 7, Rol = Roles.Jugador };
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.HttpContext.Items[ClavesContexto.SesionAutenticada] = sesion;
+        _servicioSesiones.Setup(s => s.CerrarSesion(token));
+
+        var resultado = _controller.Eliminar();
+
+        Assert.IsInstanceOfType<NoContentResult>(resultado);
+        _servicioSesiones.Verify(s => s.CerrarSesion(token), Times.Once);
+    }
+
+    [TestMethod]
+    public void Eliminar_RequiereAutenticacion()
+    {
+        var metodo = typeof(SesionesController).GetMethod(nameof(SesionesController.Eliminar));
+
+        Assert.IsNotNull(metodo);
+        Assert.IsNotNull(metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault());
     }
 }

@@ -31,4 +31,25 @@ internal sealed class ServicioSesiones(
             Rol = usuario.Rol.ToString(),
         };
     }
+
+    public void CerrarSesion(Guid token)
+    {
+        repositorioSesiones.Eliminar(token);
+    }
+
+    public SesionAutenticada? ObtenerSesionAutenticada(Guid token)
+    {
+        var sesion = repositorioSesiones.ObtenerPorToken(token);
+        if(sesion is null)
+        {
+            return null;
+        }
+
+        return new SesionAutenticada
+        {
+            Token = sesion.Token,
+            UsuarioId = sesion.UsuarioId,
+            Rol = sesion.Usuario.Rol.ToString(),
+        };
+    }
 }

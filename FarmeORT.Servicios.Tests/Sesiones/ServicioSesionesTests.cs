@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Sesiones;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Sesiones;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Sesiones;
 using FarmeORT.IRepositorios.Usuarios;
@@ -84,6 +85,40 @@ public sealed class ServicioSesionesTests
         _repositorioSesiones.Verify(
             r => r.Agregar(It.Is<Sesion>(s => s.Token == Token && s.Usuario == usuario)),
             Times.Once);
+    }
+
+    [TestMethod]
+    public void CerrarSesion_Token_EliminaLaSesion()
+    {
+        _repositorioSesiones.Setup(r => r.Eliminar(Token));
+
+        _servicio.CerrarSesion(Token);
+
+        _repositorioSesiones.Verify(r => r.Eliminar(Token), Times.Once);
+    }
+
+    [TestMethod]
+    public void ObtenerSesionAutenticada_TokenSinSesion_DevuelveNull()
+    {
+        _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns((Sesion?)null);
+
+        var resultado = _servicio.ObtenerSesionAutenticada(Token);
+
+        Assert.IsNull(resultado);
+    }
+
+    [TestMethod]
+    public void ObtenerSesionAutenticada_TokenConSesion_DevuelveTokenUsuarioYRol()
+    {
+        var usuario = new Usuario { Id = UsuarioId, Rol = Rol.Jugador, ContrasenaHash = ContrasenaHash };
+        _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns(new Sesion(Token, usuario));
+
+        var resultado = _servicio.ObtenerSesionAutenticada(Token);
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(Token, resultado.Token);
+        Assert.AreEqual(UsuarioId, resultado.UsuarioId);
+        Assert.AreEqual(Roles.Jugador, resultado.Rol);
     }
 
     private Usuario ConfigurarCredencialesValidas()
