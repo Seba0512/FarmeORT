@@ -40,8 +40,18 @@ public sealed class UsuarioTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(apellido: apellido));
     }
 
-    private static Usuario CrearUsuario(string nombre = "Ana", string apellido = "Pérez")
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("no-es-un-email")]
+    [DataRow("ana@")]
+    [DataRow("Ana <ana@farmeort.com>")]
+    public void Constructor_EmailInvalido_LanzaDatosInvalidos(string email)
     {
-        return new Usuario(nombre, apellido, "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana");
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(email: email));
+    }
+
+    private static Usuario CrearUsuario(string nombre = "Ana", string apellido = "Pérez", string email = "ana@farmeort.com")
+    {
+        return new Usuario(nombre, apellido, email, "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana");
     }
 }
