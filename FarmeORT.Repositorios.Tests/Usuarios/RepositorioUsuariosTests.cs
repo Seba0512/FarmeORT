@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Repositorios.Usuarios;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Usuarios;
 
@@ -243,6 +244,18 @@ public sealed class RepositorioUsuariosTests
 
         Assert.ThrowsExactly<EmailYaExisteException>(() => _repositorio.Agregar(nuevo));
         Assert.AreEqual(1, _baseDeDatos.Contexto.Usuarios.Count(u => u.Email == Email));
+    }
+
+    [TestMethod]
+    public void Agregar_ErrorDeBaseSinDuplicados_PropagaDbUpdateException()
+    {
+        var nuevo = new Usuario("Ana", "Pérez", "otro@farmeort.com", "otronickname", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-nuevo", new DateOnly(2026, 9, 30))
+        {
+            Id = 1,
+        };
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Agregar(nuevo));
+        Assert.IsFalse(_baseDeDatos.Contexto.Usuarios.Any(u => u.Email == nuevo.Email));
     }
 
     private static Usuario CrearUsuario(
