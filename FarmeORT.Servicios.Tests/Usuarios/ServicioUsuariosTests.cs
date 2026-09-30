@@ -87,6 +87,14 @@ public sealed class ServicioUsuariosTests
         Assert.AreEqual(eloEsperado, response.Elo);
     }
 
+    [TestMethod]
+    public void Crear_ContrasenaInvalida_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var request = CrearRequest(contrasena: "corta");
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(request));
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
@@ -97,7 +105,7 @@ public sealed class ServicioUsuariosTests
         _repositorioUsuarios.Setup(r => r.Agregar(It.Is<Usuario>(u => u.Email == Email)));
     }
 
-    private static UsuarioAdminRequest CrearRequest(string rol = Roles.Organizador)
+    private static UsuarioAdminRequest CrearRequest(string rol = Roles.Organizador, string contrasena = Contrasena)
     {
         return new UsuarioAdminRequest
         {
@@ -105,7 +113,7 @@ public sealed class ServicioUsuariosTests
             Apellido = "Pérez",
             Email = Email,
             Nickname = Nickname,
-            Contrasena = Contrasena,
+            Contrasena = contrasena,
             FechaNacimiento = new DateOnly(2000, 1, 15),
             Rol = rol,
         };
