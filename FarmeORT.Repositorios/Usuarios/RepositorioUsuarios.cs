@@ -24,6 +24,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
             consulta = consulta.Where(u => u.Nombre.ToLower().Contains(nombre));
         }
 
+        if(!string.IsNullOrWhiteSpace(filtro.Apellido))
+        {
+            var apellido = filtro.Apellido.ToLower();
+            consulta = consulta.Where(u => u.Apellido.ToLower().Contains(apellido));
+        }
+
         return consulta.OrderBy(u => u.Id).ToList();
     }
 
