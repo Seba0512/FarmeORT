@@ -14,6 +14,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
     {
         [typeof(CredencialesInvalidasException)] =
             new(StatusCodes.Status401Unauthorized, "INVALID_CREDENTIALS", "Email o contraseña incorrectos."),
+        [typeof(EmailYaExisteException)] =
+            new(StatusCodes.Status409Conflict, "EMAIL_ALREADY_EXISTS", "Ya existe un usuario con ese email."),
+        [typeof(NicknameYaExisteException)] =
+            new(StatusCodes.Status409Conflict, "NICKNAME_ALREADY_EXISTS", "Ya existe un usuario con ese nickname."),
     };
 
     public void OnException(ExceptionContext context)
