@@ -12,7 +12,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public bool ExistePorNickname(string nickname)
     {
-        throw new NotImplementedException();
+        return contexto.Usuarios.Any(u => u.Nickname == nickname);
     }
 
     public void Agregar(Usuario usuario)
