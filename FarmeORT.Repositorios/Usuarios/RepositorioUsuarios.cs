@@ -12,7 +12,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public Usuario? ObtenerPorId(int id)
     {
-        throw new NotImplementedException();
+        return contexto.Usuarios.Find(id);
     }
 
     public bool ExistePorNickname(string nickname)
