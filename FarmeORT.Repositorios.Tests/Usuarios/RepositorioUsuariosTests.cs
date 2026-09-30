@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Repositorios.Usuarios;
 
 namespace FarmeORT.Repositorios.Tests.Usuarios;
@@ -87,6 +88,21 @@ public sealed class RepositorioUsuariosTests
         var resultado = _repositorio.ObtenerPorId(99);
 
         Assert.IsNull(resultado);
+    }
+
+    [TestMethod]
+    public void Listar_SinFiltros_DevuelveTodosOrdenadosPorId()
+    {
+        _baseDeDatos.Contexto.Usuarios.AddRange(
+            CrearUsuario("laura@farmeort.com", Rol.Organizador, "hash-laura"),
+            CrearUsuario("carlos@farmeort.com", Rol.Jugador, "hash-carlos"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroUsuarios(null, null, null, 20, 0));
+
+        string[] emailsEsperados = ["admin@farmeort.com", "laura@farmeort.com", "carlos@farmeort.com"];
+        CollectionAssert.AreEqual(emailsEsperados, resultado.Select(u => u.Email).ToArray());
     }
 
     [TestMethod]
