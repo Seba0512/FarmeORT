@@ -17,7 +17,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
     {
-        throw new NotImplementedException();
+        return contexto.Usuarios.OrderBy(u => u.Id).ToList();
     }
 
     public bool ExistePorNickname(string nickname)
