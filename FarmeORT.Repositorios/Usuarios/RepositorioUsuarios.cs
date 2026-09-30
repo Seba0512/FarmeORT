@@ -17,6 +17,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public void Agregar(Usuario usuario)
     {
-        throw new NotImplementedException();
+        contexto.Usuarios.Add(usuario);
+        contexto.SaveChanges();
     }
 }
