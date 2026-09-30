@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Sesiones;
 using FarmeORT.IRepositorios.Sesiones;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Sesiones;
 
@@ -13,6 +14,6 @@ internal sealed class RepositorioSesiones(FarmeORTContext contexto) : IRepositor
 
     public void Eliminar(Guid token)
     {
-        throw new NotImplementedException();
+        contexto.Sesiones.Where(s => s.Token == token).ExecuteDelete();
     }
 }
