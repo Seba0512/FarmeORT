@@ -1,6 +1,7 @@
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Usuarios;
 using FarmeORT.WebAPI.Controllers;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -52,5 +53,17 @@ public sealed class UsuariosControllerTests
         Assert.AreEqual("/api/v1/usuarios/5", resultado.Location);
         Assert.AreSame(usuario, resultado.Value);
         _servicioUsuarios.Verify(s => s.Crear(request), Times.Once);
+    }
+
+    [TestMethod]
+    public void UsuariosController_TodosLosEndpoints_RequierenRolAdministrador()
+    {
+        var atributo = typeof(UsuariosController)
+            .GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>()
+            .SingleOrDefault();
+
+        Assert.IsNotNull(atributo);
+        Assert.Contains(Roles.Administrador, atributo.RolesPermitidos);
     }
 }
