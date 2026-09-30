@@ -14,4 +14,10 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
         var response = servicioSesiones.IniciarSesion(request);
         return Created("/api/v1/sesiones/actual", response);
     }
+
+    [HttpDelete("actual")]
+    public IActionResult Eliminar()
+    {
+        throw new NotImplementedException();
+    }
 }

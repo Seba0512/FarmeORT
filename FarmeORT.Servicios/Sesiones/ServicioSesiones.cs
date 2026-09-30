@@ -31,4 +31,9 @@ internal sealed class ServicioSesiones(
             Rol = usuario.Rol.ToString(),
         };
     }
+
+    public void CerrarSesion(Guid token)
+    {
+        throw new NotImplementedException();
+    }
 }
