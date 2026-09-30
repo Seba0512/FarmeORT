@@ -7,6 +7,7 @@ namespace FarmeORT.Dominio.Usuarios;
 public sealed partial class Usuario
 {
     private const int EloInicial = 1200;
+    private const int LargoMaximoNombre = 50;
     private const int LargoMinimoApellido = 3;
     private const int LargoMaximoApellido = 25;
     private const int EdadMinima = 13;
@@ -65,6 +66,11 @@ public sealed partial class Usuario
         if(string.IsNullOrWhiteSpace(nombre))
         {
             throw new DatosInvalidosException("El nombre es obligatorio.");
+        }
+
+        if(nombre.Length > LargoMaximoNombre)
+        {
+            throw new DatosInvalidosException("El nombre no puede tener más de 50 caracteres.");
         }
     }
 
