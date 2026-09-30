@@ -14,6 +14,8 @@ internal sealed class ServicioUsuarios(
 {
     public UsuarioResponse Crear(UsuarioAdminRequest request)
     {
+        ReglaContrasena.Validar(request.Contrasena);
+
         if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
         {
             throw new EmailYaExisteException();
