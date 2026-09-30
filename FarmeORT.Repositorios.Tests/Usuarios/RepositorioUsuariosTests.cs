@@ -76,6 +76,17 @@ public sealed class RepositorioUsuariosTests
         Assert.IsTrue(existe);
     }
 
+    [TestMethod]
+    public void ExistePorNickname_NicknameInexistente_DevuelveFalse()
+    {
+        _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
+        _baseDeDatos.Contexto.SaveChanges();
+
+        var existe = _repositorio.ExistePorNickname("otronickname");
+
+        Assert.IsFalse(existe);
+    }
+
     private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
     {
         var nickname = email.Split('@')[0];
