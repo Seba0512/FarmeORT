@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc.Filters;
 namespace FarmeORT.WebAPI.Filtros;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
-internal sealed class AutenticacionAttribute : Attribute, IAuthorizationFilter
+internal class AutenticacionAttribute : Attribute, IAuthorizationFilter
 {
     private const string PrefijoBearer = "Bearer ";
 
@@ -23,6 +23,11 @@ internal sealed class AutenticacionAttribute : Attribute, IAuthorizationFilter
         }
 
         context.HttpContext.Items[ClavesContexto.SesionAutenticada] = sesion;
+        AutorizarSesion(context, sesion);
+    }
+
+    protected virtual void AutorizarSesion(AuthorizationFilterContext context, SesionAutenticada sesion)
+    {
     }
 
     private static bool IntentarObtenerToken(string? encabezado, out Guid token)
