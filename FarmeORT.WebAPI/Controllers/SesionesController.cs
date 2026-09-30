@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Sesiones;
 using FarmeORT.IServicios.Sesiones;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -18,6 +19,8 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
     [HttpDelete("actual")]
     public IActionResult Eliminar()
     {
-        throw new NotImplementedException();
+        var sesion = (SesionAutenticada)HttpContext.Items[ClavesContexto.SesionAutenticada]!;
+        servicioSesiones.CerrarSesion(sesion.Token);
+        return NoContent();
     }
 }
