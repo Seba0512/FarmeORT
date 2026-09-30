@@ -5,6 +5,7 @@
     <ProjectReference Include="..\FarmeORT.IServicios\FarmeORT.IServicios.csproj" />
     <ProjectReference Include="..\FarmeORT.Excepciones\FarmeORT.Excepciones.csproj" />
     <ProjectReference Include="..\FarmeORT.Repositorios\FarmeORT.Repositorios.csproj" />
+    <ProjectReference Include="..\FarmeORT.Servicios\FarmeORT.Servicios.csproj" />
   </ItemGroup>
 
   <ItemGroup>
