@@ -45,15 +45,36 @@ namespace FarmeORT.Repositorios.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Apellido")
+                        .IsRequired()
+                        .HasMaxLength(25)
+                        .HasColumnType("nvarchar(25)");
+
                     b.Property<string>("ContrasenaHash")
                         .IsRequired()
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
+                    b.Property<int>("Elo")
+                        .HasColumnType("int");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(254)
                         .HasColumnType("nvarchar(254)");
+
+                    b.Property<DateOnly>("FechaNacimiento")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Nickname")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
 
                     b.Property<string>("Rol")
                         .IsRequired()
@@ -65,14 +86,22 @@ namespace FarmeORT.Repositorios.Migrations
                     b.HasIndex("Email")
                         .IsUnique();
 
+                    b.HasIndex("Nickname")
+                        .IsUnique();
+
                     b.ToTable("Usuarios");
 
                     b.HasData(
                         new
                         {
                             Id = 1,
+                            Apellido = "FarmeORT",
                             ContrasenaHash = "3LS7NmeR5ARDHCPv9u/dfA==.SXnTh+G3L29NXz1uN1cIe0KKW2S7Mpxc1vmT7g1RKw0=",
+                            Elo = 1200,
                             Email = "admin@farmeort.com",
+                            FechaNacimiento = new DateOnly(2000, 1, 1),
+                            Nickname = "admin",
+                            Nombre = "Administrador",
                             Rol = "Administrador"
                         });
                 });
