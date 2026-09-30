@@ -4,10 +4,6 @@ using FarmeORT.IServicios.Sesiones;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace FarmeORT.WebAPI.Tests.Filtros;
@@ -30,7 +26,7 @@ public sealed class AutorizacionAttributeTests
     [TestMethod]
     public void OnAuthorization_RolNoPermitido_Devuelve403ConForbidden()
     {
-        var contexto = CrearContexto($"Bearer {Token}");
+        var contexto = ContextoDeFiltro.Crear(_servicioSesiones.Object, $"Bearer {Token}");
         var sesion = new SesionAutenticada { Token = Token, UsuarioId = 7, Rol = Roles.Jugador };
         _servicioSesiones.Setup(s => s.ObtenerSesionAutenticada(Token)).Returns(sesion);
 
@@ -48,7 +44,7 @@ public sealed class AutorizacionAttributeTests
     [TestMethod]
     public void OnAuthorization_RolPermitido_NoCortaElRequest()
     {
-        var contexto = CrearContexto($"Bearer {Token}");
+        var contexto = ContextoDeFiltro.Crear(_servicioSesiones.Object, $"Bearer {Token}");
         var sesion = new SesionAutenticada { Token = Token, UsuarioId = 1, Rol = Roles.Administrador };
         _servicioSesiones.Setup(s => s.ObtenerSesionAutenticada(Token)).Returns(sesion);
 
@@ -61,7 +57,7 @@ public sealed class AutorizacionAttributeTests
     [TestMethod]
     public void OnAuthorization_SinHeaderAuthorization_Devuelve401ConInvalidToken()
     {
-        var contexto = CrearContexto();
+        var contexto = ContextoDeFiltro.Crear(_servicioSesiones.Object);
 
         _filtro.OnAuthorization(contexto);
 
@@ -71,18 +67,5 @@ public sealed class AutorizacionAttributeTests
         var error = resultado.Value as ErrorResponse;
         Assert.IsNotNull(error);
         Assert.AreEqual("INVALID_TOKEN", error.ErrorCode);
-    }
-
-    private AuthorizationFilterContext CrearContexto(string? encabezadoAuthorization = null)
-    {
-        var servicios = new ServiceCollection().AddSingleton(_servicioSesiones.Object).BuildServiceProvider();
-        var contextoHttp = new DefaultHttpContext { RequestServices = servicios };
-        if(encabezadoAuthorization is not null)
-        {
-            contextoHttp.Request.Headers.Authorization = encabezadoAuthorization;
-        }
-
-        var contextoAccion = new ActionContext(contextoHttp, new RouteData(), new ActionDescriptor());
-        return new AuthorizationFilterContext(contextoAccion, []);
     }
 }

@@ -4,10 +4,6 @@ using FarmeORT.IServicios.Sesiones;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Abstractions;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.AspNetCore.Routing;
-using Microsoft.Extensions.DependencyInjection;
 using Moq;
 
 namespace FarmeORT.WebAPI.Tests.Filtros;
@@ -30,7 +26,7 @@ public sealed class AutenticacionAttributeTests
     [TestMethod]
     public void OnAuthorization_SinHeaderAuthorization_Devuelve401ConInvalidToken()
     {
-        var contexto = CrearContexto();
+        var contexto = ContextoDeFiltro.Crear(_servicioSesiones.Object);
 
         _filtro.OnAuthorization(contexto);
 
@@ -49,7 +45,7 @@ public sealed class AutenticacionAttributeTests
     [DataRow("Bearer no-es-un-guid")]
     public void OnAuthorization_HeaderConFormatoInvalido_Devuelve401ConInvalidToken(string encabezado)
     {
-        var contexto = CrearContexto(encabezado);
+        var contexto = ContextoDeFiltro.Crear(_servicioSesiones.Object, encabezado);
 
         _filtro.OnAuthorization(contexto);
 
@@ -64,7 +60,7 @@ public sealed class AutenticacionAttributeTests
     [TestMethod]
     public void OnAuthorization_TokenInexistente_Devuelve401ConInvalidToken()
     {
-        var contexto = CrearContexto($"Bearer {Token}");
+        var contexto = ContextoDeFiltro.Crear(_servicioSesiones.Object, $"Bearer {Token}");
         _servicioSesiones.Setup(s => s.ObtenerSesionAutenticada(Token)).Returns((SesionAutenticada?)null);
 
         _filtro.OnAuthorization(contexto);
@@ -80,7 +76,7 @@ public sealed class AutenticacionAttributeTests
     [TestMethod]
     public void OnAuthorization_TokenValido_GuardaLaSesionYNoCortaElRequest()
     {
-        var contexto = CrearContexto($"Bearer {Token}");
+        var contexto = ContextoDeFiltro.Crear(_servicioSesiones.Object, $"Bearer {Token}");
         var sesion = new SesionAutenticada { Token = Token, UsuarioId = 7, Rol = Roles.Jugador };
         _servicioSesiones.Setup(s => s.ObtenerSesionAutenticada(Token)).Returns(sesion);
 
@@ -88,18 +84,5 @@ public sealed class AutenticacionAttributeTests
 
         Assert.IsNull(contexto.Result);
         Assert.AreSame(sesion, contexto.HttpContext.Items[ClavesContexto.SesionAutenticada]);
-    }
-
-    private AuthorizationFilterContext CrearContexto(string? encabezadoAuthorization = null)
-    {
-        var servicios = new ServiceCollection().AddSingleton(_servicioSesiones.Object).BuildServiceProvider();
-        var contextoHttp = new DefaultHttpContext { RequestServices = servicios };
-        if(encabezadoAuthorization is not null)
-        {
-            contextoHttp.Request.Headers.Authorization = encabezadoAuthorization;
-        }
-
-        var contextoAccion = new ActionContext(contextoHttp, new RouteData(), new ActionDescriptor());
-        return new AuthorizationFilterContext(contextoAccion, []);
     }
 }
