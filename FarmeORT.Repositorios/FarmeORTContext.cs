@@ -6,7 +6,10 @@ namespace FarmeORT.Repositorios;
 
 public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) : DbContext(options)
 {
+    private const int LargoMaximoNombre = 50;
+    private const int LargoMaximoApellido = 25;
     private const int LargoMaximoEmail = 254;
+    private const int LargoMaximoNickname = 20;
     private const int LargoMaximoContrasenaHash = 128;
     private const int LargoMaximoRol = 20;
 
@@ -34,8 +37,12 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         modelBuilder.Entity<Usuario>(usuario =>
         {
             usuario.HasKey(u => u.Id);
+            usuario.Property(u => u.Nombre).HasMaxLength(LargoMaximoNombre).IsRequired();
+            usuario.Property(u => u.Apellido).HasMaxLength(LargoMaximoApellido).IsRequired();
             usuario.Property(u => u.Email).HasMaxLength(LargoMaximoEmail).IsRequired();
             usuario.HasIndex(u => u.Email).IsUnique();
+            usuario.Property(u => u.Nickname).HasMaxLength(LargoMaximoNickname).IsRequired();
+            usuario.HasIndex(u => u.Nickname).IsUnique();
             usuario.Property(u => u.ContrasenaHash).HasMaxLength(LargoMaximoContrasenaHash).IsRequired();
             usuario.Property(u => u.Rol).HasConversion<string>().HasMaxLength(LargoMaximoRol);
             usuario.HasData(AdministradorPrecargado);
