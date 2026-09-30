@@ -261,6 +261,102 @@ contraseña inicial.
 
 ---
 
+### D-12 — Roles como constantes de texto en DTOs
+
+**Problema:** cada endpoint protegido tiene que indicar qué rol exige, pero WebAPI no conoce el
+Dominio (D-01), así que no puede usar el enum `Rol`.
+
+**Alternativas consideradas:** strings sueltos en cada atributo (magic strings); un enum propio en
+DTOs, espejo del de Dominio, con mapeo en el servicio; constantes de texto en DTOs.
+
+**Decisión adoptada:** la clase estática `Roles` en `FarmeORT.DTOs.Usuarios` con `Jugador`,
+`Organizador` y `Administrador`. La sesión autenticada y la respuesta del login llevan el rol como
+texto, generado con `Rol.ToString()`.
+
+**Justificación:** evita magic strings sin duplicar el enum ni mantener dos tipos sincronizados. El test
+`ObtenerSesionAutenticada_TokenConSesion_DevuelveTokenUsuarioYRol` compara con `Roles.Jugador`, lo que
+garantiza que el texto del servicio coincide con el que compara el filtro.
+
+**Conceptos del curso:** bajo acoplamiento, separación en capas, Clean Code (sin magic strings).
+
+**Evidencia:** `FarmeORT.DTOs/Usuarios/Roles.cs`, `AutorizacionAttribute`, `ServicioSesionesTests`.
+
+**Participación de IA:** la IA planteó las alternativas; el equipo eligió las constantes.
+
+---
+
+### D-13 — `[Autorizacion]` hereda de `[Autenticacion]` con un punto de extensión
+
+**Problema:** la autorización por rol necesita que antes se haya autenticado el request. Si son dos
+atributos independientes, es fácil marcar un endpoint con autorización y olvidar la autenticación.
+
+**Alternativas consideradas:** dos atributos independientes con orden fijado por `Order`;
+`[Autorizacion]` que hereda de `[Autenticacion]`.
+
+**Decisión adoptada:** `AutenticacionAttribute` valida el token (401) y, al final, llama a un método
+`protected virtual AutorizarSesion(context, sesion)` que por defecto no hace nada.
+`AutorizacionAttribute(params string[] rolesPermitidos)` lo redefine y responde 403 si el rol no está
+permitido. Un endpoint lleva un solo atributo: `[Autenticacion]` o `[Autorizacion(Roles.X)]`.
+
+**Justificación:** no se puede exigir un rol sin autenticar, y la lectura del token no se repite. Es una
+aplicación acotada de Template Method: la base fija los pasos y la subclase redefine uno. Cada clase
+sigue teniendo una sola responsabilidad (autenticar o autorizar). Las reglas del tipo "¿es el
+organizador asignado a este torneo?" no van en el filtro sino en el servicio.
+
+**Conceptos del curso:** Template Method, OCP, SRP, herencia, filtros de ASP.NET.
+
+**Evidencia:** `FarmeORT.WebAPI/Filtros/AutenticacionAttribute.cs`, `AutorizacionAttribute.cs` y sus
+tests (incluido `OnAuthorization_SinHeaderAuthorization_Devuelve401ConInvalidToken` sobre
+`[Autorizacion]`, que verifica el comportamiento heredado).
+
+**Participación de IA:** la IA planteó las dos alternativas; el equipo eligió la herencia.
+
+---
+
+### D-14 — Los filtros de autenticación y autorización responden ellos mismos el 401 y el 403
+
+**Problema:** el filtro global de excepciones (D-07) no captura las excepciones que lanzan los filtros
+de autorización de ASP.NET, así que lanzar una excepción desde ahí terminaría en un 500.
+
+**Alternativas consideradas:** lanzar excepciones y capturarlas con un middleware; que el filtro asigne
+`context.Result` con el `ErrorResponse` correspondiente.
+
+**Decisión adoptada:** los filtros asignan `context.Result`: 401 con `INVALID_TOKEN` ("La sesión no es
+válida o expiró.") si falta el header, si no tiene la forma `Bearer {guid}` o si el token no tiene
+sesión; 403 con `FORBIDDEN` ("No tenés permisos para realizar esta operación.") si el rol no está
+permitido. El servicio devuelve `null` en lugar de lanzar cuando el token no existe.
+
+**Justificación:** mantiene el mismo formato de error que el resto de la API sin agregar un
+middleware. La consulta al servicio solo ocurre si el header tiene un formato válido.
+
+**Evidencia:** `AutenticacionAttributeTests`, `AutorizacionAttributeTests` y la prueba manual de
+`DELETE /sesiones/actual` (204 con token válido; 401 al repetirlo, sin token o con formato inválido).
+
+**Participación de IA:** la IA detectó la limitación del filtro de excepciones y propuso esta solución;
+el equipo definió los códigos `INVALID_TOKEN` y `FORBIDDEN`.
+
+---
+
+### D-15 — Test por reflexión de los atributos de seguridad de cada endpoint
+
+**Problema:** los tests unitarios de un controller no ejecutan los filtros. Si alguien borra
+`[Autenticacion]` de un endpoint, ningún test falla y el endpoint queda abierto.
+
+**Alternativas consideradas:** tests de integración con `WebApplicationFactory` (no vistos en el curso
+y más lentos); un test por reflexión que verifique que el método tenga el atributo.
+
+**Decisión adoptada:** un test por endpoint protegido que verifica el atributo por reflexión, por
+ejemplo `SesionesControllerTests.Eliminar_RequiereAutenticacion`.
+
+**Justificación:** es rápido, no requiere infraestructura y protege la regla de seguridad. El
+comportamiento del filtro en sí ya está cubierto por sus propios tests.
+
+**Evidencia:** `FarmeORT.WebAPI.Tests/Controllers/SesionesControllerTests.cs`.
+
+**Participación de IA:** propuesta de la IA, aprobada por el equipo.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -281,3 +377,7 @@ contraseña inicial.
   administrador precargado.~~ Resuelto: `CreaUsuariosYSesiones` (D-11).
 - Explicar en la guía de instalación cómo crear `.env` y `appsettings.Development.json` (D-09) y cuál
   es la contraseña inicial del administrador (D-11).
+- Las sesiones no vencen: un token vale hasta que se hace logout. La letra no pide vencimiento, pero el
+  mensaje del 401 dice "o expiró". Decidir si se agrega un vencimiento o se ajusta el mensaje.
+- Cuando más controllers lean la sesión del contexto, extraer esa lectura a un solo lugar (por ejemplo,
+  un método de extensión `HttpContext.ObtenerSesionAutenticada()`), para no repetir el cast.
