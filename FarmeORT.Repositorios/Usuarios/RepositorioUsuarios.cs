@@ -17,7 +17,14 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
     {
-        return contexto.Usuarios.OrderBy(u => u.Id).ToList();
+        IQueryable<Usuario> consulta = contexto.Usuarios;
+        if(!string.IsNullOrWhiteSpace(filtro.Nombre))
+        {
+            var nombre = filtro.Nombre.ToLower();
+            consulta = consulta.Where(u => u.Nombre.ToLower().Contains(nombre));
+        }
+
+        return consulta.OrderBy(u => u.Id).ToList();
     }
 
     public bool ExistePorNickname(string nickname)
