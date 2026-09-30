@@ -1,0 +1,40 @@
+@startuml
+hide circle
+skinparam classAttributeIconSize 0
+title Registro público de jugadores — vista lógica (clases relevantes)
+
+class JugadoresController <<public>> {
+  + Registrar(request : RegistroJugadorRequest) : IActionResult
+}
+interface IServicioUsuarios {
+  + RegistrarJugador(request : RegistroJugadorRequest) : UsuarioResponse
+  + Crear(request : UsuarioAdminRequest) : UsuarioResponse
+}
+class ServicioUsuarios <<internal sealed>> {
+  + RegistrarJugador(request : RegistroJugadorRequest) : UsuarioResponse
+  + Crear(request : UsuarioAdminRequest) : UsuarioResponse
+  - CrearResponse(usuario : Usuario) : UsuarioResponse
+}
+interface IRepositorioUsuarios {
+  + ObtenerPorEmail(email : string) : Usuario?
+  + ExistePorNickname(nickname : string) : bool
+  + Agregar(usuario : Usuario) : void
+}
+class RepositorioUsuarios <<internal sealed>> {
+  + ObtenerPorEmail(email : string) : Usuario?
+  + ExistePorNickname(nickname : string) : bool
+  + Agregar(usuario : Usuario) : void
+}
+interface IHasheadorContrasenas {
+  + Hashear(contrasena : string) : string
+}
+JugadoresController -down-> "1" IServicioUsuarios : inyectado
+ServicioUsuarios .up.|> IServicioUsuarios
+ServicioUsuarios -down-> "1" IRepositorioUsuarios : inyectado
+ServicioUsuarios -down-> "1" IHasheadorContrasenas : inyectado
+RepositorioUsuarios .up.|> IRepositorioUsuarios
+note bottom of ServicioUsuarios
+  Reutiliza Crear con Rol = Jugador.
+  TimeProvider inyectado determina la fecha local.
+end note
+@enduml

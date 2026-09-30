@@ -492,6 +492,65 @@ dos altas simultáneas.
 
 ---
 
+### D-22 — Registro público con request propio y rol fijado por el servicio
+
+**Problema:** el punto 1.2 permite registrarse sin sesión, pero el cliente no debe elegir un rol
+administrativo. El alta de usuarios ya implementa las validaciones, hash, unicidad y ELO inicial.
+
+**Alternativas consideradas:** reutilizar directamente el request administrativo en el endpoint
+público; duplicar todo el caso de uso; un request público sin rol y una operación explícita del
+servicio que reutiliza el alta existente.
+
+**Decisión adoptada:** `RegistroJugadorRequest` y `IServicioUsuarios.RegistrarJugador`; el servicio
+fija `Roles.Jugador` al delegar a `Crear`. La fecha nullable detecta una fecha omitida en el borde y
+el servicio también la exige. El Controller devuelve `UsuarioResponse` y Location del recurso
+Usuarios existente, cuyo GET conserva el acceso administrativo acordado.
+
+**Justificación:** aplica el contrato aprobado sin introducir otro servicio, jerarquía de usuarios
+o endpoint público de consulta. Las propiedades adicionales rol/ELO no conceden privilegios y no
+se crea una sesión automáticamente. No se crean skills declaradas; el modelo del punto 1.4 se
+implementará con su propia funcionalidad.
+
+**Conceptos del curso:** SRP, bajo acoplamiento, reutilización, validación en el borde y el dominio,
+Controller de GRASP.
+
+**Evidencia:** `JugadoresController`, `ServicioUsuarios.RegistrarJugador`, sus tests y la colección
+`Datos/FarmeORT.RegistroJugadores.postman_collection.json` (incluye rol/ELO adicionales y login).
+
+**Participación de IA:** Codex implementó y verificó el flujo dentro del pedido del usuario,
+reutilizando las decisiones D-01, D-03, D-16 a D-20 y el contrato API del equipo.
+
+---
+
+### D-23 — Conflictos de unicidad detectados al guardar también responden 409
+
+**Problema:** otra alta puede guardar un email o nickname entre la consulta de unicidad y
+`SaveChanges`. El índice único evita el duplicado, pero la excepción de EF antes terminaba en 500.
+
+**Alternativas consideradas:** mantener el 500; interpretar mensajes internos específicos de SQL
+Server; consultar las claves de unicidad después de una `DbUpdateException` y traducir solo el
+conflicto encontrado a las excepciones existentes.
+
+**Decisión adoptada:** `RepositorioUsuarios.Agregar` conserva un solo guardado. Si falla, consulta
+el email y luego el nickname con los métodos existentes; lanza `EmailYaExisteException` o
+`NicknameYaExisteException` cuando existe ese conflicto. Si no hay ninguno, propaga el error de EF.
+
+**Justificación:** respeta el 409 aprobado con SQL Server y con el fake SQLite, sin examinar mensajes
+del proveedor, cambiar índices o introducir dependencias. La consulta posterior confirma el
+conflicto; no sustituye al índice único que protege la persistencia.
+
+**Conceptos del curso:** separación de responsabilidades, encapsulación de persistencia, traducción
+de excepciones y pruebas de integración. Es responsabilidad de infraestructura traducir el
+conflicto detectado por la base, mientras el servicio conserva las validaciones previas.
+
+**Evidencia:** tests `Agregar_EmailOcupadoDespuesDeConsultar_…`,
+`Agregar_NicknameOcupadoDespuesDeConsultar_…` y `Agregar_ErrorDeBaseSinDuplicados_…`, con SQLite.
+
+**Participación de IA:** Codex reprodujo el pendiente mediante RED/GREEN, reutilizó las consultas
+en REFACTOR y adaptó el catch para satisfacer simultáneamente el formato obligatorio y StyleCop.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -521,6 +580,6 @@ dos altas simultáneas.
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
 - Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
   eliminar si tiene batallas sin resolver o si organiza un torneo que no está Finalizado ni Cancelado.
-- Si dos altas con el mismo email o nickname llegan al mismo tiempo, el índice único de la base rechaza
-  la segunda, pero hoy esa `DbUpdateException` terminaría en 500 en lugar de 409.
+- ~~Si dos altas compiten por email o nickname, la segunda terminaba en 500.~~ Resuelto en D-23:
+  el conflicto detectado al guardar se traduce a 409; los otros errores de EF se propagan.
 - Registrar en AGENTS.md que Dominio referencia a Excepciones (D-16).

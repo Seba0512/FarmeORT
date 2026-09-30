@@ -1,0 +1,1038 @@
+{
+  "info": {
+    "name": "FarmeORT - Registro público de jugadores",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Punto 1.2. Ejecutar completa sobre la API Development y SQL Server. Cada ejecución genera email y nickname nuevos. Los prefijos de los casos quedan por debajo de 20 caracteres."
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://127.0.0.1:5088"
+    },
+    {
+      "key": "registroEmail",
+      "value": ""
+    },
+    {
+      "key": "registroNickname",
+      "value": ""
+    },
+    {
+      "key": "fechaCumple13",
+      "value": ""
+    },
+    {
+      "key": "fechaMenor13",
+      "value": ""
+    },
+    {
+      "key": "playerId",
+      "value": ""
+    },
+    {
+      "key": "playerToken",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Jugadores",
+      "item": [
+        {
+          "name": "Registro público → 201",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                  "pm.collectionVariables.set(\"registroEmail\", \"registro.\" + sufijo + \"@farmeort.test\");",
+                  "pm.collectionVariables.set(\"registroNickname\", \"jug\" + sufijo);",
+                  "const hoy = new Date();",
+                  "const cumple13 = new Date(hoy.getFullYear() - 13, hoy.getMonth(), hoy.getDate());",
+                  "const fechaLocal = d => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, \"0\"), String(d.getDate()).padStart(2, \"0\")].join(\"-\");",
+                  "pm.collectionVariables.set(\"fechaCumple13\", fechaLocal(cumple13));",
+                  "const menor = new Date(cumple13); menor.setDate(menor.getDate() + 1);",
+                  "pm.collectionVariables.set(\"fechaMenor13\", fechaLocal(menor));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const jugador = pm.response.json();",
+                  "pm.test(\"Jugador con ELO inicial\", () => { pm.expect(jugador.rol).to.eql(\"Jugador\"); pm.expect(jugador.elo).to.eql(1200); pm.expect(jugador.id).to.be.above(0); });",
+                  "pm.test(\"Sin secretos ni sesión\", () => { pm.expect(jugador).not.to.have.property(\"contrasena\"); pm.expect(jugador).not.to.have.property(\"contrasenaHash\"); pm.expect(jugador).not.to.have.property(\"token\"); });",
+                  "pm.test(\"Location del usuario\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/usuarios/\" + jugador.id));",
+                  "pm.collectionVariables.set(\"playerId\", jugador.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Email duplicado → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"EMAIL_ALREADY_EXISTS\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"a{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Nickname duplicado → 409",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"NICKNAME_ALREADY_EXISTS\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"otro.{{registroEmail}}\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Nombre vacío → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apellido corto → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pe\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Email inválido → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"no-es-email\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Nickname con espacios → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"con espacio\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Contraseña corta → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"Corta123!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fecha nula → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": null\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fecha omitida → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"{{registroEmail}}\",\n  \"nickname\": \"{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Menor de 13 años → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"INVALID_DATA\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"menor.{{registroEmail}}\",\n  \"nickname\": \"m{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"{{fechaMenor13}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Fecha futura extrema → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"INVALID_DATA\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"futuro.{{registroEmail}}\",\n  \"nickname\": \"f{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"9999-12-31\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Body vacío → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "JSON mal formado → 400",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"Código de error\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Formato estable\", () => pm.expect(error).to.have.all.keys(\"userMessage\", \"errorCode\", \"moreInfo\", \"detalles\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cumple 13 hoy → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const jugador = pm.response.json();",
+                  "pm.test(\"Jugador con ELO inicial\", () => { pm.expect(jugador.rol).to.eql(\"Jugador\"); pm.expect(jugador.elo).to.eql(1200); pm.expect(jugador.id).to.be.above(0); });",
+                  "pm.test(\"Sin secretos ni sesión\", () => { pm.expect(jugador).not.to.have.property(\"contrasena\"); pm.expect(jugador).not.to.have.property(\"contrasenaHash\"); pm.expect(jugador).not.to.have.property(\"token\"); });",
+                  "pm.test(\"Location del usuario\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/usuarios/\" + jugador.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"limite.{{registroEmail}}\",\n  \"nickname\": \"l{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"{{fechaCumple13}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Rol y ELO enviados no conceden privilegios → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const jugador = pm.response.json();",
+                  "pm.test(\"Jugador con ELO inicial\", () => { pm.expect(jugador.rol).to.eql(\"Jugador\"); pm.expect(jugador.elo).to.eql(1200); pm.expect(jugador.id).to.be.above(0); });",
+                  "pm.test(\"Sin secretos ni sesión\", () => { pm.expect(jugador).not.to.have.property(\"contrasena\"); pm.expect(jugador).not.to.have.property(\"contrasenaHash\"); pm.expect(jugador).not.to.have.property(\"token\"); });",
+                  "pm.test(\"Location del usuario\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/usuarios/\" + jugador.id));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Ana\",\n  \"apellido\": \"Pérez\",\n  \"email\": \"rol.{{registroEmail}}\",\n  \"nickname\": \"r{{registroNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Administrador\",\n  \"elo\": 9999\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Sesiones",
+      "item": [
+        {
+          "name": "Login del jugador registrado → 201",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const sesion = pm.response.json();",
+                  "pm.test(\"Identidad del jugador\", () => { pm.expect(sesion.usuarioId).to.eql(Number(pm.collectionVariables.get(\"playerId\"))); pm.expect(sesion.rol).to.eql(\"Jugador\"); });",
+                  "pm.collectionVariables.set(\"playerToken\", sesion.token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "noauth"
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{registroEmail}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout del jugador → 204",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones/actual",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones",
+                "actual"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
