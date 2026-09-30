@@ -13,6 +13,8 @@ public sealed class ServicioUsuariosTests
 {
     private const string Email = "ana@farmeort.com";
     private const string Nickname = "anaperez";
+    private const string Contrasena = "ClaveSegura123!!";
+    private const string ContrasenaHash = "hash-generado";
 
     private static readonly DateOnly FechaActual = new(2026, 9, 30);
 
@@ -48,6 +50,35 @@ public sealed class ServicioUsuariosTests
         Assert.ThrowsExactly<NicknameYaExisteException>(() => _servicio.Crear(CrearRequest()));
     }
 
+    [TestMethod]
+    public void Crear_DatosValidos_GuardaUsuarioConContrasenaHasheada()
+    {
+        ConfigurarAltaValida();
+
+        _servicio.Crear(CrearRequest());
+
+        _repositorioUsuarios.Verify(
+            r => r.Agregar(It.Is<Usuario>(u =>
+                u.Nombre == "Ana"
+                && u.Apellido == "Pérez"
+                && u.Email == Email
+                && u.Nickname == Nickname
+                && u.FechaNacimiento == new DateOnly(2000, 1, 15)
+                && u.Rol == Rol.Organizador
+                && u.ContrasenaHash == ContrasenaHash)),
+            Times.Once);
+    }
+
+    private void ConfigurarAltaValida()
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
+        _repositorioUsuarios.Setup(r => r.ExistePorNickname(Nickname)).Returns(false);
+        _hasheadorContrasenas.Setup(h => h.Hashear(Contrasena)).Returns(ContrasenaHash);
+        _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(2026, 9, 30, 12, 0, 0, TimeSpan.Zero));
+        _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+        _repositorioUsuarios.Setup(r => r.Agregar(It.Is<Usuario>(u => u.Email == Email)));
+    }
+
     private static UsuarioAdminRequest CrearRequest()
     {
         return new UsuarioAdminRequest
@@ -56,7 +87,7 @@ public sealed class ServicioUsuariosTests
             Apellido = "Pérez",
             Email = Email,
             Nickname = Nickname,
-            Contrasena = "ClaveSegura123!!",
+            Contrasena = Contrasena,
             FechaNacimiento = new DateOnly(2000, 1, 15),
             Rol = Roles.Organizador,
         };

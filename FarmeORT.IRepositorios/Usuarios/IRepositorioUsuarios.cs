@@ -7,4 +7,6 @@ public interface IRepositorioUsuarios
     Usuario? ObtenerPorEmail(string email);
 
     bool ExistePorNickname(string nickname);
+
+    void Agregar(Usuario usuario);
 }
