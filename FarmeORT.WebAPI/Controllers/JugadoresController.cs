@@ -11,8 +11,7 @@ public sealed class JugadoresController(IServicioUsuarios servicioUsuarios) : Co
     [HttpPost]
     public IActionResult Registrar([FromBody] RegistroJugadorRequest request)
     {
-        _ = servicioUsuarios;
-        _ = request;
-        throw new NotImplementedException();
+        var response = servicioUsuarios.RegistrarJugador(request);
+        return Created($"/api/v1/usuarios/{response.Id}", response);
     }
 }
