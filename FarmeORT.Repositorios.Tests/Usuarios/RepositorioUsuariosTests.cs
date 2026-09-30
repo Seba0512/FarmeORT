@@ -170,6 +170,23 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void Listar_ConLimiteYDesplazamiento_DevuelveLaPaginaEnOrdenDeId()
+    {
+        _baseDeDatos.Contexto.Usuarios.AddRange(
+            CrearUsuario("usuario2@farmeort.com", Rol.Jugador, "hash-2"),
+            CrearUsuario("usuario3@farmeort.com", Rol.Jugador, "hash-3"),
+            CrearUsuario("usuario4@farmeort.com", Rol.Jugador, "hash-4"),
+            CrearUsuario("usuario5@farmeort.com", Rol.Jugador, "hash-5"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroUsuarios(null, null, null, 2, 2));
+
+        string[] emailsEsperados = ["usuario3@farmeort.com", "usuario4@farmeort.com"];
+        CollectionAssert.AreEqual(emailsEsperados, resultado.Select(u => u.Email).ToArray());
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameExistente_DevuelveTrue()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
