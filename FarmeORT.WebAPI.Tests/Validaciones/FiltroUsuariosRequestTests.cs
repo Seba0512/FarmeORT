@@ -7,6 +7,29 @@ namespace FarmeORT.WebAPI.Tests.Validaciones;
 public sealed class FiltroUsuariosRequestTests
 {
     [TestMethod]
+    [DataRow(1, 0)]
+    [DataRow(100, 0)]
+    [DataRow(20, 500)]
+    public void Validar_PaginacionEnRango_EsValida(int limit, int offset)
+    {
+        var filtro = new FiltroUsuariosRequest { Limit = limit, Offset = offset };
+        var errores = new List<ValidationResult>();
+
+        var esValido = Validator.TryValidateObject(filtro, new ValidationContext(filtro), errores, validateAllProperties: true);
+
+        Assert.IsTrue(esValido);
+    }
+
+    [TestMethod]
+    public void Constructor_SinParametros_UsaLimit20YOffset0()
+    {
+        var filtro = new FiltroUsuariosRequest();
+
+        Assert.AreEqual(20, filtro.Limit);
+        Assert.AreEqual(0, filtro.Offset);
+    }
+
+    [TestMethod]
     [DataRow(0)]
     [DataRow(101)]
     [DataRow(-1)]
