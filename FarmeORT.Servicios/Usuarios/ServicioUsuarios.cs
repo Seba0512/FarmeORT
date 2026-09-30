@@ -37,6 +37,21 @@ internal sealed class ServicioUsuarios(
             contrasenaHash,
             fechaActual);
         repositorioUsuarios.Agregar(usuario);
-        return new UsuarioResponse();
+        return CrearResponse(usuario);
+    }
+
+    private static UsuarioResponse CrearResponse(Usuario usuario)
+    {
+        return new UsuarioResponse
+        {
+            Id = usuario.Id,
+            Nombre = usuario.Nombre,
+            Apellido = usuario.Apellido,
+            Email = usuario.Email,
+            Nickname = usuario.Nickname,
+            FechaNacimiento = usuario.FechaNacimiento,
+            Rol = usuario.Rol.ToString(),
+            Elo = usuario.Rol == Rol.Jugador ? usuario.Elo : null,
+        };
     }
 }
