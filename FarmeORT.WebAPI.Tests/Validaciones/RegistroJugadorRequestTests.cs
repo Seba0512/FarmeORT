@@ -7,6 +7,21 @@ namespace FarmeORT.WebAPI.Tests.Validaciones;
 public sealed class RegistroJugadorRequestTests
 {
     [TestMethod]
+    [DataRow(1, 3, 3, 15)]
+    [DataRow(50, 25, 20, 25)]
+    public void Validar_LimitesPermitidos_EsValido(int largoNombre, int largoApellido, int largoNickname, int largoContrasena)
+    {
+        var request = CrearRequest(
+            nombre: new string('A', largoNombre),
+            apellido: new string('P', largoApellido),
+            nickname: new string('n', largoNickname),
+            contrasena: "Aa1!" + new string('a', largoContrasena - 4));
+        var errores = new List<ValidationResult>();
+
+        Assert.IsTrue(Validator.TryValidateObject(request, new ValidationContext(request), errores, validateAllProperties: true));
+    }
+
+    [TestMethod]
     [DataRow("")]
     [DataRow("NombreDeCincuentaYUnCaracteresParaProbarElLimiteXYZ")]
     public void Validar_NombreInvalido_EsInvalido(string nombre)

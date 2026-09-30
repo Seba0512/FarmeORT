@@ -74,17 +74,112 @@ public sealed class ServicioRegistroJugadorTests
         _hasheador.Verify(h => h.Hashear(Contrasena), Times.Never);
     }
 
+    [TestMethod]
+    public void RegistrarJugador_EmailExistente_LanzaEmailYaExisteSinGuardarNiHashear()
+    {
+        var existente = new Usuario("Otra", "Persona", Email, "otrapersona", new DateOnly(2000, 1, 15), Rol.Organizador, "hash", new DateOnly(2026, 9, 30));
+        _repositorio.Setup(r => r.ObtenerPorEmail(Email)).Returns(existente);
+
+        Assert.ThrowsExactly<EmailYaExisteException>(() => _servicio.RegistrarJugador(CrearRequest()));
+        _repositorio.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+        _hasheador.Verify(h => h.Hashear(Contrasena), Times.Never);
+    }
+
+    [TestMethod]
+    public void RegistrarJugador_NicknameExistente_LanzaNicknameYaExisteSinGuardarNiHashear()
+    {
+        _repositorio.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
+        _repositorio.Setup(r => r.ExistePorNickname(Nickname)).Returns(true);
+
+        Assert.ThrowsExactly<NicknameYaExisteException>(() => _servicio.RegistrarJugador(CrearRequest()));
+        _repositorio.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+        _hasheador.Verify(h => h.Hashear(Contrasena), Times.Never);
+    }
+
+    [TestMethod]
+    public void RegistrarJugador_ContrasenaInvalida_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var request = CrearRequest(contrasena: "corta");
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.RegistrarJugador(request));
+        _repositorio.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    [DataRow("nombre", "")]
+    [DataRow("apellido", "Pe")]
+    [DataRow("email", "no-es-email")]
+    [DataRow("nickname", "con espacio")]
+    public void RegistrarJugador_DatosPersonalesInvalidos_LanzaDatosInvalidosSinGuardar(string campo, string valor)
+    {
+        var request = new RegistroJugadorRequest
+        {
+            Nombre = campo == "nombre" ? valor : "Ana",
+            Apellido = campo == "apellido" ? valor : "Pérez",
+            Email = campo == "email" ? valor : Email,
+            Nickname = campo == "nickname" ? valor : Nickname,
+            Contrasena = Contrasena,
+            FechaNacimiento = new DateOnly(2000, 1, 15),
+        };
+        _repositorio.Setup(r => r.ObtenerPorEmail(request.Email)).Returns((Usuario?)null);
+        _repositorio.Setup(r => r.ExistePorNickname(request.Nickname)).Returns(false);
+        _hasheador.Setup(h => h.Hashear(Contrasena)).Returns(ContrasenaHash);
+        ConfigurarReloj();
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.RegistrarJugador(request));
+        _repositorio.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    [DataRow(2013, 10, 1)]
+    [DataRow(2027, 1, 1)]
+    [DataRow(9999, 12, 31)]
+    public void RegistrarJugador_NoCumpleEdadMinima_LanzaDatosInvalidosSinGuardar(int anio, int mes, int dia)
+    {
+        ConfigurarAltaValida();
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.RegistrarJugador(CrearRequest(new DateOnly(anio, mes, dia))));
+        _repositorio.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void RegistrarJugador_Cumple13Hoy_DevuelveJugador()
+    {
+        ConfigurarAltaValida();
+
+        var response = _servicio.RegistrarJugador(CrearRequest(new DateOnly(2013, 9, 30)));
+
+        Assert.AreEqual(new DateOnly(2013, 9, 30), response.FechaNacimiento);
+        Assert.AreEqual(Roles.Jugador, response.Rol);
+    }
+
+    [TestMethod]
+    public void RegistrarJugador_Cumple13ManianaEnFechaLocal_LanzaDatosInvalidos()
+    {
+        ConfigurarAltaValida();
+        _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(2026, 10, 1, 1, 0, 0, TimeSpan.Zero));
+        _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.CreateCustomTimeZone("MontevideoTest", TimeSpan.FromHours(-3), "Montevideo", "Montevideo"));
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.RegistrarJugador(CrearRequest(new DateOnly(2013, 10, 1))));
+        _repositorio.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorio.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
         _repositorio.Setup(r => r.ExistePorNickname(Nickname)).Returns(false);
         _hasheador.Setup(h => h.Hashear(Contrasena)).Returns(ContrasenaHash);
-        _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(2026, 9, 30, 12, 0, 0, TimeSpan.Zero));
-        _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+        ConfigurarReloj();
         _repositorio.Setup(r => r.Agregar(It.Is<Usuario>(u => u.Email == Email)));
     }
 
-    private static RegistroJugadorRequest CrearRequest(DateOnly? fechaNacimiento = null)
+    private void ConfigurarReloj()
+    {
+        _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(2026, 9, 30, 12, 0, 0, TimeSpan.Zero));
+        _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+    }
+
+    private static RegistroJugadorRequest CrearRequest(DateOnly? fechaNacimiento = null, string contrasena = Contrasena)
     {
         return new RegistroJugadorRequest
         {
@@ -92,7 +187,7 @@ public sealed class ServicioRegistroJugadorTests
             Apellido = "Pérez",
             Email = Email,
             Nickname = Nickname,
-            Contrasena = Contrasena,
+            Contrasena = contrasena,
             FechaNacimiento = fechaNacimiento ?? new DateOnly(2000, 1, 15),
         };
     }

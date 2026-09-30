@@ -3,6 +3,7 @@ using FarmeORT.IServicios.Usuarios;
 using FarmeORT.WebAPI.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Moq;
 
 namespace FarmeORT.WebAPI.Tests.Controllers;
@@ -34,5 +35,19 @@ public sealed class JugadoresControllerTests
         Assert.AreEqual("/api/v1/usuarios/5", resultado.Location);
         Assert.AreSame(jugador, resultado.Value);
         servicio.Verify(s => s.RegistrarJugador(request), Times.Once);
+    }
+
+    [TestMethod]
+    public void Registrar_ContratoPublico_ExponePostJugadoresSinAutenticacion()
+    {
+        var tipo = typeof(JugadoresController);
+        var metodo = tipo.GetMethod(nameof(JugadoresController.Registrar));
+        Assert.IsNotNull(metodo);
+        var ruta = tipo.GetCustomAttributes(typeof(RouteAttribute), true).Cast<RouteAttribute>().Single();
+
+        Assert.AreEqual("api/v1/jugadores", ruta.Template);
+        Assert.HasCount(1, metodo.GetCustomAttributes(typeof(HttpPostAttribute), true));
+        Assert.IsFalse(tipo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
+        Assert.IsFalse(metodo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
     }
 }
