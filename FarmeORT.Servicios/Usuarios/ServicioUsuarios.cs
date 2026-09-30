@@ -44,6 +44,11 @@ internal sealed class ServicioUsuarios(
 
     public UsuarioResponse ObtenerPorId(int id)
     {
+        if(repositorioUsuarios.ObtenerPorId(id) is null)
+        {
+            throw new UsuarioNoEncontradoException();
+        }
+
         throw new NotImplementedException();
     }
 
