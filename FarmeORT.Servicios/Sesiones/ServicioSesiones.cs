@@ -39,6 +39,12 @@ internal sealed class ServicioSesiones(
 
     public SesionAutenticada? ObtenerSesionAutenticada(Guid token)
     {
+        var sesion = repositorioSesiones.ObtenerPorToken(token);
+        if(sesion is null)
+        {
+            return null;
+        }
+
         throw new NotImplementedException();
     }
 }
