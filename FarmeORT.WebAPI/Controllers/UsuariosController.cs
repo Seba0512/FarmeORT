@@ -17,6 +17,13 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
         return Created($"/api/v1/usuarios/{response.Id}", response);
     }
 
+    [HttpGet]
+    public IActionResult Listar([FromQuery] FiltroUsuariosRequest filtro)
+    {
+        _ = filtro;
+        throw new NotImplementedException();
+    }
+
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {

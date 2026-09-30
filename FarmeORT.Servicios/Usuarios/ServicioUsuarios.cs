@@ -48,6 +48,11 @@ internal sealed class ServicioUsuarios(
         return CrearResponse(usuario);
     }
 
+    public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
+    {
+        throw new NotImplementedException();
+    }
+
     private static Rol ConvertirRol(string rol)
     {
         if(!Enum.TryParse<Rol>(rol, out var rolConvertido) || !Enum.IsDefined(rolConvertido))

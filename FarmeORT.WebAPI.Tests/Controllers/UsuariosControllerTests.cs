@@ -69,6 +69,20 @@ public sealed class UsuariosControllerTests
     }
 
     [TestMethod]
+    public void Listar_ConFiltros_Devuelve200ConLosUsuarios()
+    {
+        var filtro = new FiltroUsuariosRequest { Nombre = "ana", Limit = 10, Offset = 0 };
+        IReadOnlyList<UsuarioResponse> usuarios = [new UsuarioResponse { Id = 5, Nombre = "Ana" }];
+        _servicioUsuarios.Setup(s => s.Listar(filtro)).Returns(usuarios);
+
+        var resultado = _controller.Listar(filtro) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(usuarios, resultado.Value);
+    }
+
+    [TestMethod]
     public void UsuariosController_TodosLosEndpoints_RequierenRolAdministrador()
     {
         var atributo = typeof(UsuariosController)

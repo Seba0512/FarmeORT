@@ -7,4 +7,6 @@ public interface IServicioUsuarios
     UsuarioResponse Crear(UsuarioAdminRequest request);
 
     UsuarioResponse ObtenerPorId(int id);
+
+    IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro);
 }
