@@ -45,6 +45,11 @@ internal sealed class ServicioSesiones(
             return null;
         }
 
-        throw new NotImplementedException();
+        return new SesionAutenticada
+        {
+            Token = sesion.Token,
+            UsuarioId = sesion.UsuarioId,
+            Rol = sesion.Usuario.Rol.ToString(),
+        };
     }
 }
