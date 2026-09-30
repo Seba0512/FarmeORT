@@ -43,6 +43,16 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void ObtenerPorEmail_AdministradorPrecargado_DevuelveAdministrador()
+    {
+        var resultado = _repositorio.ObtenerPorEmail("admin@farmeort.com");
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(Rol.Administrador, resultado.Rol);
+        Assert.IsFalse(string.IsNullOrEmpty(resultado.ContrasenaHash));
+    }
+
+    [TestMethod]
     public void ObtenerPorEmail_EmailInexistente_DevuelveNull()
     {
         var otroUsuario = new Usuario { Email = "otro@farmeort.com", Rol = Rol.Organizador, ContrasenaHash = "hash-otro" };
