@@ -87,6 +87,28 @@ public sealed class RepositorioUsuariosTests
         Assert.IsFalse(existe);
     }
 
+    [TestMethod]
+    public void Agregar_UsuarioNuevo_QuedaGuardadoConSuId()
+    {
+        var fechaNacimiento = new DateOnly(1998, 3, 10);
+        var usuario = new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez", fechaNacimiento, Rol.Jugador, "hash-ana", new DateOnly(2026, 9, 30));
+
+        _repositorio.Agregar(usuario);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.IsGreaterThan(1, usuario.Id);
+        var guardado = _baseDeDatos.Contexto.Usuarios.SingleOrDefault(u => u.Id == usuario.Id);
+        Assert.IsNotNull(guardado);
+        Assert.AreEqual("Ana", guardado.Nombre);
+        Assert.AreEqual("Pérez", guardado.Apellido);
+        Assert.AreEqual("ana@farmeort.com", guardado.Email);
+        Assert.AreEqual("anaperez", guardado.Nickname);
+        Assert.AreEqual(fechaNacimiento, guardado.FechaNacimiento);
+        Assert.AreEqual(Rol.Jugador, guardado.Rol);
+        Assert.AreEqual("hash-ana", guardado.ContrasenaHash);
+        Assert.AreEqual(1200, guardado.Elo);
+    }
+
     private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
     {
         var nickname = email.Split('@')[0];
