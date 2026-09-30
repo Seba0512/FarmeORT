@@ -61,5 +61,9 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         {
             throw new EmailYaExisteException();
         }
+        catch(DbUpdateException) when (contexto.Usuarios.Any(u => u.Nickname == usuario.Nickname))
+        {
+            throw new NicknameYaExisteException();
+        }
     }
 }
