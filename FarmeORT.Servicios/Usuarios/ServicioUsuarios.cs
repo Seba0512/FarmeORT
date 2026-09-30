@@ -14,6 +14,8 @@ internal sealed class ServicioUsuarios(
 {
     public UsuarioResponse RegistrarJugador(RegistroJugadorRequest request)
     {
+        var fechaNacimiento = request.FechaNacimiento
+            ?? throw new DatosInvalidosException("La fecha de nacimiento es obligatoria.");
         return Crear(new UsuarioAdminRequest
         {
             Nombre = request.Nombre,
@@ -21,7 +23,7 @@ internal sealed class ServicioUsuarios(
             Email = request.Email,
             Nickname = request.Nickname,
             Contrasena = request.Contrasena,
-            FechaNacimiento = request.FechaNacimiento.GetValueOrDefault(),
+            FechaNacimiento = fechaNacimiento,
             Rol = Roles.Jugador,
         });
     }
