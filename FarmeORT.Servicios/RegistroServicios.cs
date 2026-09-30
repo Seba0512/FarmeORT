@@ -1,7 +1,9 @@
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Sesiones;
+using FarmeORT.IServicios.Usuarios;
 using FarmeORT.Servicios.Seguridad;
 using FarmeORT.Servicios.Sesiones;
+using FarmeORT.Servicios.Usuarios;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FarmeORT.Servicios;
@@ -13,6 +15,7 @@ public static class RegistroServicios
         servicios.AddScoped<IServicioSesiones, ServicioSesiones>();
         servicios.AddScoped<IHasheadorContrasenas, HasheadorContrasenas>();
         servicios.AddScoped<IGeneradorTokens, GeneradorTokens>();
+        servicios.AddScoped<IServicioUsuarios, ServicioUsuarios>();
         return servicios;
     }
 }
