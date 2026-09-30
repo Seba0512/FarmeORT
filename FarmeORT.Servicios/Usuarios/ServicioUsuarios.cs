@@ -14,8 +14,16 @@ internal sealed class ServicioUsuarios(
 {
     public UsuarioResponse RegistrarJugador(RegistroJugadorRequest request)
     {
-        _ = request;
-        throw new NotImplementedException();
+        return Crear(new UsuarioAdminRequest
+        {
+            Nombre = request.Nombre,
+            Apellido = request.Apellido,
+            Email = request.Email,
+            Nickname = request.Nickname,
+            Contrasena = request.Contrasena,
+            FechaNacimiento = request.FechaNacimiento.GetValueOrDefault(),
+            Rol = Roles.Jugador,
+        });
     }
 
     public UsuarioResponse Crear(UsuarioAdminRequest request)
