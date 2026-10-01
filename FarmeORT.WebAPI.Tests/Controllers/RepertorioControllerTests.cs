@@ -71,6 +71,18 @@ public sealed class RepertorioControllerTests
         _servicioRepertorio.Verify(s => s.Quitar(JugadorId, 3), Times.Once);
     }
 
+    [TestMethod]
+    public void Controller_Repertorio_RequiereRolJugador()
+    {
+        var atributo = typeof(RepertorioController)
+            .GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>()
+            .SingleOrDefault();
+
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
+    }
+
     private static SkillDeclaradaResponse CrearResponse()
     {
         return new SkillDeclaradaResponse
