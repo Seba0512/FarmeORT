@@ -14,7 +14,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public Usuario? ObtenerPorId(int id)
     {
-        return contexto.Usuarios.Find(id);
+        return contexto.Usuarios.SingleOrDefault(u => u.Id == id && !u.Eliminado);
     }
 
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
