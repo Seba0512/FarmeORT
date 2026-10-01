@@ -180,6 +180,26 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
     }
 
+    [TestMethod]
+    public void Guardar_EstadoModificadoPorOtroPedido_TraduceConflictoABatallaModificada()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = new Skill("AURASTARE", "Aura Stare", "Mirada fija para farmear aura en la batalla.", CategoriaSkill.Gestual, 2) { Id = 4 };
+        _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 3, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
+        _baseDeDatos.Contexto.Entry(batalla).Property(b => b.JugadorTurnoId).CurrentValue = 8;
+        using var otroContexto = CrearOtroContexto();
+        var cancelada = otroContexto.Batallas.Single(b => b.Id == batalla.Id);
+        cancelada.Cancelar();
+        otroContexto.SaveChanges();
+
+        Assert.ThrowsExactly<BatallaModificadaException>(() => _repositorio.Guardar());
+
+        var guardada = _baseDeDatos.Contexto.Batallas.Single(b => b.Id == batalla.Id);
+        Assert.AreEqual(EstadoBatalla.Cancelada, guardada.Estado);
+        Assert.IsNull(guardada.JugadorTurnoId);
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
+    }
+
     private FarmeORTContext CrearOtroContexto()
     {
         var opciones = new DbContextOptionsBuilder<FarmeORTContext>()
