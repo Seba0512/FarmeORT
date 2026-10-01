@@ -51,17 +51,17 @@ internal sealed class ServicioUsuarios(
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        if(!MismoTexto(usuario.Email, request.Email) && repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
+        if(!MismoTexto(usuario.Email, request.Email))
         {
-            throw new EmailYaExisteException();
+            ValidarEmailDisponible(request.Email);
         }
 
-        if(!MismoTexto(usuario.Nickname, request.Nickname) && repositorioUsuarios.ExistePorNickname(request.Nickname))
+        if(!MismoTexto(usuario.Nickname, request.Nickname))
         {
-            throw new NicknameYaExisteException();
+            ValidarNicknameDisponible(request.Nickname);
         }
 
-        var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
+        var fechaActual = ObtenerFechaActual();
         var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
         usuario.Modificar(
             request.Nombre,
@@ -91,17 +91,9 @@ internal sealed class ServicioUsuarios(
 
     private UsuarioResponse CrearUsuario(RegistroJugadorRequest request, Rol rol, DateOnly fechaNacimiento)
     {
-        if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
-        {
-            throw new EmailYaExisteException();
-        }
-
-        if(repositorioUsuarios.ExistePorNickname(request.Nickname))
-        {
-            throw new NicknameYaExisteException();
-        }
-
-        var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
+        ValidarEmailDisponible(request.Email);
+        ValidarNicknameDisponible(request.Nickname);
+        var fechaActual = ObtenerFechaActual();
         var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
         var usuario = new Usuario(
             request.Nombre,
@@ -114,6 +106,27 @@ internal sealed class ServicioUsuarios(
             fechaActual);
         repositorioUsuarios.Agregar(usuario);
         return CrearResponse(usuario);
+    }
+
+    private void ValidarEmailDisponible(string email)
+    {
+        if(repositorioUsuarios.ObtenerPorEmail(email) is not null)
+        {
+            throw new EmailYaExisteException();
+        }
+    }
+
+    private void ValidarNicknameDisponible(string nickname)
+    {
+        if(repositorioUsuarios.ExistePorNickname(nickname))
+        {
+            throw new NicknameYaExisteException();
+        }
+    }
+
+    private DateOnly ObtenerFechaActual()
+    {
+        return DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
     }
 
     private static Rol ConvertirRol(string rol)
