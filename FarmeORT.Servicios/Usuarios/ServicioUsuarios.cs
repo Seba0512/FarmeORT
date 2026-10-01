@@ -40,6 +40,54 @@ internal sealed class ServicioUsuarios(
         return [.. usuarios.Select(CrearResponse)];
     }
 
+    public UsuarioResponse Modificar(int id, UsuarioAdminRequest request, int usuarioActualId)
+    {
+        if(id == usuarioActualId)
+        {
+            throw new OperacionSobreSiMismoException();
+        }
+
+        ReglaContrasena.Validar(request.Contrasena);
+        var rol = ConvertirRol(request.Rol);
+        var fechaNacimiento = ObtenerFechaNacimiento(request);
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        if(!MismoTexto(usuario.Email, request.Email))
+        {
+            ValidarEmailDisponible(request.Email);
+        }
+
+        if(!MismoTexto(usuario.Nickname, request.Nickname))
+        {
+            ValidarNicknameDisponible(request.Nickname);
+        }
+
+        var fechaActual = ObtenerFechaActual();
+        var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
+        usuario.Modificar(
+            request.Nombre,
+            request.Apellido,
+            request.Email,
+            request.Nickname,
+            fechaNacimiento,
+            rol,
+            contrasenaHash,
+            fechaActual);
+        repositorioUsuarios.Actualizar(usuario);
+        return CrearResponse(usuario);
+    }
+
+    public void Eliminar(int id, int usuarioActualId)
+    {
+        if(id == usuarioActualId)
+        {
+            throw new OperacionSobreSiMismoException();
+        }
+
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        usuario.Eliminar();
+        repositorioUsuarios.Eliminar(usuario);
+    }
+
     private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
     {
         return request.FechaNacimiento
@@ -48,17 +96,9 @@ internal sealed class ServicioUsuarios(
 
     private UsuarioResponse CrearUsuario(RegistroJugadorRequest request, Rol rol, DateOnly fechaNacimiento)
     {
-        if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
-        {
-            throw new EmailYaExisteException();
-        }
-
-        if(repositorioUsuarios.ExistePorNickname(request.Nickname))
-        {
-            throw new NicknameYaExisteException();
-        }
-
-        var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
+        ValidarEmailDisponible(request.Email);
+        ValidarNicknameDisponible(request.Nickname);
+        var fechaActual = ObtenerFechaActual();
         var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
         var usuario = new Usuario(
             request.Nombre,
@@ -73,6 +113,27 @@ internal sealed class ServicioUsuarios(
         return CrearResponse(usuario);
     }
 
+    private void ValidarEmailDisponible(string email)
+    {
+        if(repositorioUsuarios.ObtenerPorEmail(email) is not null)
+        {
+            throw new EmailYaExisteException();
+        }
+    }
+
+    private void ValidarNicknameDisponible(string nickname)
+    {
+        if(repositorioUsuarios.ExistePorNickname(nickname))
+        {
+            throw new NicknameYaExisteException();
+        }
+    }
+
+    private DateOnly ObtenerFechaActual()
+    {
+        return DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
+    }
+
     private static Rol ConvertirRol(string rol)
     {
         if(!Enum.TryParse<Rol>(rol, out var rolConvertido) || !Enum.IsDefined(rolConvertido))
@@ -81,6 +142,12 @@ internal sealed class ServicioUsuarios(
         }
 
         return rolConvertido;
+    }
+
+    // Los índices únicos de SQL Server no distinguen mayúsculas: cambiar solo mayúsculas no ocupa un valor ajeno.
+    private static bool MismoTexto(string actual, string nuevo)
+    {
+        return string.Equals(actual, nuevo, StringComparison.OrdinalIgnoreCase);
     }
 
     private static UsuarioResponse CrearResponse(Usuario usuario)

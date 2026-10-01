@@ -17,7 +17,7 @@ internal sealed class ServicioSesiones(
     public SesionResponse IniciarSesion(LoginRequest request)
     {
         var usuario = repositorioUsuarios.ObtenerPorEmail(request.Email);
-        if(usuario is null || !hasheadorContrasenas.Verificar(request.Contrasena, usuario.ContrasenaHash))
+        if(usuario is null || usuario.Eliminado || !hasheadorContrasenas.Verificar(request.Contrasena, usuario.ContrasenaHash))
         {
             throw new CredencialesInvalidasException();
         }

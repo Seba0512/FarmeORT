@@ -28,4 +28,19 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
     {
         return Ok(servicioUsuarios.ObtenerPorId(id));
     }
+
+    [HttpPut("{id:int}")]
+    public IActionResult Modificar(int id, [FromBody] UsuarioAdminRequest request)
+    {
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        return Ok(servicioUsuarios.Modificar(id, request, sesion.UsuarioId));
+    }
+
+    [HttpDelete("{id:int}")]
+    public IActionResult Eliminar(int id)
+    {
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        servicioUsuarios.Eliminar(id, sesion.UsuarioId);
+        return NoContent();
+    }
 }

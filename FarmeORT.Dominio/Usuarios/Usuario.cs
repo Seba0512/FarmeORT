@@ -22,19 +22,7 @@ public sealed partial class Usuario
         string contrasenaHash,
         DateOnly fechaActual)
     {
-        ValidarNombre(nombre);
-        ValidarApellido(apellido);
-        ValidarEmail(email);
-        ValidarNickname(nickname);
-        ValidarEdad(fechaNacimiento, fechaActual);
-
-        Nombre = nombre;
-        Apellido = apellido;
-        Email = email;
-        Nickname = nickname;
-        FechaNacimiento = fechaNacimiento;
-        Rol = rol;
-        ContrasenaHash = contrasenaHash;
+        Modificar(nombre, apellido, email, nickname, fechaNacimiento, rol, contrasenaHash, fechaActual);
         Elo = EloInicial;
     }
 
@@ -60,6 +48,39 @@ public sealed partial class Usuario
     public string ContrasenaHash { get; private set; } = string.Empty;
 
     public int Elo { get; private set; }
+
+    public bool Eliminado { get; private set; }
+
+    public void Modificar(
+        string nombre,
+        string apellido,
+        string email,
+        string nickname,
+        DateOnly fechaNacimiento,
+        Rol rol,
+        string contrasenaHash,
+        DateOnly fechaActual)
+    {
+        ValidarNombre(nombre);
+        ValidarApellido(apellido);
+        ValidarEmail(email);
+        ValidarNickname(nickname);
+        ValidarEdad(fechaNacimiento, fechaActual);
+
+        Nombre = nombre;
+        Apellido = apellido;
+        Email = email;
+        Nickname = nickname;
+        FechaNacimiento = fechaNacimiento;
+        Rol = rol;
+        ContrasenaHash = contrasenaHash;
+    }
+
+    // Baja lógica: se conservan los datos para el historial de batallas y torneos.
+    public void Eliminar()
+    {
+        Eliminado = true;
+    }
 
     private static void ValidarNombre(string nombre)
     {

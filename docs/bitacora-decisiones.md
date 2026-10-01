@@ -608,6 +608,104 @@ gráficas quedan a cargo del equipo para su consolidación en los entregables ac
 
 ---
 
+### D-26 — Operar sobre uno mismo es un conflicto (409) que decide el servicio
+
+**Problema:** la letra (2.1) prohíbe que un usuario se modifique o elimine a sí mismo. La
+especificación admite 403 y 409 en `PUT` y `DELETE /usuarios/{id}`, y hay que decidir dónde vive la
+regla.
+
+**Alternativas consideradas:** 403 desde un filtro (como si fuera falta de permisos); 403 desde el
+servicio; 409 desde el servicio.
+
+**Decisión adoptada:** el controller toma el id del usuario autenticado de la sesión (nunca del body ni
+de la query) y lo pasa al servicio, que lanza `OperacionSobreSiMismoException` antes de consultar la
+base. El filtro global la traduce a 409 `SELF_OPERATION_NOT_ALLOWED` ("Un usuario no puede modificarse
+ni eliminarse a sí mismo."). La lectura de la sesión se centralizó en
+`HttpContext.ObtenerSesionAutenticada()` (resuelve un pendiente de esta bitácora).
+
+**Justificación:** el administrador sí tiene permiso sobre el recurso `/usuarios`; lo que se rechaza es
+la operación por el estado (el destino es él mismo). Así el 403 queda reservado al rol, que deciden los
+filtros (D-14), y la regla depende del recurso concreto, por lo que va en el servicio (`AGENTS.md`, §7).
+
+**Conceptos del curso:** semántica de status codes, SRP de los filtros, identidad tomada solo del token.
+
+**Evidencia:** `ServicioUsuarios.Modificar`/`Eliminar`, `FiltroExcepciones`, tests
+`Modificar_UsuarioActual_...`, `Eliminar_UsuarioActual_...`,
+`OnException_OperacionSobreSiMismo_Devuelve409ConSelfOperationNotAllowed` y casos 409 de Postman.
+
+**Participación de IA:** Claude Code (Claude Opus 5.5) presentó las dos opciones de status con sus
+ventajas; el equipo eligió 409.
+
+---
+
+### D-27 — Eliminación de usuarios como baja lógica
+
+**Problema:** la letra permite eliminar a un jugador que ya tiene batallas finalizadas, pero esas
+batallas siguen alimentando el ranking (ganadas y perdidas del rival) y un torneo puede tener a ese
+jugador como campeón. Un borrado físico rompería ese historial o lo impediría por claves foráneas.
+
+**Alternativas consideradas:** borrado físico con cascada (pierde historial ajeno); borrado físico con
+`Restrict` (impide eliminar a quien jugó); baja lógica con un indicador en `Usuario`.
+
+**Decisión adoptada:** baja lógica. `Usuario.Eliminar()` marca `Eliminado = true` y
+`RepositorioUsuarios.Eliminar` guarda la baja y borra las sesiones del usuario en un único
+`SaveChanges` (atómico). Un usuario dado de baja no se obtiene por id (404 en `GET`, `PUT` y `DELETE`),
+no aparece en el listado y no puede iniciar sesión (401 `INVALID_CREDENTIALS`, sin revelar el motivo).
+Migración `AgregaBajaLogicaAUsuarios`.
+
+**Supuesto:** el email y el nickname de un usuario dado de baja siguen reservados (los índices únicos
+los incluyen), así que reutilizarlos responde 409. Liberarlos exigiría índices filtrados y queda fuera
+de esta entrega.
+
+**Justificación:** conserva la integridad del historial sin depender de cascadas, y cerrar las sesiones
+en la misma transacción evita que un token emitido antes de la baja siga funcionando.
+
+**Conceptos del curso:** Information Expert (el usuario sabe darse de baja), atomicidad de operaciones
+con varios efectos, persistencia con EF Core.
+
+**Evidencia:** `Usuario.Eliminar`, `RepositorioUsuarios.Eliminar`/`ObtenerPorId`/`Listar`,
+`ServicioSesiones.IniciarSesion`, tests de dominio, servicio y repositorio (SQLite) de la baja, y el
+recorrido de Postman: baja → sesión cerrada (401) → login rechazado → 404 → email reservado (409).
+
+**Participación de IA:** Claude Code propuso baja lógica frente a borrado físico con sus
+consecuencias; el equipo eligió la baja lógica.
+
+---
+
+### D-28 — `PUT /usuarios/{id}` reemplaza todos los datos y valida unicidad contra otros usuarios
+
+**Problema:** la modificación usa el mismo `UsuarioAdminRequest` del alta (especificación) y las mismas
+validaciones (letra 2.1). Hay que evitar que el usuario choque consigo mismo al conservar su email o
+nickname, también con otro uso de mayúsculas, porque SQL Server compara sin distinguirlas.
+
+**Alternativas consideradas:** contraseña opcional en el `PUT` (rompe el reemplazo completo y el
+contrato); consultar unicidad siempre y excluir el propio id en el repositorio; consultar solo si el
+valor cambió.
+
+**Decisión adoptada:** reemplazo completo: la contraseña es obligatoria y se vuelve a hashear; el rol
+puede cambiar y el ELO se conserva. Orden: operación sobre sí mismo (409) → validaciones del request
+(400) → existencia (404) → unicidad (409) → hash → `Usuario.Modificar` → guardado. La unicidad se
+consulta solo si el email o el nickname cambiaron sin distinguir mayúsculas. El constructor de
+`Usuario` reutiliza `Modificar`, así que alta y modificación comparten validaciones. Si otro usuario
+ocupa el valor entre la consulta y el guardado, el repositorio traduce el conflicto como en D-23,
+ahora excluyendo el propio id y compartido entre `Agregar` y `Actualizar`.
+
+**Justificación:** un `PUT` reemplaza el recurso completo; no consultar lo que no cambió evita falsos
+409, y excluir el propio id al traducir errores evita confundir un fallo ajeno a la unicidad con un
+duplicado (que terminaría en 409 en lugar del 500 seguro).
+
+**Conceptos del curso:** idempotencia y semántica de `PUT`, DRY, validación en el borde y en el dominio.
+
+**Evidencia:** `ServicioUsuarios.Modificar`, `Usuario.Modificar`, `RepositorioUsuarios.Actualizar` y
+`Guardar`, tests `Modificar_ConservaSuEmailYNickname_NoLoConsideraDuplicado`,
+`Actualizar_NicknameOcupadoConservandoSuEmail_LanzaNicknameYaExiste`,
+`Actualizar_ErrorDeBaseConservandoEmailYNickname_PropagaDbUpdateException` y casos de Postman.
+
+**Participación de IA:** Claude Code implementó la funcionalidad con ciclos RED/GREEN/REFACTOR por
+commit, siguiendo `AGENTS.md` y las skills `da2-*`; el equipo revisa y aprueba en el PR.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -630,13 +728,19 @@ gráficas quedan a cargo del equipo para su consolidación en los entregables ac
   es la contraseña inicial del administrador (D-11).
 - Las sesiones no vencen: un token vale hasta que se hace logout. La letra no pide vencimiento, pero el
   mensaje del 401 dice "o expiró". Decidir si se agrega un vencimiento o se ajusta el mensaje.
-- Cuando más controllers lean la sesión del contexto, extraer esa lectura a un solo lugar (por ejemplo,
-  un método de extensión `HttpContext.ObtenerSesionAutenticada()`), para no repetir el cast.
+- ~~Cuando más controllers lean la sesión del contexto, extraer esa lectura a un solo lugar (por ejemplo,
+  un método de extensión `HttpContext.ObtenerSesionAutenticada()`), para no repetir el cast.~~
+  Resuelto en D-26.
 - Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
   enrutamiento antes de los filtros. Igual con los errores de conversión de la query
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
 - Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
   eliminar si tiene batallas sin resolver o si organiza un torneo que no está Finalizado ni Cancelado.
+  `DELETE /usuarios/{id}` ya existe (D-27): al implementar batallas y torneos hay que agregar estas
+  precondiciones a `ServicioUsuarios.Eliminar` (409) con sus ciclos TDD.
+- Cambiar el rol de un usuario con datos asociados (por ejemplo, un Organizador con torneos activos
+  que pasa a Jugador) no tiene restricciones porque esas entidades todavía no existen. Revisarlo junto
+  con torneos e inscripciones.
 - ~~Si dos altas con el mismo email o nickname llegan al mismo tiempo, la segunda terminaba en 500.~~
   Resuelto en D-23: conflicto detectado al guardar → 409; se desasocia el alta fallida y otros errores
   de base se propagan al tratamiento seguro de 500.

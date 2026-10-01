@@ -55,6 +55,9 @@ namespace FarmeORT.Repositorios.Migrations
                         .HasMaxLength(128)
                         .HasColumnType("nvarchar(128)");
 
+                    b.Property<bool>("Eliminado")
+                        .HasColumnType("bit");
+
                     b.Property<int>("Elo")
                         .HasColumnType("int");
 
@@ -97,6 +100,7 @@ namespace FarmeORT.Repositorios.Migrations
                             Id = 1,
                             Apellido = "FarmeORT",
                             ContrasenaHash = "3LS7NmeR5ARDHCPv9u/dfA==.SXnTh+G3L29NXz1uN1cIe0KKW2S7Mpxc1vmT7g1RKw0=",
+                            Eliminado = false,
                             Elo = 1200,
                             Email = "admin@farmeort.com",
                             FechaNacimiento = new DateOnly(2000, 1, 1),

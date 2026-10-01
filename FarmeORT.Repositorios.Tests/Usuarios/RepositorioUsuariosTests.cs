@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Sesiones;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
@@ -10,6 +11,8 @@ namespace FarmeORT.Repositorios.Tests.Usuarios;
 public sealed class RepositorioUsuariosTests
 {
     private const string Email = "jugador@farmeort.com";
+
+    private static readonly DateOnly FechaActual = new(2026, 9, 30);
 
     private BaseDeDatosEnMemoria _baseDeDatos = null!;
     private RepositorioUsuarios _repositorio = null!;
@@ -93,6 +96,20 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void ObtenerPorId_UsuarioEliminado_DevuelveNull()
+    {
+        var usuario = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
+        usuario.Eliminar();
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.ObtenerPorId(usuario.Id);
+
+        Assert.IsNull(resultado);
+    }
+
+    [TestMethod]
     public void Listar_SinFiltros_DevuelveTodosOrdenadosPorId()
     {
         _baseDeDatos.Contexto.Usuarios.AddRange(
@@ -104,6 +121,23 @@ public sealed class RepositorioUsuariosTests
         var resultado = _repositorio.Listar(new FiltroUsuarios(null, null, null, 20, 0));
 
         string[] emailsEsperados = ["admin@farmeort.com", "laura@farmeort.com", "carlos@farmeort.com"];
+        CollectionAssert.AreEqual(emailsEsperados, resultado.Select(u => u.Email).ToArray());
+    }
+
+    [TestMethod]
+    public void Listar_ConUsuarioEliminado_LoOmite()
+    {
+        var eliminado = CrearUsuario("carlos@farmeort.com", Rol.Jugador, "hash-carlos");
+        eliminado.Eliminar();
+        _baseDeDatos.Contexto.Usuarios.AddRange(
+            CrearUsuario("laura@farmeort.com", Rol.Organizador, "hash-laura"),
+            eliminado);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroUsuarios(null, null, null, 20, 0));
+
+        string[] emailsEsperados = ["admin@farmeort.com", "laura@farmeort.com"];
         CollectionAssert.AreEqual(emailsEsperados, resultado.Select(u => u.Email).ToArray());
     }
 
@@ -201,6 +235,19 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void ConsultasDeUnicidad_UsuarioEliminado_SiguenReservandoSuEmailYNickname()
+    {
+        var usuario = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
+        usuario.Eliminar();
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.IsNotNull(_repositorio.ObtenerPorEmail(Email));
+        Assert.IsTrue(_repositorio.ExistePorNickname("jugador"));
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameInexistente_DevuelveFalse()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
@@ -272,6 +319,98 @@ public sealed class RepositorioUsuariosTests
         Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Agregar(nuevo));
         Assert.IsFalse(_baseDeDatos.Contexto.Usuarios.Any(u => u.Email == nuevo.Email));
         AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Actualizar_UsuarioModificado_GuardaLosCambios()
+    {
+        var usuario = GuardarUsuario(Email, "jugador");
+        var fechaNacimiento = new DateOnly(1998, 6, 3);
+        usuario.Modificar("Carla", "Gómez", "carla@farmeort.com", "carlagomez", fechaNacimiento, Rol.Organizador, "hash-nuevo", FechaActual);
+
+        _repositorio.Actualizar(usuario);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var guardado = _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id);
+        Assert.AreEqual("Carla", guardado.Nombre);
+        Assert.AreEqual("Gómez", guardado.Apellido);
+        Assert.AreEqual("carla@farmeort.com", guardado.Email);
+        Assert.AreEqual("carlagomez", guardado.Nickname);
+        Assert.AreEqual(fechaNacimiento, guardado.FechaNacimiento);
+        Assert.AreEqual(Rol.Organizador, guardado.Rol);
+        Assert.AreEqual("hash-nuevo", guardado.ContrasenaHash);
+        Assert.AreEqual(1200, guardado.Elo);
+    }
+
+    [TestMethod]
+    public void Actualizar_EmailOcupadoDespuesDeConsultar_LanzaEmailYaExisteSinCambiarElUsuario()
+    {
+        var usuario = GuardarUsuario(Email, "jugador");
+        GuardarUsuario("otro@farmeort.com", "otro");
+        usuario.Modificar("Ana", "Pérez", "otro@farmeort.com", "jugador", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
+
+        Assert.ThrowsExactly<EmailYaExisteException>(() => _repositorio.Actualizar(usuario));
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual(Email, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id).Email);
+        AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Actualizar_NicknameOcupadoConservandoSuEmail_LanzaNicknameYaExiste()
+    {
+        var usuario = GuardarUsuario(Email, "jugador");
+        GuardarUsuario("otro@farmeort.com", "otro");
+        usuario.Modificar("Ana", "Pérez", Email, "otro", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
+
+        Assert.ThrowsExactly<NicknameYaExisteException>(() => _repositorio.Actualizar(usuario));
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual("jugador", _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id).Nickname);
+        AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Actualizar_ErrorDeBaseConservandoEmailYNickname_PropagaDbUpdateException()
+    {
+        var usuario = GuardarUsuario(Email, "jugador");
+        _baseDeDatos.Contexto.Database.ExecuteSqlRaw(
+            "CREATE TRIGGER RechazaActualizaciones BEFORE UPDATE ON Usuarios BEGIN SELECT RAISE(ABORT, 'error de base'); END;");
+        usuario.Modificar("Carla", "Gómez", Email, "jugador", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Actualizar(usuario));
+        AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Eliminar_UsuarioConSesiones_GuardaLaBajaYCierraSoloSusSesiones()
+    {
+        var guardado = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
+        var otro = CrearUsuario("otro@farmeort.com", Rol.Jugador, "hash-otro");
+        var sesionDelOtro = Guid.NewGuid();
+        _baseDeDatos.Contexto.Sesiones.AddRange(
+            new Sesion(Guid.NewGuid(), guardado),
+            new Sesion(Guid.NewGuid(), guardado),
+            new Sesion(sesionDelOtro, otro));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var usuario = _repositorio.ObtenerPorId(guardado.Id)!;
+        usuario.Eliminar();
+
+        _repositorio.Eliminar(usuario);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.IsTrue(_baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id).Eliminado);
+        Assert.IsFalse(_baseDeDatos.Contexto.Sesiones.Any(s => s.UsuarioId == usuario.Id));
+        Assert.IsTrue(_baseDeDatos.Contexto.Sesiones.Any(s => s.Token == sesionDelOtro));
+    }
+
+    // Deja el usuario guardado y cargado por el repositorio, como lo recibe el servicio antes de modificarlo.
+    private Usuario GuardarUsuario(string email, string nickname)
+    {
+        var usuario = new Usuario("Ana", "Pérez", email, nickname, new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        return _repositorio.ObtenerPorId(usuario.Id)!;
     }
 
     private void AssertPuedeGuardarOtraAlta()

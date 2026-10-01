@@ -14,12 +14,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public Usuario? ObtenerPorId(int id)
     {
-        return contexto.Usuarios.Find(id);
+        return contexto.Usuarios.SingleOrDefault(u => u.Id == id && !u.Eliminado);
     }
 
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
     {
-        IQueryable<Usuario> consulta = contexto.Usuarios;
+        var consulta = contexto.Usuarios.Where(u => !u.Eliminado);
         if(!string.IsNullOrWhiteSpace(filtro.Nombre))
         {
             var nombre = filtro.Nombre.ToLower();
@@ -53,6 +53,26 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
     public void Agregar(Usuario usuario)
     {
         contexto.Usuarios.Add(usuario);
+        Guardar(usuario);
+    }
+
+    public void Actualizar(Usuario usuario)
+    {
+        contexto.Usuarios.Update(usuario);
+        Guardar(usuario);
+    }
+
+    // La baja y el cierre de sesiones se guardan juntos: un solo SaveChanges es una transacción.
+    public void Eliminar(Usuario usuario)
+    {
+        contexto.Sesiones.RemoveRange(contexto.Sesiones.Where(s => s.UsuarioId == usuario.Id));
+        contexto.Usuarios.Update(usuario);
+        contexto.SaveChanges();
+    }
+
+    // Otro usuario puede ocupar el email o nickname entre la validación del servicio y el guardado (D-23).
+    private void Guardar(Usuario usuario)
+    {
         try
         {
             contexto.SaveChanges();
@@ -60,12 +80,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         catch(DbUpdateException)
         {
             contexto.Entry(usuario).State = EntityState.Detached;
-            if(ObtenerPorEmail(usuario.Email) is not null)
+            if(contexto.Usuarios.Any(u => u.Email == usuario.Email && u.Id != usuario.Id))
             {
                 throw new EmailYaExisteException();
             }
 
-            if(ExistePorNickname(usuario.Nickname))
+            if(contexto.Usuarios.Any(u => u.Nickname == usuario.Nickname && u.Id != usuario.Id))
             {
                 throw new NicknameYaExisteException();
             }
