@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Servicios.Torneos;
@@ -25,6 +26,7 @@ public sealed class ServicioTorneosTests
 
     private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
+    private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
     private Mock<TimeProvider> _reloj = null!;
     private Usuario _organizador = null!;
     private ServicioTorneos _servicio = null!;
@@ -34,9 +36,10 @@ public sealed class ServicioTorneosTests
     {
         _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
+        _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
         _organizador = CrearUsuario(OrganizadorId, Rol.Organizador);
-        _servicio = new ServicioTorneos(_repositorioTorneos.Object, _repositorioUsuarios.Object, _reloj.Object);
+        _servicio = new ServicioTorneos(_repositorioTorneos.Object, _repositorioUsuarios.Object, _repositorioInscripciones.Object, _reloj.Object);
     }
 
     [TestMethod]
@@ -355,6 +358,17 @@ public sealed class ServicioTorneosTests
 
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Cancelar(99));
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(3);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: false);
+
+        Assert.AreEqual(3, response.InscripcionesAceptadas);
     }
 
     private void ConfigurarAltaValida()

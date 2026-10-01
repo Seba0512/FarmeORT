@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Torneos;
@@ -11,6 +12,7 @@ namespace FarmeORT.Servicios.Torneos;
 internal sealed class ServicioTorneos(
     IRepositorioTorneos repositorioTorneos,
     IRepositorioUsuarios repositorioUsuarios,
+    IRepositorioInscripciones repositorioInscripciones,
     TimeProvider reloj) : IServicioTorneos
 {
     public TorneoResponse Crear(TorneoRequest request)
@@ -33,6 +35,7 @@ internal sealed class ServicioTorneos(
 
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
     {
+        _ = repositorioInscripciones;
         var torneo = ObtenerTorneoExistente(id);
 
         // Para el anónimo un torneo cancelado no existe: se responde igual que si no estuviera (D-36).
