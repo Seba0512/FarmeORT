@@ -3,6 +3,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.Servicios.Torneos;
@@ -59,5 +60,15 @@ public sealed class ServicioSkillsObligatoriasTests
         Assert.AreEqual("SIXSEVEN", response.Codigo);
         Assert.AreEqual(CategoriasSkill.Gestual, response.Categoria);
         Assert.IsTrue(response.Activa);
+    }
+
+    [TestMethod]
+    public void Asociar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+
+        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(
+            () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, 99));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 }
