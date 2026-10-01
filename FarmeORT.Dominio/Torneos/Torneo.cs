@@ -104,6 +104,12 @@ public sealed class Torneo
             throw new TorneoNoModificableException();
         }
 
+        // Una skill inactiva no se agrega como obligatoria nueva; las ya asociadas se conservan (no es retroactivo).
+        if(!skill.Activa)
+        {
+            throw new SkillInactivaException();
+        }
+
         _skillsObligatorias.Add(skill);
     }
 
