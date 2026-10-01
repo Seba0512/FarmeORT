@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
@@ -119,6 +120,55 @@ public sealed class BatallaTests
         Assert.AreEqual(fecha, lanzamiento.Fecha);
         Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
         Assert.AreEqual(siguienteId, batalla.JugadorTurnoId);
+    }
+
+    [TestMethod]
+    [DataRow(7)]
+    [DataRow(8)]
+    public void Lanzar_OctavoTurno_CompletaCuatroPorJugadorYPasaAEnArbitraje(int inicialId)
+    {
+        var batalla = CrearBatallaConHistorial(7, inicialId);
+        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var skill = jugador.Repertorio.Single(d => d.SkillId == 4).Skill;
+        var fecha = new DateTimeOffset(2026, 10, 1, 17, 0, 0, TimeSpan.Zero);
+
+        var lanzamiento = batalla.Lanzar(jugador, skill, fecha);
+
+        Assert.AreEqual(8, lanzamiento.Turno);
+        Assert.HasCount(8, batalla.Lanzamientos);
+        Assert.AreEqual(4, batalla.Lanzamientos.Count(l => l.JugadorId == 7));
+        Assert.AreEqual(4, batalla.Lanzamientos.Count(l => l.JugadorId == 8));
+        Assert.AreEqual(EstadoBatalla.EnArbitraje, batalla.Estado);
+        Assert.IsNull(batalla.JugadorTurnoId);
+    }
+
+    private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        var inicial = inicialId == 7 ? jugador1 : jugador2;
+        var rival = inicialId == 7 ? jugador2 : jugador1;
+        var batalla = new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(inicial)) { Id = 12 };
+        for(var id = 1; id <= 4; id++)
+        {
+            var skill = CrearSkill(id);
+            jugador1.DeclararSkill(skill, 4, FechaActual);
+            jugador2.DeclararSkill(skill, 4, FechaActual);
+        }
+
+        var historial = (List<Lanzamiento>)typeof(Batalla)
+            .GetField("_lanzamientos", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(batalla)!;
+        for(var turno = 1; turno <= cantidad; turno++)
+        {
+            var jugador = turno % 2 == 1 ? inicial : rival;
+            var skill = jugador.Repertorio.Single(d => d.SkillId == ((turno + 1) / 2)).Skill;
+            historial.Add(new Lanzamiento(batalla, turno, jugador, skill,
+                new DateTimeOffset(2026, 10, 1, 16, turno, 0, TimeSpan.Zero)));
+        }
+
+        typeof(Batalla).GetProperty(nameof(Batalla.JugadorTurnoId))!.SetValue(batalla,
+            cantidad % 2 == 0 ? inicial.Id : rival.Id);
+        return batalla;
     }
 
     private static Skill CrearSkill(int id)
