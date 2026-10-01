@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
@@ -25,21 +26,7 @@ public sealed class Torneo
         DateOnly fechaActual)
     {
         ValidarInicioNoPasado(fechaInicio, fechaActual);
-        ValidarCodigo(codigo);
-        ValidarNombre(nombre);
-        ValidarDescripcion(descripcion);
-        ValidarCupo(cupo);
-        ValidarFechas(fechaInicio, fechaFin);
-        ValidarOrganizador(organizador);
-
-        Codigo = codigo;
-        Nombre = nombre;
-        Descripcion = descripcion;
-        FechaInicio = fechaInicio;
-        FechaFin = fechaFin;
-        Cupo = cupo;
-        Organizador = organizador;
-        OrganizadorId = organizador.Id;
+        AsignarDatos(codigo, nombre, descripcion, fechaInicio, fechaFin, cupo, organizador);
         Estado = EstadoTorneo.Abierto;
     }
 
@@ -81,14 +68,7 @@ public sealed class Torneo
             throw new TorneoNoModificableException();
         }
 
-        Codigo = codigo;
-        Nombre = nombre;
-        Descripcion = descripcion;
-        FechaInicio = fechaInicio;
-        FechaFin = fechaFin;
-        Cupo = cupo;
-        Organizador = organizador;
-        OrganizadorId = organizador.Id;
+        AsignarDatos(codigo, nombre, descripcion, fechaInicio, fechaFin, cupo, organizador);
     }
 
     // Solo se cancela un torneo que todavía se puede disputar: Abierto o En curso.
@@ -100,6 +80,34 @@ public sealed class Torneo
         }
 
         Estado = EstadoTorneo.Cancelado;
+    }
+
+    // Valida todo antes de asignar: un dato inválido no deja el torneo a medio cambiar.
+    [MemberNotNull(nameof(Organizador))]
+    private void AsignarDatos(
+        string codigo,
+        string nombre,
+        string descripcion,
+        DateOnly fechaInicio,
+        DateOnly fechaFin,
+        int cupo,
+        Usuario organizador)
+    {
+        ValidarCodigo(codigo);
+        ValidarNombre(nombre);
+        ValidarDescripcion(descripcion);
+        ValidarCupo(cupo);
+        ValidarFechas(fechaInicio, fechaFin);
+        ValidarOrganizador(organizador);
+
+        Codigo = codigo;
+        Nombre = nombre;
+        Descripcion = descripcion;
+        FechaInicio = fechaInicio;
+        FechaFin = fechaFin;
+        Cupo = cupo;
+        Organizador = organizador;
+        OrganizadorId = organizador.Id;
     }
 
     private static void ValidarCodigo(string codigo)
