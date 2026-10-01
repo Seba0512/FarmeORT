@@ -70,6 +70,19 @@ public sealed class RepositorioRankingTests
         CollectionAssert.AreEqual(new[] { "activo" }, ranking.Select(u => u.Nickname).ToArray());
     }
 
+    [TestMethod]
+    public void ListarRanking_MasJugadoresQueLaCantidad_DevuelveSoloLosPrimeros()
+    {
+        AgregarUsuario("tercero", 1300);
+        AgregarUsuario("primero", 1500);
+        AgregarUsuario("segundo", 1400);
+        GuardarYLimpiar();
+
+        var ranking = _repositorio.ListarRanking(2);
+
+        CollectionAssert.AreEqual(new[] { "primero", "segundo" }, ranking.Select(u => u.Nickname).ToArray());
+    }
+
     private Usuario AgregarUsuario(string nickname, int elo, Rol rol = Rol.Jugador)
     {
         var usuario = new Usuario("Nombre", "Apellido", $"{nickname}@farmeort.com", nickname, new DateOnly(2000, 1, 15), rol, "hash", FechaActual);
