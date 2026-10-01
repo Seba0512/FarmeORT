@@ -1,8 +1,10 @@
 using FarmeORT.IRepositorios.Sesiones;
 using FarmeORT.IRepositorios.Skills;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Repositorios.Sesiones;
 using FarmeORT.Repositorios.Skills;
+using FarmeORT.Repositorios.Torneos;
 using FarmeORT.Repositorios.Usuarios;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +19,7 @@ public sealed class RegistroRepositoriosTests
     [DataRow(typeof(IRepositorioUsuarios), typeof(RepositorioUsuarios))]
     [DataRow(typeof(IRepositorioSesiones), typeof(RepositorioSesiones))]
     [DataRow(typeof(IRepositorioSkills), typeof(RepositorioSkills))]
+    [DataRow(typeof(IRepositorioTorneos), typeof(RepositorioTorneos))]
     [DataRow(typeof(FarmeORTContext), typeof(FarmeORTContext))]
     public void AgregarRepositorios_TipoDeAccesoADatos_RegistraImplementacionScoped(Type tipo, Type implementacion)
     {
