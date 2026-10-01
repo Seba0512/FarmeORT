@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Skills;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.Repositorios.Skills;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Skills;
 
@@ -205,6 +206,17 @@ public sealed class RepositorioSkillsTests
         Assert.ThrowsExactly<CodigoSkillYaExisteException>(() => _repositorio.Agregar(nueva));
         Assert.AreEqual(1, _baseDeDatos.Contexto.Skills.Count(s => s.Codigo == "SIXSEVEN"));
         AssertPuedeGuardarOtraSkill();
+    }
+
+    [TestMethod]
+    public void Actualizar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoSkillYaExisteSinCambiarLaSkill()
+    {
+        GuardarSkills(CrearSkill("TRALALERO"));
+        var skill = GuardarYCargar(CrearSkill("SIXSEVEN"));
+        skill.Modificar("TRALALERO", "Six-Seven", Descripcion, CategoriaSkill.Gestual, 2);
+
+        Assert.ThrowsExactly<CodigoSkillYaExisteException>(() => _repositorio.Actualizar(skill));
+        Assert.AreEqual("SIXSEVEN", _baseDeDatos.Contexto.Skills.AsNoTracking().Single(s => s.Id == skill.Id).Codigo);
     }
 
     private static FiltroSkills SinFiltros()
