@@ -22,4 +22,6 @@ public interface IRepositorioUsuarios
     void Eliminar(Usuario usuario);
 
     void GuardarRepertorio(Usuario jugador);
+
+    IReadOnlyList<Usuario> ListarRanking(int cantidad);
 }

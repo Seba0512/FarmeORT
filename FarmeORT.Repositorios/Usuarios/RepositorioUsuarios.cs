@@ -104,6 +104,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         }
     }
 
+    public IReadOnlyList<Usuario> ListarRanking(int cantidad)
+    {
+        _ = cantidad;
+        throw new NotImplementedException();
+    }
+
     private bool EstaGuardada(SkillDeclarada declarada)
     {
         return contexto.Set<SkillDeclarada>().Any(d => d.JugadorId == declarada.JugadorId && d.SkillId == declarada.SkillId);
