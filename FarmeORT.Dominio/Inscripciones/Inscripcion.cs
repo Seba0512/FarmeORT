@@ -51,10 +51,7 @@ public sealed class Inscripcion
     // No controla el estado del torneo: también se usa al cancelar un torneo En curso.
     public void Cancelar()
     {
-        if(Estado != EstadoInscripcion.Aceptada)
-        {
-            throw new InscripcionNoActivaException();
-        }
+        ValidarAceptada();
 
         Estado = EstadoInscripcion.Cancelada;
     }
@@ -62,11 +59,17 @@ public sealed class Inscripcion
     // La usa el fallo de una batalla: el perdedor queda fuera del torneo.
     public void Eliminar()
     {
+        ValidarAceptada();
+
+        Estado = EstadoInscripcion.Eliminada;
+    }
+
+    // Cancelada y Eliminada son estados finales.
+    private void ValidarAceptada()
+    {
         if(Estado != EstadoInscripcion.Aceptada)
         {
             throw new InscripcionNoActivaException();
         }
-
-        Estado = EstadoInscripcion.Eliminada;
     }
 }
