@@ -39,6 +39,9 @@ public sealed class ServicioTorneosTests
         _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
         _organizador = CrearUsuario(OrganizadorId, Rol.Organizador);
+
+        // Por defecto el torneo no tiene inscriptos; los tests que lo necesitan redefinen la cantidad.
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(0);
         _servicio = new ServicioTorneos(_repositorioTorneos.Object, _repositorioUsuarios.Object, _repositorioInscripciones.Object, _reloj.Object);
     }
 

@@ -30,12 +30,11 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Agregar(torneo);
-        return CrearResponse<TorneoResponse>(torneo);
+        return CrearResponse<TorneoResponse>(torneo, 0);
     }
 
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
     {
-        _ = repositorioInscripciones;
         var torneo = ObtenerTorneoExistente(id);
 
         // Para el anónimo un torneo cancelado no existe: se responde igual que si no estuviera (D-36).
@@ -44,7 +43,7 @@ internal sealed class ServicioTorneos(
             throw new TorneoNoEncontradoException();
         }
 
-        return CrearResponse<TorneoDetalleResponse>(torneo);
+        return CrearResponse<TorneoDetalleResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
@@ -65,7 +64,7 @@ internal sealed class ServicioTorneos(
             Paginacion.AjustarLimite(filtro.Limit),
             Paginacion.AjustarDesplazamiento(filtro.Offset));
         var torneos = repositorioTorneos.Listar(filtroRepositorio);
-        return torneos.Select(CrearResponse<TorneoResponse>).ToList();
+        return torneos.Select(t => CrearResponse<TorneoResponse>(t, 0)).ToList();
     }
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
@@ -90,7 +89,7 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo);
+        return CrearResponse<TorneoResponse>(torneo, 0);
     }
 
     public TorneoResponse Cancelar(int id)
@@ -98,7 +97,7 @@ internal sealed class ServicioTorneos(
         var torneo = ObtenerTorneoExistente(id);
         torneo.Cancelar();
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo);
+        return CrearResponse<TorneoResponse>(torneo, 0);
     }
 
     private Torneo ObtenerTorneoExistente(int id)
@@ -146,7 +145,7 @@ internal sealed class ServicioTorneos(
     }
 
     // El detalle repite los datos del resumen: el mismo mapeo sirve para los dos tipos de respuesta.
-    private static T CrearResponse<T>(Torneo torneo)
+    private static T CrearResponse<T>(Torneo torneo, int inscripcionesAceptadas)
         where T : TorneoResponse, new()
     {
         return new T
@@ -159,6 +158,7 @@ internal sealed class ServicioTorneos(
             FechaInicio = torneo.FechaInicio,
             FechaFin = torneo.FechaFin,
             Cupo = torneo.Cupo,
+            InscripcionesAceptadas = inscripcionesAceptadas,
             OrganizadorId = torneo.OrganizadorId,
             Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
         };
