@@ -63,6 +63,23 @@ public sealed class ServicioSkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void Listar_TorneoConObligatorias_LasDevuelveOrdenadasPorId()
+    {
+        var otra = new Skill("TRALALERO", "Tralalero", "Canto con ritmo de tarantela italiana.", CategoriaSkill.Meme, 5)
+        {
+            Id = 1,
+        };
+        _torneo.AsociarSkillObligatoria(_skill);
+        _torneo.AsociarSkillObligatoria(otra);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+
+        var skills = _servicio.Listar(TorneoId, esAnonimo: true);
+
+        CollectionAssert.AreEqual(new[] { 1, SkillId }, skills.Select(s => s.Id).ToArray());
+        Assert.AreEqual("TRALALERO", skills[0].Codigo);
+    }
+
+    [TestMethod]
     public void Quitar_SkillAsociada_LaQuitaDelTorneoYGuarda()
     {
         _torneo.AsociarSkillObligatoria(_skill);
