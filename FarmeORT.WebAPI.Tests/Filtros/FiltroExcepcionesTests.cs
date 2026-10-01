@@ -80,6 +80,13 @@ public sealed class FiltroExcepcionesTests
     [DataRow(typeof(SkillObligatoriaYaAsociadaException), StatusCodes.Status409Conflict, "MANDATORY_SKILL_ALREADY_ADDED", "La skill ya es obligatoria en este torneo.")]
     [DataRow(typeof(LimiteSkillsObligatoriasException), StatusCodes.Status409Conflict, "MANDATORY_SKILLS_LIMIT_REACHED", "Un torneo puede tener como máximo 2 skills obligatorias.")]
     [DataRow(typeof(SkillObligatoriaNoEncontradaException), StatusCodes.Status404NotFound, "MANDATORY_SKILL_NOT_FOUND", "La skill no es obligatoria en este torneo.")]
+    [DataRow(typeof(InscripcionNoEncontradaException), StatusCodes.Status404NotFound, "REGISTRATION_NOT_FOUND", "No existe una inscripción con ese id.")]
+    [DataRow(typeof(NoEsDuenoDeLaInscripcionException), StatusCodes.Status403Forbidden, "NOT_REGISTRATION_OWNER", "La inscripción no es tuya.")]
+    [DataRow(typeof(TorneoNoAbiertoException), StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto a inscripciones.")]
+    [DataRow(typeof(InscripcionYaExisteException), StatusCodes.Status409Conflict, "ALREADY_REGISTERED", "Ya tenés una inscripción aceptada en este torneo.")]
+    [DataRow(typeof(TorneoCompletoException), StatusCodes.Status409Conflict, "TOURNAMENT_FULL", "El torneo ya alcanzó su cupo de inscripciones aceptadas.")]
+    [DataRow(typeof(InscripcionNoActivaException), StatusCodes.Status409Conflict, "REGISTRATION_NOT_ACTIVE", "La inscripción ya no está aceptada.")]
+    [DataRow(typeof(SkillObligatoriaEnUsoException), StatusCodes.Status409Conflict, "MANDATORY_SKILL_IN_USE", "No podés quitar la skill: es obligatoria en un torneo en el que estás inscripto.")]
     public void OnException_ErrorMapeado_DevuelveSuStatusYCodigo(Type tipo, int status, string codigo, string mensaje)
     {
         var contexto = CrearContexto((Exception)Activator.CreateInstance(tipo)!);
