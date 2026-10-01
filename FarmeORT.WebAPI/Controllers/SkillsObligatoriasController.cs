@@ -12,8 +12,8 @@ public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias ser
     [HttpGet]
     public IActionResult Listar(int torneoId)
     {
-        _ = torneoId;
-        throw new NotImplementedException();
+        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
+        return Ok(servicioSkillsObligatorias.Listar(torneoId, esAnonimo));
     }
 
     [HttpPost]
