@@ -26,6 +26,7 @@ public sealed class RegistroServiciosTests
     [DataRow(typeof(IServicioSkills), typeof(ServicioSkills))]
     [DataRow(typeof(IServicioTorneos), typeof(ServicioTorneos))]
     [DataRow(typeof(IServicioRepertorio), typeof(ServicioRepertorio))]
+    [DataRow(typeof(IServicioSkillsObligatorias), typeof(ServicioSkillsObligatorias))]
     [DataRow(typeof(ICalculadorElo), typeof(CalculadorEloBase))]
     public void AgregarServicios_InterfazDeServicio_RegistraImplementacionScoped(Type interfaz, Type implementacion)
     {

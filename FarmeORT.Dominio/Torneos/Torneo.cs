@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 
@@ -14,6 +15,9 @@ public sealed class Torneo
     private const int LargoMaximoDescripcion = 500;
     private const int CupoMinimo = 4;
     private const int CupoMaximo = 64;
+    private const int MaximoSkillsObligatorias = 2;
+
+    private readonly List<Skill> _skillsObligatorias = [];
 
     public Torneo(
         string codigo,
@@ -56,6 +60,11 @@ public sealed class Torneo
 
     public Usuario Organizador { get; private set; }
 
+    public IReadOnlyCollection<Skill> SkillsObligatorias => _skillsObligatorias;
+
+    // El anónimo solo ve torneos Abiertos, En curso o Finalizados (letra 1.3).
+    public bool EsVisibleParaAnonimos => Estado != EstadoTorneo.Cancelado;
+
     public void Modificar(
         string codigo,
         string nombre,
@@ -66,11 +75,7 @@ public sealed class Torneo
         Usuario organizador,
         DateOnly fechaActual)
     {
-        // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
-        if(Estado != EstadoTorneo.Abierto)
-        {
-            throw new TorneoNoModificableException();
-        }
+        ValidarModificable();
 
         // Una fecha de inicio que ya pasó y no cambia no impide editar el resto (D-37).
         if(fechaInicio != FechaInicio)
@@ -90,6 +95,52 @@ public sealed class Torneo
         }
 
         Estado = EstadoTorneo.Cancelado;
+    }
+
+    public void AsociarSkillObligatoria(Skill skill)
+    {
+        ValidarModificable();
+
+        // Una skill inactiva no se agrega como obligatoria nueva; las ya asociadas se conservan (no es retroactivo).
+        if(!skill.Activa)
+        {
+            throw new SkillInactivaException();
+        }
+
+        if(_skillsObligatorias.Any(s => s.Id == skill.Id))
+        {
+            throw new SkillObligatoriaYaAsociadaException();
+        }
+
+        // Con 2 obligatorias, a cada jugador le quedan al menos 2 de sus 4 lanzamientos libres.
+        if(_skillsObligatorias.Count == MaximoSkillsObligatorias)
+        {
+            throw new LimiteSkillsObligatoriasException();
+        }
+
+        _skillsObligatorias.Add(skill);
+    }
+
+    public void QuitarSkillObligatoria(int skillId)
+    {
+        ValidarModificable();
+
+        var obligatoria = _skillsObligatorias.SingleOrDefault(s => s.Id == skillId);
+        if(obligatoria == null)
+        {
+            throw new SkillObligatoriaNoEncontradaException();
+        }
+
+        _skillsObligatorias.Remove(obligatoria);
+    }
+
+    // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
+    private void ValidarModificable()
+    {
+        if(Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoModificableException();
+        }
     }
 
     // Valida todo antes de asignar: un dato inválido no deja el torneo a medio cambiar.

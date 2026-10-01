@@ -42,6 +42,16 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_CANCELLABLE", "Solo se puede cancelar un torneo Abierto o En curso."),
         [typeof(OperacionSobreSiMismoException)] =
             new(StatusCodes.Status409Conflict, "SELF_OPERATION_NOT_ALLOWED", "Un usuario no puede modificarse ni eliminarse a sí mismo."),
+
+        // Skills obligatorias del torneo (D-40).
+        [typeof(NoEsOrganizadorDelTorneoException)] =
+            new(StatusCodes.Status403Forbidden, "NOT_TOURNAMENT_ORGANIZER", "No sos el organizador asignado a este torneo."),
+        [typeof(SkillObligatoriaYaAsociadaException)] =
+            new(StatusCodes.Status409Conflict, "MANDATORY_SKILL_ALREADY_ADDED", "La skill ya es obligatoria en este torneo."),
+        [typeof(LimiteSkillsObligatoriasException)] =
+            new(StatusCodes.Status409Conflict, "MANDATORY_SKILLS_LIMIT_REACHED", "Un torneo puede tener como máximo 2 skills obligatorias."),
+        [typeof(SkillObligatoriaNoEncontradaException)] =
+            new(StatusCodes.Status404NotFound, "MANDATORY_SKILL_NOT_FOUND", "La skill no es obligatoria en este torneo."),
     };
 
     public void OnException(ExceptionContext context)
