@@ -111,6 +111,16 @@ public sealed class SkillTests
         Assert.AreEqual("La descripción debe tener entre 20 y 300 caracteres.", excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(6)]
+    public void Constructor_DificultadFueraDeRango_LanzaDatosInvalidos(int dificultad)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearSkill(dificultad: dificultad));
+
+        Assert.AreEqual("La dificultad debe ser un entero entre 1 y 5.", excepcion.Message);
+    }
+
     private static Skill CrearSkill(
         string codigo = "SIXSEVEN",
         string nombre = "Six-Seven",
