@@ -256,6 +256,20 @@ public sealed class ServicioInscripcionesTests
         Assert.IsEmpty(inscripciones);
     }
 
+    [TestMethod]
+    [DataRow("Pendiente")]
+    [DataRow("aceptada")]
+    [DataRow("1")]
+    public void Listar_EstadoInexistente_NoFiltraPorEstado(string estado)
+    {
+        var filtro = new FiltroInscripciones(null, null, null, null, null, null, 20, 0);
+        _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
+
+        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest { Estado = estado }, 1, Roles.Administrador);
+
+        Assert.IsEmpty(inscripciones);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
