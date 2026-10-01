@@ -150,6 +150,15 @@ public sealed class ServicioTorneosTests
         Assert.AreEqual(nameof(EstadoTorneo.Cancelado), response.Estado);
     }
 
+    [TestMethod]
+    public void Cancelar_TorneoInexistente_LanzaTorneoNoEncontradoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Cancelar(99));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
