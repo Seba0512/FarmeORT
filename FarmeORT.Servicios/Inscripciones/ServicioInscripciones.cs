@@ -39,7 +39,6 @@ internal sealed class ServicioInscripciones(
 
     public IReadOnlyList<InscripcionResponse> Listar(FiltroInscripcionesRequest filtro, int usuarioId, string rol)
     {
-        _ = rol;
         EstadoInscripcion? estado = null;
         if(filtro.Estado != null)
         {
@@ -52,7 +51,7 @@ internal sealed class ServicioInscripciones(
             filtro.FechaDesde,
             filtro.FechaHasta,
             rol == Roles.Jugador ? usuarioId : null,
-            null,
+            rol == Roles.Organizador ? usuarioId : null,
             filtro.Limit,
             filtro.Offset);
         return repositorioInscripciones.Listar(filtroRepositorio).Select(CrearResponse).ToList();
