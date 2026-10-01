@@ -15,7 +15,7 @@ internal sealed class ServicioTorneos(
 {
     public TorneoResponse Crear(TorneoRequest request)
     {
-        var datos = ObtenerDatosObligatorios(request);
+        var datos = ObtenerDatosDelTorneo(request);
         ValidarCodigoDisponible(request.Codigo);
         var organizador = ObtenerUsuarioExistente(datos.OrganizadorId);
         var torneo = new Torneo(
@@ -67,7 +67,7 @@ internal sealed class ServicioTorneos(
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
     {
-        var datos = ObtenerDatosObligatorios(request);
+        var datos = ObtenerDatosDelTorneo(request);
         var torneo = ObtenerTorneoExistente(id);
         var organizador = ObtenerUsuarioExistente(datos.OrganizadorId);
 
@@ -142,25 +142,13 @@ internal sealed class ServicioTorneos(
         return null;
     }
 
-    private static DatosObligatorios ObtenerDatosObligatorios(TorneoRequest request)
+    private static DatosDelTorneo ObtenerDatosDelTorneo(TorneoRequest request)
     {
-        return new DatosObligatorios(
-            ObtenerObligatorio(request.FechaInicio, "La fecha de inicio es obligatoria."),
-            ObtenerObligatorio(request.FechaFin, "La fecha de fin es obligatoria."),
-            ObtenerObligatorio(request.Cupo, "El cupo es obligatorio."),
-            ObtenerObligatorio(request.OrganizadorId, "El organizador es obligatorio."));
-    }
-
-    // El DTO ya exige estos datos; el servicio los vuelve a controlar porque no depende de quién lo invoque.
-    private static T ObtenerObligatorio<T>(T? valor, string mensaje)
-        where T : struct
-    {
-        if(valor == null)
-        {
-            throw new DatosInvalidosException(mensaje);
-        }
-
-        return valor.Value;
+        return new DatosDelTorneo(
+            DatosObligatorios.Obtener(request.FechaInicio, "La fecha de inicio es obligatoria."),
+            DatosObligatorios.Obtener(request.FechaFin, "La fecha de fin es obligatoria."),
+            DatosObligatorios.Obtener(request.Cupo, "El cupo es obligatorio."),
+            DatosObligatorios.Obtener(request.OrganizadorId, "El organizador es obligatorio."));
     }
 
     private DateOnly ObtenerFechaActual()
@@ -188,5 +176,5 @@ internal sealed class ServicioTorneos(
     }
 
     // Datos que el DTO declara opcionales para poder detectar cuándo se omiten.
-    private sealed record DatosObligatorios(DateOnly FechaInicio, DateOnly FechaFin, int Cupo, int OrganizadorId);
+    private sealed record DatosDelTorneo(DateOnly FechaInicio, DateOnly FechaFin, int Cupo, int OrganizadorId);
 }
