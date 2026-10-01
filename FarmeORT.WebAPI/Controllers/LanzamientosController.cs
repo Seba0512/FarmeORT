@@ -14,6 +14,8 @@ public sealed class LanzamientosController(IServicioLanzamientos servicioLanzami
     [HttpPost]
     public IActionResult Lanzar(int id, [FromBody] LanzamientoRequest request)
     {
-        throw new NotImplementedException(servicioLanzamientos.GetType().Name);
+        var jugadorId = HttpContext.ObtenerSesionAutenticada().UsuarioId;
+        var response = servicioLanzamientos.Lanzar(id, jugadorId, request);
+        return Created($"/api/v1/batallas/{id}/lanzamientos", response);
     }
 }
