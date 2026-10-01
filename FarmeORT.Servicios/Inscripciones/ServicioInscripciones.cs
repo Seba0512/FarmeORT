@@ -39,10 +39,24 @@ internal sealed class ServicioInscripciones(
 
     public IReadOnlyList<InscripcionResponse> Listar(FiltroInscripcionesRequest filtro, int usuarioId, string rol)
     {
-        _ = filtro;
         _ = usuarioId;
         _ = rol;
-        throw new NotImplementedException();
+        EstadoInscripcion? estado = null;
+        if(filtro.Estado != null)
+        {
+            estado = Enum.Parse<EstadoInscripcion>(filtro.Estado);
+        }
+
+        var filtroRepositorio = new FiltroInscripciones(
+            filtro.TorneoId,
+            estado,
+            filtro.FechaDesde,
+            filtro.FechaHasta,
+            null,
+            null,
+            filtro.Limit,
+            filtro.Offset);
+        return repositorioInscripciones.Listar(filtroRepositorio).Select(CrearResponse).ToList();
     }
 
     public InscripcionResponse ObtenerPorId(int id, int usuarioId, string rol)
