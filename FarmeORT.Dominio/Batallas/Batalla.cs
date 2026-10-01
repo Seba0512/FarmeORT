@@ -7,7 +7,16 @@ public sealed class Batalla
 {
     public Batalla(Torneo torneo, int numeroRonda, Usuario jugador1, Usuario jugador2, ISorteo sorteo)
     {
-        throw new NotImplementedException();
+        Torneo = torneo;
+        TorneoId = torneo.Id;
+        NumeroRonda = numeroRonda;
+        Jugador1 = jugador1;
+        Jugador1Id = jugador1.Id;
+        Jugador2 = jugador2;
+        Jugador2Id = jugador2.Id;
+        Estado = EstadoBatalla.Pendiente;
+        JugadorInicialId = sorteo.ElegirEntre(jugador1, jugador2).Id;
+        JugadorTurnoId = JugadorInicialId;
     }
 
     public int Id { get; init; }
