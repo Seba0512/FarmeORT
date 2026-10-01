@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Batallas;
 
@@ -49,6 +50,11 @@ public sealed class Batalla
 
     public void Cancelar()
     {
+        if(Estado != EstadoBatalla.Pendiente && Estado != EstadoBatalla.EnArbitraje)
+        {
+            throw new BatallaNoCancelableException();
+        }
+
         Estado = EstadoBatalla.Cancelada;
         JugadorTurnoId = null;
     }
