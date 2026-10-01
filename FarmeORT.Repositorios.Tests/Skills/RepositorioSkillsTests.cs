@@ -111,6 +111,19 @@ public sealed class RepositorioSkillsTests
         CollectionAssert.AreEqual(new[] { "SIXSEVEN", "AURASTARE" }, skills.Select(s => s.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Listar_FiltroPorDificultad_DevuelveSoloLasDeEsaDificultad()
+    {
+        GuardarSkills(
+            CrearSkill("SIXSEVEN", dificultad: 2),
+            CrearSkill("TRALALERO", dificultad: 5),
+            CrearSkill("AURASTARE", dificultad: 2));
+
+        var skills = _repositorio.Listar(SinFiltros() with { Dificultad = 2 });
+
+        CollectionAssert.AreEqual(new[] { "SIXSEVEN", "AURASTARE" }, skills.Select(s => s.Codigo).ToArray());
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
