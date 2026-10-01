@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Skills;
+using FarmeORT.IRepositorios.Skills;
 using FarmeORT.Repositorios.Skills;
 
 namespace FarmeORT.Repositorios.Tests.Skills;
@@ -85,6 +86,21 @@ public sealed class RepositorioSkillsTests
         var existe = _repositorio.ExistePorCodigo("TRALALERO");
 
         Assert.IsFalse(existe);
+    }
+
+    [TestMethod]
+    public void Listar_SinFiltros_DevuelveTodasOrdenadasPorId()
+    {
+        GuardarSkills(CrearSkill("TRALALERO"), CrearSkill("SIXSEVEN"));
+
+        var skills = _repositorio.Listar(SinFiltros());
+
+        CollectionAssert.AreEqual(new[] { "TRALALERO", "SIXSEVEN" }, skills.Select(s => s.Codigo).ToArray());
+    }
+
+    private static FiltroSkills SinFiltros()
+    {
+        return new FiltroSkills(null, null, null, null, 20, 0);
     }
 
     private void GuardarSkills(params Skill[] skills)
