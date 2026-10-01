@@ -76,9 +76,10 @@ public sealed partial class Usuario
         ContrasenaHash = contrasenaHash;
     }
 
+    // Baja lógica: se conservan los datos para el historial de batallas y torneos.
     public void Eliminar()
     {
-        throw new NotImplementedException();
+        Eliminado = true;
     }
 
     private static void ValidarNombre(string nombre)
