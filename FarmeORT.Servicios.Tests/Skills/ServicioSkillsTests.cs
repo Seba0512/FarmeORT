@@ -153,6 +153,18 @@ public sealed class ServicioSkillsTests
     }
 
     [TestMethod]
+    [DataRow(0)]
+    [DataRow(-5)]
+    public void Listar_LimitMenorAUno_UsaElValorPorDefecto(int limit)
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Limit = limit });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
     public void Modificar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
     {
         _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
