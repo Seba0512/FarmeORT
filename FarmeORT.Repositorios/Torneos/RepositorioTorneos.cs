@@ -7,11 +7,12 @@ namespace FarmeORT.Repositorios.Torneos;
 
 internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositorioTorneos
 {
-    // Se incluye el organizador porque la respuesta muestra su nombre.
+    // Se incluyen el organizador, porque la respuesta muestra su nombre, y las skills obligatorias.
     public Torneo? ObtenerPorId(int id)
     {
         return contexto.Torneos
             .Include(t => t.Organizador)
+            .Include(t => t.SkillsObligatorias)
             .SingleOrDefault(t => t.Id == id);
     }
 
