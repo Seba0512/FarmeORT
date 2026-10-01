@@ -492,6 +492,122 @@ dos altas simultáneas.
 
 ---
 
+### D-22 — Registro público y alta administrativa comparten creación con rol tipado
+
+**Problema:** el registro anónimo no puede permitir elegir rol ni ELO. Reutilizar directamente
+`UsuarioAdminRequest` desde `RegistrarJugador` acoplaba el caso público al contrato administrativo.
+
+**Alternativas consideradas:** duplicar toda la creación; convertir el request público a un DTO
+administrativo; extraer una creación privada común con los datos compartidos y `Rol` como enum.
+
+**Decisión adoptada:** `RegistrarJugador` recibe `RegistroJugadorRequest`, fija `Rol.Jugador` y
+llama a `CrearUsuario`; `Crear` convierte y valida el rol administrativo y llama al mismo método.
+El método común consulta unicidad, obtiene la fecha local, hashea, construye y persiste. Se conserva
+el orden de validaciones de D-20 y el registro no convierte el rol Jugador de enum a texto y viceversa.
+El jugador nace con ELO 1200, sin skills declaradas y sin iniciar sesión automáticamente.
+
+**Location:** se devuelve `/api/v1/usuarios/{id}`, el recurso existente que representa al usuario
+creado. La consulta sigue siendo administrativa: el anónimo recibe la representación en el POST,
+pero no puede consultar esa URL. La especificación exige `UsuarioResponse + Location` y no define
+un GET público de jugadores. Se acepta esta limitación sin inventar una ruta ni ampliar permisos.
+
+**Justificación:** evita duplicar reglas y depender del DTO administrativo desde el registro, y
+mantiene la especificación aprobada. El repertorio del punto 1.4 se implementará con esa funcionalidad.
+
+**Conceptos del curso:** SRP, bajo acoplamiento, reutilización y Controller de GRASP.
+
+**Evidencia:** `ServicioUsuarios.RegistrarJugador`, `Crear` y `CrearUsuario`, `JugadoresController`,
+tests de ambos servicios y `Datos/FarmeORT.postman_collection.json` (rol/ELO adicionales y Location).
+
+**Participación de IA:** Codex implementó el registro y aplicó el refactor solicitado por el usuario
+a partir de la revisión del compañero, quien informó haber consultado a Claude. Se siguieron la
+letra, tabla API, AGENTS.md, contexto local y skills de arquitectura, API, dominio, TDD y revisión.
+
+---
+
+### D-23 — Traducir unicidad al guardar y recuperar el contexto tras un fallo
+
+**Problema:** otra alta puede ocupar el email o nickname entre la validación y `SaveChanges`.
+Además, un guardado fallido dejaba al usuario como `Added`, contaminando el próximo guardado del contexto.
+
+**Alternativas consideradas:** mantener el 500; interpretar mensajes SQL específicos del proveedor;
+consultar las claves después del fallo y traducir el conflicto. Para el tracking: conservarlo,
+limpiar todo el contexto o desasociar únicamente el usuario cuya inserción falló.
+
+**Decisión adoptada:** ante `DbUpdateException`, desasociar el usuario con `EntityState.Detached`,
+consultar email y nickname con los métodos existentes y lanzar sus excepciones de unicidad (409).
+Si no hay esos conflictos, relanzar el error original con `throw;`. No limpiar otras entidades.
+
+**Justificación:** el índice único protege la base; las consultas posteriores permiten expresar
+el conflicto con las excepciones existentes sin depender del texto del proveedor. El usuario fallido
+no se reintenta en otro `SaveChanges`, y otros errores mantienen el tratamiento seguro de 500.
+
+**Conceptos del curso:** encapsulación de persistencia, traducción de excepciones y tracking de EF.
+
+**Evidencia:** `RepositorioUsuarios.Agregar` y tests de email, nickname y error no relacionado con
+esas unicidades, que además guardan otra alta en el mismo contexto después de cada fallo.
+
+**Participación de IA:** Codex reprodujo y corrigió el problema con RED/GREEN separados, siguiendo
+la revisión aportada por el usuario y las skills de TDD, arquitectura y dominio.
+
+---
+
+### D-24 — Compartir las validaciones de datos personales y exigir la fecha en ambas altas
+
+**Problema:** las anotaciones estaban duplicadas entre DTOs y `UsuarioAdminRequest.FechaNacimiento`
+era no anulable. Una fecha omitida llegaba como `01/01/0001`, pasaba la edad mínima y podía persistirse.
+
+**Alternativas consideradas:** mantener dos DTOs independientes con reglas duplicadas; corregir
+solo la fecha administrativa; compartir las propiedades mediante herencia del request público.
+
+**Decisión adoptada:** `UsuarioAdminRequest` extiende `RegistroJugadorRequest` y agrega únicamente
+`Rol`. Las seis propiedades compartidas conservan nombres, anotaciones y mensajes; la fecha es
+`DateOnly?` con `[Required]`. El servicio también exige la fecha, sin inventar una fecha por defecto.
+
+**Justificación:** el alta administrativa exige los mismos datos del registro más el rol (punto 2.1).
+Una única definición evita divergencias. La API distingue ausencia y null del valor de una fecha;
+el dominio sigue recibiendo una fecha concreta. No cambia JSON ni se agregan campos al registro.
+
+**Conceptos del curso:** reutilización, herencia de contratos de datos y validación en el borde y servicio.
+
+**Evidencia:** `UsuarioAdminRequestTests.Validar_JsonSinFechaNacimiento_RechazaFechaOmitida`,
+`ServicioUsuariosTests.Crear_FechaNacimientoOmitida_LanzaDatosInvalidosSinGuardarNiHashear`,
+tests de ambos DTOs y requests administrativos de fecha omitida, nula y válida en Postman.
+
+**Participación de IA:** el compañero identificó el bug en su revisión con Claude; el usuario pidió
+corregirlo. Codex ejecutó y commiteó RED antes de GREEN y realizó el refactor con tests verdes.
+
+---
+
+### D-25 — Rechazar fechas futuras antes del cálculo de edad
+
+**Problema:** `AddYears(13)` podía desbordar con una fecha extrema y producir 500. El guardado
+contra ese desbordamiento daba el mensaje de edad mínima incluso para un nacimiento futuro.
+
+**Alternativas consideradas:** capturar el desbordamiento; agrupar ambos casos con el mensaje de
+edad mínima; validar primero que la fecha no sea futura y luego comprobar los 13 años cumplidos.
+
+**Decisión adoptada:** rechazar una fecha futura antes de llamar a `AddYears`, con el mensaje
+"La fecha de nacimiento no puede ser futura.". Para menores de 13 se conserva el mensaje de edad
+mínima; cumplen la regla quienes cumplen 13 en la fecha local actual. Ambos errores son 400 INVALID_DATA.
+
+**Justificación:** un dato inválido del cliente no debe causar un error del servidor y cada mensaje
+debe describir el problema concreto. Se conserva el reloj local inyectado de D-18.
+
+**Conceptos del curso:** validación de dominio, casos límite y errores REST coherentes.
+
+**Evidencia:** tests de fecha máxima, fecha futura cercana, edad mínima y cumpleaños 13; caso de
+fecha futura extrema en `Datos/FarmeORT.postman_collection.json`.
+
+**Participación de IA:** Codex corrigió el desbordamiento en el registro y luego precisó el mensaje
+solicitado en la revisión, con RED/GREEN separados para ambos cambios.
+
+**Alcance documental de esta revisión:** se versionan esta bitácora y la colección JSON. Por pedido
+expreso del usuario no se generan UML, imágenes ni otros Markdown; los diagramas y evidencias
+gráficas quedan a cargo del equipo para su consolidación en los entregables académicos.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -521,6 +637,7 @@ dos altas simultáneas.
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
 - Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
   eliminar si tiene batallas sin resolver o si organiza un torneo que no está Finalizado ni Cancelado.
-- Si dos altas con el mismo email o nickname llegan al mismo tiempo, el índice único de la base rechaza
-  la segunda, pero hoy esa `DbUpdateException` terminaría en 500 en lugar de 409.
+- ~~Si dos altas con el mismo email o nickname llegan al mismo tiempo, la segunda terminaba en 500.~~
+  Resuelto en D-23: conflicto detectado al guardar → 409; se desasocia el alta fallida y otros errores
+  de base se propagan al tratamiento seguro de 500.
 - Registrar en AGENTS.md que Dominio referencia a Excepciones (D-16).
