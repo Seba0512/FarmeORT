@@ -117,6 +117,18 @@ public sealed class TorneosControllerTests
         CollectionAssert.AreEqual(new[] { Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
 
+    [TestMethod]
+    [DataRow(nameof(TorneosController.Listar))]
+    [DataRow(nameof(TorneosController.ObtenerPorId))]
+    public void Consultas_IncluidoAnonimo_UsanAutenticacionOpcional(string accion)
+    {
+        var metodo = typeof(TorneosController).GetMethod(accion);
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
+    }
+
     private void PrepararContexto(bool autenticado)
     {
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
