@@ -63,6 +63,16 @@ public sealed class ServicioSkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void Asociar_TorneoInexistente_LanzaTorneoNoEncontradoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(
+            () => _servicio.Asociar(99, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
     public void Asociar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneoSinGuardar()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
