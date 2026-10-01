@@ -99,6 +99,11 @@ public sealed class Torneo
 
     public void AsociarSkillObligatoria(Skill skill)
     {
+        if(Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoModificableException();
+        }
+
         _skillsObligatorias.Add(skill);
     }
 
