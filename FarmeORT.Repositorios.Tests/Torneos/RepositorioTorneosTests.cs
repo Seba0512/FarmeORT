@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.Repositorios.Torneos;
 using Microsoft.EntityFrameworkCore;
@@ -216,6 +217,43 @@ public sealed class RepositorioTorneosTests
         Assert.AreEqual(EstadoTorneo.Cancelado, _baseDeDatos.Contexto.Torneos.Single(t => t.Id == torneo.Id).Estado);
     }
 
+    [TestMethod]
+    public void Agregar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoTorneoYaExisteSinDuplicar()
+    {
+        GuardarTorneos(CrearTorneo("COPAAURA"));
+        var nuevo = CrearTorneo("COPAAURA", "Otra copa");
+
+        Assert.ThrowsExactly<CodigoTorneoYaExisteException>(() => _repositorio.Agregar(nuevo));
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Torneos.Count(t => t.Codigo == "COPAAURA"));
+        AssertPuedeGuardarOtroTorneo();
+    }
+
+    [TestMethod]
+    public void Agregar_ErrorDeBaseSinCodigoDuplicado_PropagaDbUpdateException()
+    {
+        var existente = CrearTorneo("COPAAURA");
+        GuardarTorneos(existente);
+        var nuevo = new Torneo("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 8, _organizador, FechaActual)
+        {
+            Id = existente.Id,
+        };
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Agregar(nuevo));
+        Assert.IsFalse(_baseDeDatos.Contexto.Torneos.Any(t => t.Codigo == "COPAFUEGO"));
+        AssertPuedeGuardarOtroTorneo();
+    }
+
+    [TestMethod]
+    public void Actualizar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoTorneoYaExisteSinCambiarElTorneo()
+    {
+        GuardarTorneos(CrearTorneo("COPAFUEGO"));
+        var torneo = GuardarYCargar(CrearTorneo("COPAAURA"));
+        torneo.Modificar("COPAFUEGO", "Copa Aura", Descripcion, FechaInicio, FechaFin, 8, torneo.Organizador, FechaActual);
+
+        Assert.ThrowsExactly<CodigoTorneoYaExisteException>(() => _repositorio.Actualizar(torneo));
+        Assert.AreEqual("COPAAURA", _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Codigo);
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroTorneos Filtro(
         EstadoTorneo? estado = null,
@@ -227,6 +265,15 @@ public sealed class RepositorioTorneosTests
         int desplazamiento = 0)
     {
         return new FiltroTorneos(estado, fechaDesde, fechaHasta, nombre, null, excluirCancelados, limite, desplazamiento);
+    }
+
+    private void AssertPuedeGuardarOtroTorneo()
+    {
+        var siguiente = CrearTorneo("SIGUIENTE");
+
+        _repositorio.Agregar(siguiente);
+
+        Assert.IsTrue(_baseDeDatos.Contexto.Torneos.Any(t => t.Id == siguiente.Id && t.Codigo == "SIGUIENTE"));
     }
 
     // Deja el torneo guardado y cargado desde el contexto, como lo recibe el servicio antes de modificarlo.
