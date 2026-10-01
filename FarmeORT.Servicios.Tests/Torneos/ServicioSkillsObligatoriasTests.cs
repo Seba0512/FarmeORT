@@ -55,6 +55,7 @@ public sealed class ServicioSkillsObligatoriasTests
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
         _repositorioSkills.Setup(r => r.ObtenerPorId(SkillId)).Returns(_skill);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([]);
         _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
 
         var response = _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId);

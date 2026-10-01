@@ -17,7 +17,6 @@ internal sealed class ServicioSkillsObligatorias(
 {
     public IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo)
     {
-        _ = repositorioInscripciones;
         var torneo = ObtenerTorneoExistente(torneoId);
         if(esAnonimo && !torneo.EsVisibleParaAnonimos)
         {
@@ -40,6 +39,7 @@ internal sealed class ServicioSkillsObligatorias(
             throw new SkillNoEncontradaException();
         }
 
+        ValidarQueLaTenganLosInscriptos(torneoId, skill);
         torneo.AsociarSkillObligatoria(skill);
         repositorioTorneos.Actualizar(torneo);
         return CrearResponse(skill);
@@ -50,6 +50,19 @@ internal sealed class ServicioSkillsObligatorias(
         var torneo = ObtenerTorneoDelOrganizador(torneoId, organizadorId);
         torneo.QuitarSkillObligatoria(skillId);
         repositorioTorneos.Actualizar(torneo);
+    }
+
+    // Letra 2.4: todos los inscriptos Aceptados tienen que poder cumplir la nueva obligatoria.
+    private void ValidarQueLaTenganLosInscriptos(int torneoId, Skill skill)
+    {
+        var sinLaSkill = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId)
+            .Where(i => i.Jugador.SkillsFaltantes([skill]).Count > 0)
+            .Select(i => i.Jugador.Nickname)
+            .ToList();
+        if(sinLaSkill.Count > 0)
+        {
+            throw new JugadoresSinSkillObligatoriaException(sinLaSkill);
+        }
     }
 
     private Torneo ObtenerTorneoExistente(int torneoId)
