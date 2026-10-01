@@ -11,12 +11,22 @@ código final. Ante la duda, frenar y preguntar al integrante antes que decidir 
 
 ## 0. Jerarquía de fuentes
 
-Letra oficial > aclaraciones docentes > **configuración obligatoria del repo** (rama
+Letra oficial 2026.2 > aclaraciones docentes (clases, sus transcripciones y el foro) >
+**configuración obligatoria del repo** (rama
 [`repo-configuration`](https://github.com/IngSoft-DA2/DA2-Tecnologia/tree/repo-configuration) de
 DA2-Tecnologia) > diseño aprobado (UML) > especificación de la API > bitácora de decisiones >
-tests existentes > código existente > este archivo > conocimiento general.
+tests existentes > código existente > este archivo > skills `da2-*` > conocimiento general.
 
 Si algo de este archivo contradice una fuente superior, gana la superior: señalar la contradicción.
+
+Lo que dicen los docentes en clase manda sobre este archivo, las skills, la bitácora y el código, con
+tres cuidados:
+- Algunas clases leen un **borrador** de la letra (por ejemplo, el que tenía notificaciones o un
+  comentario de fallo de 10 a 15 caracteres). Si difiere de la letra oficial, manda la letra oficial.
+- Distinguir lo que el docente **exige** de lo que **sugiere** u opina, y no tomar como regla un lapsus
+  evidente (por ejemplo, 403 para un token que falta: se usa 401).
+- El CI obligatorio se cumple igual aunque una clase pida menos (por ejemplo, cobertura de 80 %: el
+  check `Test` exige 90 %).
 
 ## 1. Reglas que nunca se rompen
 
@@ -139,6 +149,14 @@ testear que el mock devuelve lo configurado. Tests FIRST. En MSTest usar `Assert
 Funcionalidades con asterisco (TDD con evidencia por commit obligatorio): **inscripción a torneo,
 lanzar skill, fallar batalla, catálogo de skills, generar rondas / finalizar torneo**.
 
+Lo que piden los docentes en clase:
+- En las funcionalidades con asterisco, **un test por commit RED**: se tiene que ver la evolución test
+  por test. Las variantes de datos de un mismo caso van con `DataRow` en el mismo test.
+- Tests **independientes** (la I de FIRST): para preparar o verificar no se usa otro método del objeto
+  bajo prueba (en un test de `Agregar` no se llama a `ObtenerPorId` del mismo repositorio); se usa el
+  contexto o datos armados a mano.
+- Arrange, Act y Assert separados por una línea en blanco; el Act en una sola línea.
+
 ## 6. Arquitectura
 
 Cada paquete lógico es un **assembly independiente** con prefijo `FarmeORT.`: Dominio, IServicios,
@@ -149,10 +167,15 @@ referenciando solo el assembly que prueba. Antes de crear algo, **buscar si ya e
 interfaz, DTO, excepción, mapper, filter o helper equivalente.
 
 ```text
-WebAPI       → DTOs, IServicios
+WebAPI       → DTOs, IServicios, Fabrica
+Fabrica      → Servicios, Repositorios
 Servicios    → IServicios, Dominio, IRepositorios
 Repositorios → IRepositorios, Dominio
 ```
+
+La WebAPI **no referencia** Servicios ni Repositorios: la inyección de dependencias se resuelve en
+`FarmeORT.Fabrica`, que llama al registro de cada assembly. En clase bajaron un diagrama de componentes
+de 8 a 4 porque la WebAPI conocía la lógica y el acceso a datos.
 
 - **Dominio**: entidades y reglas propias (Information Expert). No conoce WebAPI, DTOs, EF ni ASP.NET.
 - **Controller = recepcionista**: mapea DTO, llama al servicio, devuelve status. Sin reglas, sin
@@ -161,13 +184,16 @@ Repositorios → IRepositorios, Dominio
   ni puntos de variación.
 - **Repositorios**: persisten y consultan; **no deciden reglas**.
 - **DTOs**: sufijos `*Request`/`*Response`; nunca exponer entidades de dominio.
+- **Excepciones propias** solo si están justificadas (dan un `errorCode` propio o distinguen el origen
+  del error); no crear excepciones por crear.
 - `new` de lo propio y estable del dominio; inyectar infraestructura y lo que puede variar.
 - DI: DbContext, repositorios y servicios **Scoped**. Nunca DbContext Singleton ni Singleton que
   reciba un Scoped. Program.cs delega el registro de DI, filtros y base en métodos/helpers.
 - Por defecto `internal` (+ `sealed`); abrir solo lo necesario y documentar qué es público. Para tests
   sobre tipos internos: `InternalsVisibleTo` (+ `DynamicProxyGenAssembly2` para Moq).
 - Puntos de variación a mantener: `ICalculadorElo ← CalculadorEloBase`,
-  `IEstrategiaEmparejamiento ← EmparejamientoPorElo`, y el mecanismo extensible de notificaciones.
+  `IEstrategiaEmparejamiento ← EmparejamientoPorElo`, y el mecanismo extensible de notificaciones
+  (postergado: ver §8).
   Un patrón se aplica solo si resuelve un problema concreto, y se registra en la bitácora.
 
 ### Persistencia (EF Core 10 Code First)
@@ -205,6 +231,12 @@ equipo, frenar y proponer agregarlo.
 
 - Route = identidad del recurso; query = filtros/orden/paginación (no obligatorios salvo el torneo en
   `GET /batallas`); body = datos de la operación; GET y DELETE sin body.
+- Rutas de **hasta tres niveles** (el id final no cuenta), en minúscula y con guiones.
+- Paginado con `limit`/`offset`, con valor por defecto y tope. **Fuera de rango no se rechaza**, "para no
+  trancar al usuario": `limit` mayor al tope usa el tope, `limit` menor a 1 usa el valor por defecto,
+  `offset` negativo usa 0, y un filtro con un valor inválido se ignora. Un tipo mal formado
+  (`limit=abc`) sigue siendo 400. El tipo de paginado (offset o cursor) se documenta con sus
+  alternativas: los docentes lo piden como obligatorio.
 - Identidad **solo** desde `Authorization: Bearer {token}` (token opaco persistido, no JWT salvo
   decisión documentada). Nunca aceptar `userId`/`jugadorId` en query o body para el usuario actual.
 - Filters separados (SRP): **autenticación** (valida la sesión en la base → 401), **autorización**
@@ -217,6 +249,9 @@ equipo, frenar y proponer agregarlo.
   trace, SQL, connection strings, paths ni `exception.Message` en el 500.
 - JSON y query en camelCase; recursos en plural; operaciones no CRUD como sub-recursos sustantivados.
 - Validar en el borde (`[ApiController]` + data annotations → 400) **y** en el dominio.
+- En la especificación, por endpoint: también el protocolo y de dónde sale cada parámetro de ruta; los
+  objetos complejos se describen aparte y se enlazan. Swagger sirve solo si lista todas las respuestas.
+- CORS: los docentes lo sugieren (no se evalúa).
 
 ## 8. Reglas de dominio clave
 
@@ -229,7 +264,8 @@ La letra oficial manda. Resumen de lo que más se rompe:
   nada de jobs, timers ni transiciones automáticas. Cupo potencia de 2 entre 4 y 64. No se modifica
   si está EnCurso, Finalizado o Cancelado. Cancelar (desde Abierto/EnCurso) cancela batallas no
   finalizadas e inscripciones Aceptadas, atómicamente. El anónimo no ve torneos Cancelados.
-- **Skill inactiva**: no puede declararse en un repertorio nuevo ni agregarse como obligatoria nueva.
+- **Skill inactiva**: no puede declararse en un repertorio nuevo ni agregarse como obligatoria nueva,
+  y el rechazo dice que **no es posible utilizarla porque está inactiva**, con `errorCode` propio.
   **No es retroactiva**: sí puede lanzarse en batalla si ya estaba en el repertorio.
 - **Repertorio**: eliminar una skill solo está bloqueado si es obligatoria de un torneo **y** el
   jugador tiene inscripción **Aceptada** en él **y** el torneo no está Finalizado ni Cancelado.
@@ -242,16 +278,18 @@ La letra oficial manda. Resumen de lo que más se rompe:
   su repertorio, no repetida; si `obligatoriasPendientes == turnosRestantes`, solo puede lanzar una
   obligatoria pendiente. Tras el 8.º lanzamiento → `EnArbitraje`.
 - **Fallar batalla**: Pendiente o EnArbitraje; solo el **organizador asignado** a ese torneo; ganador
-  es uno de los dos. Efectos **atómicos**: nuevos ELO → ganador y comentario → Finalizada →
+  es uno de los dos; comentario de 10 a 500 caracteres (letra oficial; el borrador leído en clase decía
+  10 a 15). Efectos **atómicos**: nuevos ELO → ganador y comentario → Finalizada →
   inscripción del perdedor Eliminada.
 - **ELO**: K = 32; `Ea = 1 / (1 + 10^((Rb − Ra) / 400))`; `Ra' = Ra + K·(S − Ea)`. Calcular **ambos**
   con los valores **previos** de ambos; redondear; piso 100.
 - **Rondas**: la primera requiere Abierto y Aceptadas == Cupo (→ EnCurso). Emparejamiento
   **determinístico y documentado** con desempate explícito (nunca el orden accidental de SQL).
   Finalizar: EnCurso, sin batallas sin resolver, un solo jugador no eliminado → Campeón.
-- **Notificaciones**: turno del rival, EnArbitraje al organizador, resultado a ambos jugadores. Deben
-  admitir tipos nuevos **sin modificar el código que dispara los eventos** (punto de extensión
-  exigido, OCP).
+- **Notificaciones**: la letra oficial 2026.2 **no las incluye** (estaban en el borrador leído en
+  clase). Postergadas: no implementarlas salvo aclaración en el foro. Si vuelven: turno del rival,
+  EnArbitraje al organizador y resultado a ambos jugadores, con tipos nuevos que se agreguen **sin
+  modificar el código que dispara los eventos** (OCP).
 - **Ranking**: público; `cantidad` (default 10), `torneo` opcional; ELO DESC con desempate
   determinístico.
 
@@ -302,10 +340,17 @@ después. Estructura: raíz (código), `Aplicacion` (build Release e instalables
 ## 10. Documentación, Postman y UML
 
 - La documentación se actualiza **junto con el código**, no al final. Justificar el **por qué**.
-- **Bitácora** (solo decisiones con impacto): problema, alternativas consideradas, decisión,
-  justificación, conceptos del curso, evidencia, participación de IA.
-- **Declaración de uso de IA**: herramientas, para qué, en qué partes, y los archivos de contexto
-  usados (incluido este `AGENTS.md`). Todo lo generado debe ser entendido y defendible por el equipo.
+- **Bitácora** (solo decisiones con impacto; lo trivial va como supuesto): problema, alternativas
+  consideradas, decisión, justificación, conceptos del curso, evidencia, participación de IA. En la
+  participación de IA, decir qué se aceptó, qué se rechazó o modificó y qué problemas aparecieron: no
+  alcanza con "propuesta de la IA, aprobada".
+- **Declaración de uso de IA**: herramientas y modelos, para qué, en qué partes, los archivos de
+  contexto usados (incluido este `AGENTS.md`) y prompts representativos. En los informes se marca qué
+  texto generó la IA, y se suma una reflexión propia. Todo lo generado debe ser entendido y defendible
+  por el equipo.
+- **Informes**: explicar decisiones (por qué), no describir ("X contiene…" no es aceptable), sin que una
+  justificación contradiga a otra. Cada paquete con su responsabilidad y un diagrama de clases, y una
+  sección de manejo de excepciones con la tabla tipo → status.
 - **Postman** (Collection v2.1 en `Datos`): carpeta por recurso; variables `baseUrl`, tokens por rol
   e ids guardados con `pm.collectionVariables.set`; test de status en cada request y `errorCode` en
   los de error; en las funcionalidades con asterisco, casos de borde, 401/403/404 y cada regla 409.
@@ -314,6 +359,19 @@ después. Estructura: raíz (código), `Aplicacion` (build Release e instalables
   obligatorias 0..2, Batalla→Jugadores 2, Batalla→Lanzamientos 0..8, Batalla→Fallo 0..1,
   Torneo→Campeón 0..1), secuencia de las funcionalidades clave, componentes con lollipop (provee) /
   hook (requiere). Nada de diagramas autogenerados con notación incorrecta.
+- Lo que piden los docentes sobre los diagramas:
+  - Se hacen **antes del código** de cada funcionalidad; el de componentes puede hacerse después.
+  - Para el Obligatorio 1 van clases, secuencia, paquetes y componentes. No van objetos, estados,
+    actividad, despliegue ni casos de uso.
+  - El modelo de tablas va en notación MER.
+  - En componentes, todas las interfaces provistas y requeridas; donde no hay interfaz, una dependencia
+    de uso.
+  - Secuencia solo de funcionalidades relevantes (autenticación, inscripción, lanzar skill, fallar
+    batalla, rondas); un CRUD como crear skill no hace falta.
+- **Entrega**: solo se corrige lo que se sube a gestión. El release de GitHub incluye todo lo necesario
+  para probar fuera del IDE (`Aplicacion`, y en `Datos` los scripts `.sql`, la colección de Postman y
+  la guía). Todos los integrantes documentan y tocan todas las partes, cada uno con su cuenta; en la
+  defensa pueden preguntarle a cualquiera por cualquier parte.
 
 ## 11. Definition of Done
 
