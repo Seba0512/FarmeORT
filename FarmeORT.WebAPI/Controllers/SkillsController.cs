@@ -14,4 +14,11 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
         var response = servicioSkills.Crear(request);
         return Created($"/api/v1/skills/{response.Id}", response);
     }
+
+    [HttpGet("{id:int}")]
+    public IActionResult ObtenerPorId(int id)
+    {
+        _ = id;
+        throw new NotImplementedException();
+    }
 }

@@ -51,4 +51,17 @@ public sealed class SkillsControllerTests
         Assert.AreSame(skill, resultado.Value);
         _servicioSkills.Verify(s => s.Crear(request), Times.Once);
     }
+
+    [TestMethod]
+    public void ObtenerPorId_SkillExistente_Devuelve200ConLaSkill()
+    {
+        var skill = new SkillResponse { Id = 3, Codigo = "SIXSEVEN", Nombre = "Six-Seven", Categoria = "Gestual", Dificultad = 2, Activa = true };
+        _servicioSkills.Setup(s => s.ObtenerPorId(3)).Returns(skill);
+
+        var resultado = _controller.ObtenerPorId(3) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(skill, resultado.Value);
+    }
 }
