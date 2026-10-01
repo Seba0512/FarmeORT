@@ -110,6 +110,16 @@ public sealed class TorneoTests
         Assert.AreEqual("La fecha de inicio no puede ser anterior a la fecha actual.", excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow(Rol.Jugador)]
+    [DataRow(Rol.Administrador)]
+    public void Constructor_OrganizadorSinRolOrganizador_LanzaDatosInvalidos(Rol rol)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(rolOrganizador: rol));
+
+        Assert.AreEqual("El organizador debe ser un usuario con rol Organizador.", excepcion.Message);
+    }
+
     private static Torneo CrearTorneo(
         string codigo = "COPAAURA",
         string nombre = "Copa Aura",
