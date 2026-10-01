@@ -120,6 +120,24 @@ public sealed class ServicioRepertorioTests
         _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.Is<Usuario>(u => u == _jugador && u.Repertorio.Count == 0)), Times.Once);
     }
 
+    [TestMethod]
+    public void Listar_JugadorConSkills_DevuelveSuRepertorioOrdenadoPorSkill()
+    {
+        var otra = new Skill("TRALALERO", "Tralalero", "Canto con ritmo de tarantela italiana.", CategoriaSkill.Meme, 5)
+        {
+            Id = 1,
+        };
+        _jugador.DeclararSkill(_skill, 4, FechaActual);
+        _jugador.DeclararSkill(otra, 2, FechaActual);
+        _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
+
+        var repertorio = _servicio.Listar(JugadorId);
+
+        CollectionAssert.AreEqual(new[] { 1, SkillId }, repertorio.Select(d => d.SkillId).ToArray());
+        Assert.AreEqual("TRALALERO", repertorio[0].Codigo);
+        Assert.AreEqual(2, repertorio[0].Nivel);
+    }
+
     private void ConfigurarDeclaracionValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
