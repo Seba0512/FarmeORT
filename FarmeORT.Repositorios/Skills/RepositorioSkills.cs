@@ -7,8 +7,7 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
 {
     public Skill? ObtenerPorId(int id)
     {
-        _ = id;
-        throw new NotImplementedException();
+        return contexto.Skills.SingleOrDefault(s => s.Id == id);
     }
 
     public IReadOnlyList<Skill> Listar(FiltroSkills filtro)
