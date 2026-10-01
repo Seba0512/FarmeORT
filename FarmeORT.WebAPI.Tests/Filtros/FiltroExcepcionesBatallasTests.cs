@@ -60,6 +60,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new BatallaModificadaException(), 409, "BATTLE_CHANGED", "La batalla cambió mientras se procesaba el pedido. Volvé a consultarla.");
     }
 
+    [TestMethod]
+    public void OnException_SkillObligatoriaPendiente_Devuelve409ConMANDATORY_SKILL_PENDING()
+    {
+        VerificarMapa(new SkillObligatoriaPendienteException(), 409, "MANDATORY_SKILL_PENDING", "Debés lanzar una skill obligatoria pendiente para completar tus cuatro turnos.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
