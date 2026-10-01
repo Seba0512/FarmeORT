@@ -19,8 +19,10 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public Usuario? ObtenerConRepertorio(int id)
     {
-        _ = id;
-        throw new NotImplementedException();
+        return contexto.Usuarios
+            .Include(u => u.Repertorio)
+            .ThenInclude(d => d.Skill)
+            .SingleOrDefault(u => u.Id == id && !u.Eliminado);
     }
 
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
