@@ -15,7 +15,13 @@ public sealed class Batalla
         Jugador2 = jugador2;
         Jugador2Id = jugador2.Id;
         Estado = EstadoBatalla.Pendiente;
-        JugadorInicialId = sorteo.ElegirEntre(jugador1, jugador2).Id;
+        var jugadorInicial = jugador1.Elo.CompareTo(jugador2.Elo) switch
+        {
+            > 0 => jugador1,
+            < 0 => jugador2,
+            _ => sorteo.ElegirEntre(jugador1, jugador2),
+        };
+        JugadorInicialId = jugadorInicial.Id;
         JugadorTurnoId = JugadorInicialId;
     }
 
