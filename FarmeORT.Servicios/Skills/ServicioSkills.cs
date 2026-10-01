@@ -9,6 +9,7 @@ namespace FarmeORT.Servicios.Skills;
 internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSkills
 {
     private const int LimiteMaximo = 100;
+    private const int LimitePorDefecto = 20;
 
     public SkillResponse Crear(SkillRequest request)
     {
@@ -38,6 +39,11 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         if(limite > LimiteMaximo)
         {
             limite = LimiteMaximo;
+        }
+
+        if(limite < 1)
+        {
+            limite = LimitePorDefecto;
         }
 
         var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, limite, filtro.Offset);
