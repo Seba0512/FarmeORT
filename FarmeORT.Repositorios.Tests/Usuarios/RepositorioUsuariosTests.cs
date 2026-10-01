@@ -96,6 +96,20 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void ObtenerPorId_UsuarioEliminado_DevuelveNull()
+    {
+        var usuario = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
+        usuario.Eliminar();
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.ObtenerPorId(usuario.Id);
+
+        Assert.IsNull(resultado);
+    }
+
+    [TestMethod]
     public void Listar_SinFiltros_DevuelveTodosOrdenadosPorId()
     {
         _baseDeDatos.Contexto.Usuarios.AddRange(
