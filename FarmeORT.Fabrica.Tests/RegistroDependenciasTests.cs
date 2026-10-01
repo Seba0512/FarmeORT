@@ -1,5 +1,6 @@
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Skills;
+using FarmeORT.IServicios.Torneos;
 using FarmeORT.IServicios.Usuarios;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -14,6 +15,7 @@ public sealed class RegistroDependenciasTests
     [DataRow(typeof(IServicioSesiones))]
     [DataRow(typeof(IServicioUsuarios))]
     [DataRow(typeof(IServicioSkills))]
+    [DataRow(typeof(IServicioTorneos))]
     public void AgregarDependencias_ServicioQueUsaLaApi_SeResuelveConLifetimesValidos(Type servicio)
     {
         var servicios = new ServiceCollection();
