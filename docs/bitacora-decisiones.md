@@ -1261,6 +1261,75 @@ relaciones muchos a muchos en EF Core.
 
 ---
 
+### D-61 — Ranking: solo jugadores sin baja, ELO de mayor a menor con desempate por id
+
+**Problema:** la letra pide un ranking público con `cantidad` (10 por defecto) y `torneo` opcional,
+ordenado por ELO de mayor a menor, que devuelva posición, nickname, ELO, batallas ganadas y batallas
+perdidas. Hay que decidir el desempate, quién entra, qué hacer con una cantidad fuera de rango y qué
+devolver en ganadas y perdidas mientras no existan las batallas, que otra persona implementa en paralelo.
+
+**Alternativas consideradas:**
+- Desempate: por id (va primero el que se registró antes), por nickname o por batallas ganadas.
+- Dónde ordenar: en la consulta del repositorio o en el servicio, trayendo a todos los jugadores.
+- Ganadas y perdidas: devolverlas en 0 hasta que existan las batallas, o sumar los campos recién
+  cuando existan.
+
+**Decisión adoptada:**
+- Contrato:
+  - `GET /api/v1/ranking?cantidad=N`, público: no pide token.
+  - Responde 200 con una lista de `JugadorRankingResponse`: `posicion`, `nickname`, `elo`,
+    `batallasGanadas` y `batallasPerdidas`.
+  - Una `cantidad` que no es un número (`cantidad=abc`) responde 400 `VALIDATION_ERROR`. No hay 401,
+    403, 404 ni 409.
+  - El filtro `torneo` se agrega cuando existan las inscripciones.
+- Entran solo los usuarios con rol Jugador y sin baja lógica (D-27): organizadores y administradores no
+  juegan batallas.
+- Orden: ELO de mayor a menor y, si empatan, id de menor a mayor. La posición es el lugar en la lista
+  (1, 2, 3…), así que dos jugadores con el mismo ELO tienen posiciones distintas.
+- El orden y el corte por cantidad van en la consulta del repositorio (`IRepositorioUsuarios.ListarRanking`):
+  la base devuelve solo los primeros N. Ordenar en el servicio obligaría a traer a todos los jugadores.
+- `cantidad` fuera de rango se ajusta igual que la paginación (D-35): mayor a 100 usa 100 y menor a 1 usa
+  10.
+- `batallasGanadas` y `batallasPerdidas` valen 0 hasta que exista Batalla. El contrato sale completo desde
+  ahora, como `InscripcionesAceptadas` en torneos (D-36).
+
+**Justificación:**
+- Desempate por id y no por nickname: el id es único y no cambia, y no depende de cómo compara texto
+  cada base. SQL Server, con la intercalación por defecto, no distingue mayúsculas y SQLite sí, así que
+  ordenar por nickname podría dar otro orden en los tests. Las batallas ganadas todavía no existen.
+- El desempate tiene que estar escrito en la consulta: sin `ThenBy`, el orden de los empates depende del
+  plan de ejecución de la base.
+- Para que el test del desempate falle sin `ThenBy`, crea un índice por ELO en la base de prueba: SQLite
+  lo recorre al revés y devuelve los empates del id mayor al menor, como puede pasar en SQL Server. Sin
+  el índice, SQLite devuelve los empates en el orden en que se guardaron y el test pasaba por casualidad.
+
+**Conceptos del curso:** REST (query para filtros, recurso público), status codes, determinismo, tests
+de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST (Repeatable).
+
+**Evidencia:**
+- `RankingController`, `ServicioRanking` e `IRepositorioUsuarios.ListarRanking` / `RepositorioUsuarios`.
+- `RankingControllerTests`, `ServicioRankingTests` y `RepositorioRankingTests` (solo jugadores, desempate
+  con el índice, baja lógica y cantidad).
+- La carpeta Ranking de Postman: cantidad por defecto, 1, mayor al tope, menor a 1, que no aparezcan
+  organizadores, administradores ni usuarios dados de baja, y `cantidad=abc` → 400. Se corrió la
+  colección completa contra SQL Server sin fallos.
+
+**Pendientes:**
+- Calcular `batallasGanadas` y `batallasPerdidas` cuando exista Batalla.
+- El filtro `torneo`, cuando existan las inscripciones: definir qué jugadores del torneo entran.
+- Agregar el endpoint a la especificación de la API y `ServicioRanking` al diagrama de clases.
+
+**Participación de IA:**
+- Claude Code propuso el contrato, el desempate por id frente al nickname (por la intercalación) y los
+  campos en 0; el integrante eligió las opciones recomendadas y aprobó el resto de las etapas en bloque.
+- Problema que apareció: el primer intento de RED del desempate pasaba sin `ThenBy`. Claude Code lo
+  detectó antes de commitear; `PRAGMA reverse_unordered_selects` no sirvió porque no aplica a consultas
+  con `ORDER BY`, y lo resolvió con el índice por ELO en el test.
+- Para correr la carpeta en la colección completa se cambió el salto (`setNextRequest`) del último
+  request de Skills obligatorias, que ahora pasa por Ranking antes del logout.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
