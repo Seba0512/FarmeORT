@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.IServicios.Torneos;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -11,9 +12,8 @@ public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias ser
     [HttpPost]
     public IActionResult Asociar(int torneoId, [FromBody] SkillObligatoriaRequest request)
     {
-        _ = servicioSkillsObligatorias;
-        _ = torneoId;
-        _ = request;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        var response = servicioSkillsObligatorias.Asociar(torneoId, request, sesion.UsuarioId);
+        return Created($"/api/v1/torneos/{torneoId}/skills-obligatorias/{response.Id}", response);
     }
 }
