@@ -30,6 +30,12 @@ public sealed class Torneo
         Estado = EstadoTorneo.Abierto;
     }
 
+    // EF Core materializa el torneo con este constructor y completa la navegación después (D-08).
+    private Torneo()
+    {
+        Organizador = null!;
+    }
+
     public int Id { get; init; }
 
     public string Codigo { get; private set; } = string.Empty;

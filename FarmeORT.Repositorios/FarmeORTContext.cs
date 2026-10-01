@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Sesiones;
 using FarmeORT.Dominio.Skills;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using Microsoft.EntityFrameworkCore;
 
@@ -17,6 +18,10 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     private const int LargoMaximoNombreSkill = 40;
     private const int LargoMaximoDescripcionSkill = 300;
     private const int LargoMaximoCategoriaSkill = 20;
+    private const int LargoMaximoCodigoTorneo = 20;
+    private const int LargoMaximoNombreTorneo = 60;
+    private const int LargoMaximoDescripcionTorneo = 500;
+    private const int LargoMaximoEstadoTorneo = 20;
 
     // Objeto anónimo porque HasData necesita fijar el Id, que el constructor de Usuario no recibe.
     // Hash PBKDF2 (formato de HasheadorContrasenas) calculado una sola vez, para que la migración no cambie en cada build.
@@ -39,6 +44,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     public DbSet<Sesion> Sesiones => Set<Sesion>();
 
     public DbSet<Skill> Skills => Set<Skill>();
+
+    public DbSet<Torneo> Torneos => Set<Torneo>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -74,6 +81,23 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
             skill.Property(s => s.Nombre).HasMaxLength(LargoMaximoNombreSkill).IsRequired();
             skill.Property(s => s.Descripcion).HasMaxLength(LargoMaximoDescripcionSkill).IsRequired();
             skill.Property(s => s.Categoria).HasConversion<string>().HasMaxLength(LargoMaximoCategoriaSkill);
+        });
+
+        modelBuilder.Entity<Torneo>(torneo =>
+        {
+            torneo.HasKey(t => t.Id);
+            torneo.Property(t => t.Codigo).HasMaxLength(LargoMaximoCodigoTorneo).IsRequired();
+            torneo.HasIndex(t => t.Codigo).IsUnique();
+            torneo.Property(t => t.Nombre).HasMaxLength(LargoMaximoNombreTorneo).IsRequired();
+            torneo.Property(t => t.Descripcion).HasMaxLength(LargoMaximoDescripcionTorneo).IsRequired();
+            torneo.Property(t => t.Estado).HasConversion<string>().HasMaxLength(LargoMaximoEstadoTorneo);
+            torneo.HasIndex(t => t.Estado);
+
+            // Restrict: un organizador con torneos no se borra físicamente (la baja de usuarios es lógica, D-27).
+            torneo.HasOne(t => t.Organizador)
+                .WithMany()
+                .HasForeignKey(t => t.OrganizadorId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
     }
 }
