@@ -74,6 +74,13 @@ public sealed class Torneo
         DateOnly fechaActual)
     {
         _ = fechaActual;
+
+        // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
+        if(Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoModificableException();
+        }
+
         Codigo = codigo;
         Nombre = nombre;
         Descripcion = descripcion;
