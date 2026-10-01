@@ -1,5 +1,7 @@
 using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Inscripciones;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
@@ -15,7 +17,7 @@ internal sealed class ServicioInscripciones(
 {
     public InscripcionResponse Inscribir(int jugadorId, InscripcionRequest request)
     {
-        var torneo = repositorioTorneos.ObtenerPorId(request.TorneoId.GetValueOrDefault())!;
+        var torneo = ObtenerTorneoExistente(request.TorneoId.GetValueOrDefault());
         var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId)!;
         var inscripcion = new Inscripcion(torneo, jugador, reloj.GetLocalNow().DateTime);
         repositorioInscripciones.Agregar(inscripcion);
@@ -43,6 +45,17 @@ internal sealed class ServicioInscripciones(
         _ = id;
         _ = jugadorId;
         throw new NotImplementedException();
+    }
+
+    private Torneo ObtenerTorneoExistente(int torneoId)
+    {
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
+        return torneo;
     }
 
     private static InscripcionResponse CrearResponse(Inscripcion inscripcion)
