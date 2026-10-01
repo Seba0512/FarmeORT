@@ -6,9 +6,17 @@ namespace FarmeORT.Servicios.Ranking;
 
 internal sealed class ServicioRanking(IRepositorioUsuarios repositorioUsuarios) : IServicioRanking
 {
+    private const int CantidadMaxima = 100;
+
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
-        var jugadores = repositorioUsuarios.ListarRanking(filtro.Cantidad);
+        var cantidad = filtro.Cantidad;
+        if(cantidad > CantidadMaxima)
+        {
+            cantidad = CantidadMaxima;
+        }
+
+        var jugadores = repositorioUsuarios.ListarRanking(cantidad);
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
