@@ -51,8 +51,12 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public IReadOnlyList<Inscripcion> ListarAceptadasDelJugador(int jugadorId)
     {
-        _ = jugadorId;
-        throw new NotImplementedException();
+        return contexto.Inscripciones
+            .Include(i => i.Torneo)
+            .ThenInclude(t => t.SkillsObligatorias)
+            .Where(i => i.JugadorId == jugadorId && i.Estado == EstadoInscripcion.Aceptada)
+            .OrderBy(i => i.Id)
+            .ToList();
     }
 
     public void Agregar(Inscripcion inscripcion)
