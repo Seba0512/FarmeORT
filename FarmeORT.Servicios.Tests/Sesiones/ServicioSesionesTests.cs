@@ -62,6 +62,22 @@ public sealed class ServicioSesionesTests
     }
 
     [TestMethod]
+    public void IniciarSesion_UsuarioEliminadoConContrasenaCorrecta_LanzaCredencialesInvalidasSinCrearSesion()
+    {
+        var request = new LoginRequest { Email = Email, Contrasena = Contrasena };
+        var usuario = CrearUsuario();
+        usuario.Eliminar();
+        _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns(usuario);
+        _hasheadorContrasenas.Setup(h => h.Verificar(Contrasena, ContrasenaHash)).Returns(true);
+        _generadorTokens.Setup(g => g.Generar()).Returns(Token);
+        _repositorioSesiones.Setup(r => r.Agregar(It.Is<Sesion>(s => s.Token == Token)));
+
+        Assert.ThrowsExactly<CredencialesInvalidasException>(() => _servicio.IniciarSesion(request));
+
+        _repositorioSesiones.Verify(r => r.Agregar(It.IsAny<Sesion>()), Times.Never);
+    }
+
+    [TestMethod]
     public void IniciarSesion_CredencialesValidas_DevuelveTokenUsuarioYRol()
     {
         var request = new LoginRequest { Email = Email, Contrasena = Contrasena };
