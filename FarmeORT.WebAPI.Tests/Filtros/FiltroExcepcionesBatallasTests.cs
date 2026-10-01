@@ -54,6 +54,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new SkillYaLanzadaException(), 409, "SKILL_ALREADY_THROWN", "Ya lanzaste esta skill en la batalla.");
     }
 
+    [TestMethod]
+    public void OnException_BatallaModificada_Devuelve409ConBATTLE_CHANGED()
+    {
+        VerificarMapa(new BatallaModificadaException(), 409, "BATTLE_CHANGED", "La batalla cambió mientras se procesaba el pedido. Volvé a consultarla.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
