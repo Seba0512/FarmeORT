@@ -95,6 +95,16 @@ public sealed class UsuarioTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(fechaNacimiento: DateOnly.MaxValue));
     }
 
+    [TestMethod]
+    [DataRow(2026, 10, 1)]
+    [DataRow(9999, 12, 31)]
+    public void Constructor_FechaFutura_ExplicaQueElNacimientoNoPuedeSerFuturo(int anio, int mes, int dia)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(fechaNacimiento: new DateOnly(anio, mes, dia)));
+
+        Assert.AreEqual("La fecha de nacimiento no puede ser futura.", excepcion.Message);
+    }
+
     private static Usuario CrearUsuario(
         string nombre = "Ana",
         string apellido = "Pérez",
