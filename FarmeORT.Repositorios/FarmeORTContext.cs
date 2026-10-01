@@ -150,7 +150,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         modelBuilder.Entity<Batalla>(batalla =>
         {
             batalla.HasKey(b => b.Id);
-            batalla.Property(b => b.Estado).HasConversion<string>().HasMaxLength(20);
+            batalla.Property(b => b.Estado).HasConversion<string>().HasMaxLength(20).IsConcurrencyToken();
             batalla.HasOne(b => b.Torneo)
                 .WithMany()
                 .HasForeignKey(b => b.TorneoId)
