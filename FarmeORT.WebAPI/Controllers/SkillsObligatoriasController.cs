@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Torneos;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Torneos;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
@@ -10,6 +11,7 @@ namespace FarmeORT.WebAPI.Controllers;
 public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias servicioSkillsObligatorias) : ControllerBase
 {
     [HttpGet]
+    [AutenticacionOpcional]
     public IActionResult Listar(int torneoId)
     {
         var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
@@ -17,6 +19,7 @@ public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias ser
     }
 
     [HttpPost]
+    [Autorizacion(Roles.Organizador)]
     public IActionResult Asociar(int torneoId, [FromBody] SkillObligatoriaRequest request)
     {
         var sesion = HttpContext.ObtenerSesionAutenticada();
@@ -25,6 +28,7 @@ public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias ser
     }
 
     [HttpDelete("{skillId:int}")]
+    [Autorizacion(Roles.Organizador)]
     public IActionResult Quitar(int torneoId, int skillId)
     {
         var sesion = HttpContext.ObtenerSesionAutenticada();
