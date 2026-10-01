@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Skills;
 using FarmeORT.DTOs.Skills;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IServicios.Skills;
 
@@ -10,6 +11,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
     public SkillResponse Crear(SkillRequest request)
     {
         var categoria = Enum.Parse<CategoriaSkill>(request.Categoria);
+        ValidarCodigoDisponible(request.Codigo);
         var skill = new Skill(request.Codigo, request.Nombre, request.Descripcion, categoria, request.Dificultad.GetValueOrDefault());
         repositorioSkills.Agregar(skill);
         return CrearResponse(skill);
@@ -39,6 +41,14 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         _ = id;
         _ = request;
         throw new NotImplementedException();
+    }
+
+    private void ValidarCodigoDisponible(string codigo)
+    {
+        if(repositorioSkills.ExistePorCodigo(codigo))
+        {
+            throw new CodigoSkillYaExisteException();
+        }
     }
 
     private static SkillResponse CrearResponse(Skill skill)
