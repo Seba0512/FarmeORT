@@ -80,6 +80,31 @@ public sealed class SkillsObligatoriasControllerTests
         _servicio.Verify(s => s.Quitar(TorneoId, 3, OrganizadorId), Times.Once);
     }
 
+    [TestMethod]
+    [DataRow(nameof(SkillsObligatoriasController.Asociar))]
+    [DataRow(nameof(SkillsObligatoriasController.Quitar))]
+    public void Modificaciones_SkillsObligatorias_RequierenRolOrganizador(string accion)
+    {
+        var metodo = typeof(SkillsObligatoriasController).GetMethod(accion);
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>()
+            .SingleOrDefault();
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Organizador }, atributo.RolesPermitidos.ToArray());
+    }
+
+    [TestMethod]
+    public void Listar_IncluidoAnonimo_UsaAutenticacionOpcional()
+    {
+        var metodo = typeof(SkillsObligatoriasController).GetMethod(nameof(SkillsObligatoriasController.Listar));
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
+    }
+
     private void AutenticarOrganizador()
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = OrganizadorId, Rol = Roles.Organizador };
