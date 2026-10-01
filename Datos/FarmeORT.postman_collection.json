@@ -2,7 +2,7 @@
   "info": {
     "name": "FarmeORT",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección del proyecto con registro público, sesiones, mantenimiento de usuarios (alta, modificación y baja lógica) y catálogo de skills. Configurar baseUrl y adminContrasena en un environment local; adminEmail corresponde al administrador precargado. Ejecutar completa con Collection Runner o Newman. El login administrativo salta a Usuarios; su último caso salta a Skills y el último caso de Skills vuelve al logout administrativo, que termina la ejecución. Los ids, emails, nicknames y tokens se generan durante el run. No exportar credenciales ni tokens reales."
+    "description": "Colección del proyecto con registro público, sesiones, mantenimiento de usuarios (alta, modificación y baja lógica), catálogo de skills y gestión de torneos. Configurar baseUrl y adminContrasena en un environment local; adminEmail corresponde al administrador precargado. Ejecutar completa con Collection Runner o Newman. El login administrativo salta a Usuarios; el último caso de Usuarios salta a Skills, el último de Skills a Torneos y el último de Torneos vuelve al logout administrativo, que termina la ejecución. Los ids, emails, nicknames y tokens se generan durante el run. No exportar credenciales ni tokens reales."
   },
   "variable": [
     {
@@ -121,6 +121,70 @@
     },
     {
       "key": "skillsJugadorToken",
+      "value": ""
+    },
+    {
+      "key": "torneoFechaHoy",
+      "value": ""
+    },
+    {
+      "key": "torneoFechaManana",
+      "value": ""
+    },
+    {
+      "key": "torneoFechaAyer",
+      "value": ""
+    },
+    {
+      "key": "torneoFechaInicio",
+      "value": ""
+    },
+    {
+      "key": "torneoFechaFin",
+      "value": ""
+    },
+    {
+      "key": "torneoOrganizadorEmail",
+      "value": ""
+    },
+    {
+      "key": "torneoOrganizadorNickname",
+      "value": ""
+    },
+    {
+      "key": "torneoOrganizadorId",
+      "value": ""
+    },
+    {
+      "key": "torneoCodigo",
+      "value": ""
+    },
+    {
+      "key": "torneoCodigoMinusculas",
+      "value": ""
+    },
+    {
+      "key": "torneoNombre",
+      "value": ""
+    },
+    {
+      "key": "torneoId",
+      "value": ""
+    },
+    {
+      "key": "torneoMinCodigo",
+      "value": ""
+    },
+    {
+      "key": "torneoMinCodigoMinusculas",
+      "value": ""
+    },
+    {
+      "key": "torneoMinId",
+      "value": ""
+    },
+    {
+      "key": "torneoMaxCodigo",
       "value": ""
     }
   ],
@@ -5522,6 +5586,2348 @@
                     "exec": [
                       "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
                       "pm.test(\"Código de error FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));",
+                      "pm.execution.setNextRequest(\"Torneos - alta de organizador para torneos → 201\");"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Torneos",
+      "item": [
+        {
+          "name": "Torneos - Éxito",
+          "item": [
+            {
+              "name": "Torneos - alta de organizador para torneos → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Laura\",\n  \"apellido\": \"Torneos\",\n  \"email\": \"{{torneoOrganizadorEmail}}\",\n  \"nickname\": \"{{torneoOrganizadorNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"1990-05-20\",\n  \"rol\": \"Organizador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = Date.now().toString(36).toUpperCase();",
+                      "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                      "// Fechas locales: la API compara con la fecha actual del servidor, que corre en la misma máquina.",
+                      "const hoy = new Date();",
+                      "const fecha = dias => new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + dias)).toISOString().slice(0, 10);",
+                      "pm.collectionVariables.set(\"torneoFechaHoy\", fecha(0));",
+                      "pm.collectionVariables.set(\"torneoFechaManana\", fecha(1));",
+                      "pm.collectionVariables.set(\"torneoFechaAyer\", fecha(-1));",
+                      "pm.collectionVariables.set(\"torneoFechaInicio\", fecha(30));",
+                      "pm.collectionVariables.set(\"torneoFechaFin\", fecha(60));",
+                      "pm.collectionVariables.set(\"torneoOrganizadorEmail\", \"organizador.\" + guid + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"torneoOrganizadorNickname\", \"org\" + guid);",
+                      "pm.collectionVariables.set(\"torneoCodigo\", \"TOR\" + sufijo);",
+                      "pm.collectionVariables.set(\"torneoNombre\", \"Copa Aura \" + sufijo);",
+                      "pm.collectionVariables.set(\"torneoMinCodigo\", \"TMI\" + sufijo);",
+                      "pm.collectionVariables.set(\"torneoMaxCodigo\", (\"TMAX\" + sufijo + \"XXXXXXXXXXXXXXXXXXXX\").slice(0, 20));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"torneoOrganizadorId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - alta válida → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const torneo = pm.response.json();",
+                      "pm.test(\"Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/torneos/\" + torneo.id));",
+                      "pm.test(\"Nace Abierto y sin inscripciones\", () => { pm.expect(torneo.estado).to.eql(\"Abierto\"); pm.expect(torneo.inscripcionesAceptadas).to.eql(0); });",
+                      "pm.test(\"Nombre del organizador\", () => pm.expect(torneo.organizador).to.eql(\"Laura Torneos\"));",
+                      "pm.collectionVariables.set(\"torneoId\", torneo.id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - alta con cupo 4 e inicio hoy → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoMinCodigo}}\",\n  \"nombre\": \"Copa Mini\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaHoy}}\",\n  \"fechaFin\": \"{{torneoFechaManana}}\",\n  \"cupo\": 4,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Cupo mínimo\", () => pm.expect(pm.response.json().cupo).to.eql(4));",
+                      "pm.collectionVariables.set(\"torneoMinId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - alta con cupo 64 y largos máximos → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoMaxCodigo}}\",\n  \"nombre\": \"NNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNNN\",\n  \"descripcion\": \"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 64,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Cupo máximo\", () => pm.expect(pm.response.json().cupo).to.eql(64));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - anónimo consulta el detalle → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Detalle del torneo\", () => pm.expect(pm.response.json().codigo).to.eql(pm.collectionVariables.get(\"torneoCodigo\")));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - jugador filtra por nombre y estado → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos?nombre={{torneoNombre}}&estado=Abierto",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "{{torneoNombre}}"
+                    },
+                    {
+                      "key": "estado",
+                      "value": "Abierto"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const ids = pm.response.json().map(t => t.id);",
+                      "pm.test(\"Incluye el torneo creado\", () => pm.expect(ids).to.include(pm.collectionVariables.get(\"torneoId\")));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - anónimo filtra por fecha de inicio → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos?fechaDesde={{torneoFechaHoy}}&fechaHasta={{torneoFechaHoy}}&limit=100",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ],
+                  "query": [
+                    {
+                      "key": "fechaDesde",
+                      "value": "{{torneoFechaHoy}}"
+                    },
+                    {
+                      "key": "fechaHasta",
+                      "value": "{{torneoFechaHoy}}"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const torneos = pm.response.json();",
+                      "pm.test(\"Solo los que empiezan hoy\", () => torneos.forEach(t => pm.expect(t.fechaInicio).to.eql(pm.collectionVariables.get(\"torneoFechaHoy\"))));",
+                      "pm.test(\"Incluye el de cupo 4\", () => pm.expect(torneos.map(t => t.id)).to.include(pm.collectionVariables.get(\"torneoMinId\")));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - estado inexistente no filtra y limit mayor al tope usa el tope → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos?estado=Pausado&limit=600",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ],
+                  "query": [
+                    {
+                      "key": "estado",
+                      "value": "Pausado"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "600"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Como máximo 100\", () => pm.expect(pm.response.json().length).to.be.at.most(100));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación válida → 200",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"Copa Aura Invierno\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 16,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const torneo = pm.response.json();",
+                      "pm.test(\"Datos reemplazados\", () => { pm.expect(torneo.cupo).to.eql(16); pm.expect(torneo.nombre).to.eql(\"Copa Aura Invierno\"); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación que solo cambia mayúsculas del código → 200",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigoMinusculas}}\",\n  \"nombre\": \"Copa Aura Invierno\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 16,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"torneoCodigoMinusculas\", pm.collectionVariables.get(\"torneoCodigo\").toLowerCase());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cancelación → 200",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoMinId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoMinId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Queda Cancelado\", () => pm.expect(pm.response.json().estado).to.eql(\"Cancelado\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - anónimo no ve el detalle de un cancelado → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoMinId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoMinId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - anónimo no lista cancelados → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos?estado=Cancelado&limit=100",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ],
+                  "query": [
+                    {
+                      "key": "estado",
+                      "value": "Cancelado"
+                    },
+                    {
+                      "key": "limit",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Sin cancelados\", () => pm.expect(pm.response.json()).to.eql([]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - administrador ve el detalle de un cancelado → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoMinId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoMinId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Cancelado\", () => pm.expect(pm.response.json().estado).to.eql(\"Cancelado\"));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Torneos - Errores",
+          "item": [
+            {
+              "name": "Torneos - alta con código existente → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoMaxCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_CODE_ALREADY_EXISTS\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_CODE_ALREADY_EXISTS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - alta con código existente en otras mayúsculas → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoMinCodigoMinusculas}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"torneoMinCodigoMinusculas\", pm.collectionVariables.get(\"torneoMinCodigo\").toLowerCase());"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_CODE_ALREADY_EXISTS\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_CODE_ALREADY_EXISTS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - body vacío {} → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - JSON mal formado → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{ \"codigo\": \"COPA1\", ",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - código de 4 caracteres → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"COPA\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - nombre de 4 caracteres → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"Copa\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - descripción de 501 caracteres → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cupo 2 → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 2,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cupo 128 → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 128,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cupo que no es potencia de 2 → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"TPOT{{torneoMinCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 6,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error INVALID_DATA\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_DATA\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - fecha de fin igual al inicio → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"TFIN{{torneoMinCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaInicio}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error INVALID_DATA\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_DATA\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - fecha de inicio anterior a hoy → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"TINI{{torneoMinCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaAyer}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error INVALID_DATA\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_DATA\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - fechas y cupo nulos → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": null,\n  \"fechaFin\": null,\n  \"cupo\": null,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - organizador inexistente → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"TORG{{torneoMinCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": 999999\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error USER_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"USER_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - organizador con otro rol → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"TROL{{torneoMinCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{adminId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error INVALID_DATA\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_DATA\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - alta sin token → 401",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - jugador no puede crear torneos → 403",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - consulta con token inválido → 401",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "token-invalido",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - consulta de torneo inexistente → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "999999"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación de torneo inexistente → 404",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "999999"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación con el código de otro torneo → 409",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoMaxCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_CODE_ALREADY_EXISTS\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_CODE_ALREADY_EXISTS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación con fecha de inicio anterior a hoy → 400",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaAyer}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error INVALID_DATA\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_DATA\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación de un cancelado → 409",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoMinId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoMinId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoMinCodigo}}\",\n  \"nombre\": \"Copa Mini\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 4,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_MODIFIABLE\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_MODIFIABLE\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - jugador no puede modificar torneos → 403",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCodigo}}\",\n  \"nombre\": \"{{torneoNombre}}\",\n  \"descripcion\": \"Torneo eliminatorio de batallas de aura.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cancelar un cancelado → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoMinId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoMinId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_CANCELLABLE\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_CANCELLABLE\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cancelar un torneo inexistente → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/999999/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "999999",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - jugador no puede cancelar torneos → 403",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cancelación sin token → 401",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));",
                       "pm.execution.setNextRequest(\"Sesiones - logout administrador → 204\");"
                     ]
                   }
