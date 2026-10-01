@@ -9,6 +9,8 @@ namespace FarmeORT.WebAPI.Controllers;
 [Route("api/v1/torneos")]
 public sealed class TorneosController(IServicioTorneos servicioTorneos) : ControllerBase
 {
+    private bool ConsultaUnAnonimo => HttpContext.ObtenerSesionOpcional() is null;
+
     [HttpPost]
     public IActionResult Crear([FromBody] TorneoRequest request)
     {
@@ -19,14 +21,12 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     [HttpGet]
     public IActionResult Listar([FromQuery] FiltroTorneosRequest filtro)
     {
-        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
-        return Ok(servicioTorneos.Listar(filtro, esAnonimo));
+        return Ok(servicioTorneos.Listar(filtro, ConsultaUnAnonimo));
     }
 
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {
-        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
-        return Ok(servicioTorneos.ObtenerPorId(id, esAnonimo));
+        return Ok(servicioTorneos.ObtenerPorId(id, ConsultaUnAnonimo));
     }
 }
