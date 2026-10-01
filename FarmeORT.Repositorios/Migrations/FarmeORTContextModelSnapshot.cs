@@ -131,6 +131,27 @@ namespace FarmeORT.Repositorios.Migrations
                     b.ToTable("Torneos");
                 });
 
+            modelBuilder.Entity("FarmeORT.Dominio.Usuarios.SkillDeclarada", b =>
+                {
+                    b.Property<int>("JugadorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.Property<DateOnly>("FechaDeclaracion")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Nivel")
+                        .HasColumnType("int");
+
+                    b.HasKey("JugadorId", "SkillId");
+
+                    b.HasIndex("SkillId");
+
+                    b.ToTable("SkillsDeclaradas", (string)null);
+                });
+
             modelBuilder.Entity("FarmeORT.Dominio.Usuarios.Usuario", b =>
                 {
                     b.Property<int>("Id")
@@ -224,6 +245,28 @@ namespace FarmeORT.Repositorios.Migrations
                         .IsRequired();
 
                     b.Navigation("Organizador");
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Usuarios.SkillDeclarada", b =>
+                {
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", null)
+                        .WithMany("Repertorio")
+                        .HasForeignKey("JugadorId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FarmeORT.Dominio.Skills.Skill", "Skill")
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Skill");
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Usuarios.Usuario", b =>
+                {
+                    b.Navigation("Repertorio");
                 });
 #pragma warning restore 612, 618
         }
