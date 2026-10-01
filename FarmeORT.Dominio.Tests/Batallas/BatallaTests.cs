@@ -34,6 +34,24 @@ public sealed class BatallaTests
         Assert.AreSame(jugador2, sorteo.Jugador2Recibido);
     }
 
+    [TestMethod]
+    [DataRow(1300, 1200, 7)]
+    [DataRow(1200, 1300, 8)]
+    public void Constructor_EloDistinto_EmpiezaElMayorSinSortear(int elo1, int elo2, int esperado)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        typeof(Usuario).GetProperty(nameof(Usuario.Elo))!.SetValue(jugador1, elo1);
+        typeof(Usuario).GetProperty(nameof(Usuario.Elo))!.SetValue(jugador2, elo2);
+        var sorteo = new SorteoPreparado(esperado == 7 ? jugador2 : jugador1);
+
+        var batalla = new Batalla(CrearTorneo(), 1, jugador1, jugador2, sorteo);
+
+        Assert.AreEqual(esperado, batalla.JugadorInicialId);
+        Assert.AreEqual(esperado, batalla.JugadorTurnoId);
+        Assert.AreEqual(0, sorteo.Llamadas);
+    }
+
     private static Usuario CrearUsuario(int id, Rol rol)
     {
         return new Usuario("Ana", "Pérez", $"usuario{id}@farmeort.com", $"usuario{id}",
