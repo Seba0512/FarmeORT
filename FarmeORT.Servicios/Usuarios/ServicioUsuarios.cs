@@ -13,6 +13,7 @@ internal sealed class ServicioUsuarios(
     TimeProvider reloj) : IServicioUsuarios
 {
     private const int LimiteMaximo = 100;
+    private const int LimitePorDefecto = 20;
 
     public UsuarioResponse RegistrarJugador(RegistroJugadorRequest request)
     {
@@ -41,6 +42,11 @@ internal sealed class ServicioUsuarios(
         if(limite > LimiteMaximo)
         {
             limite = LimiteMaximo;
+        }
+
+        if(limite < 1)
+        {
+            limite = LimitePorDefecto;
         }
 
         var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, limite, filtro.Offset);
