@@ -1,5 +1,4 @@
 using FarmeORT.DTOs.Usuarios;
-using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Usuarios;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
@@ -33,14 +32,14 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
     [HttpPut("{id:int}")]
     public IActionResult Modificar(int id, [FromBody] UsuarioAdminRequest request)
     {
-        var sesion = (SesionAutenticada)HttpContext.Items[ClavesContexto.SesionAutenticada]!;
+        var sesion = HttpContext.ObtenerSesionAutenticada();
         return Ok(servicioUsuarios.Modificar(id, request, sesion.UsuarioId));
     }
 
     [HttpDelete("{id:int}")]
     public IActionResult Eliminar(int id)
     {
-        var sesion = (SesionAutenticada)HttpContext.Items[ClavesContexto.SesionAutenticada]!;
+        var sesion = HttpContext.ObtenerSesionAutenticada();
         servicioUsuarios.Eliminar(id, sesion.UsuarioId);
         return NoContent();
     }

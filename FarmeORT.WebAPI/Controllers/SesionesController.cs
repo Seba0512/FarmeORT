@@ -20,7 +20,7 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
     [Autenticacion]
     public IActionResult Eliminar()
     {
-        var sesion = (SesionAutenticada)HttpContext.Items[ClavesContexto.SesionAutenticada]!;
+        var sesion = HttpContext.ObtenerSesionAutenticada();
         servicioSesiones.CerrarSesion(sesion.Token);
         return NoContent();
     }
