@@ -200,6 +200,25 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
     }
 
+    [TestMethod]
+    public void ObtenerPorId_TorneoConObligatoria_CargaLaSkillAunqueSeHayaDesactivado()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = _baseDeDatos.Contexto.Skills.Single(s => s.Id == 3);
+        batalla.Torneo.AsociarSkillObligatoria(skill);
+        skill.Desactivar();
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.ObtenerPorId(batalla.Id);
+
+        Assert.IsNotNull(resultado);
+        Assert.HasCount(1, resultado.Torneo.SkillsObligatorias);
+        var obligatoria = resultado.Torneo.SkillsObligatorias.Single();
+        Assert.AreEqual(3, obligatoria.Id);
+        Assert.IsFalse(obligatoria.Activa);
+    }
+
     private FarmeORTContext CrearOtroContexto()
     {
         var opciones = new DbContextOptionsBuilder<FarmeORTContext>()
