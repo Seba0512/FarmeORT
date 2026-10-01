@@ -1,5 +1,4 @@
-using FarmeORT.Repositorios;
-using FarmeORT.Servicios;
+using FarmeORT.Fabrica;
 using FarmeORT.WebAPI.Filtros;
 using FarmeORT.WebAPI.Validaciones;
 
@@ -11,10 +10,7 @@ var connectionString = builder.Configuration.GetConnectionString("FarmeORT")
 builder.Services
     .AddControllers(opciones => opciones.Filters.Add<FiltroExcepciones>())
     .ConfigureApiBehaviorOptions(opciones => opciones.InvalidModelStateResponseFactory = RespuestaValidacion.Crear);
-builder.Services
-    .AddSingleton(TimeProvider.System)
-    .AgregarServicios()
-    .AgregarRepositorios(connectionString);
+builder.Services.AgregarDependencias(connectionString);
 
 var app = builder.Build();
 
