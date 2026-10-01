@@ -77,6 +77,19 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
     public void Actualizar(Usuario usuario)
     {
         contexto.Usuarios.Update(usuario);
-        contexto.SaveChanges();
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateException)
+        {
+            contexto.Entry(usuario).State = EntityState.Detached;
+            if(ObtenerPorEmail(usuario.Email) is not null)
+            {
+                throw new EmailYaExisteException();
+            }
+
+            throw;
+        }
     }
 }
