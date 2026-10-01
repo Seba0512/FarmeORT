@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.Repositorios.Torneos;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Torneos;
 
@@ -188,6 +189,33 @@ public sealed class RepositorioTorneosTests
         CollectionAssert.AreEqual(new[] { "COPAAURA" }, torneos.Select(t => t.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Actualizar_TorneoModificado_GuardaLosCambios()
+    {
+        var torneo = GuardarYCargar(CrearTorneo("COPAAURA"));
+        torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, torneo.Organizador, FechaActual);
+
+        _repositorio.Actualizar(torneo);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var guardado = _baseDeDatos.Contexto.Torneos.Single(t => t.Id == torneo.Id);
+        Assert.AreEqual("COPAFUEGO", guardado.Codigo);
+        Assert.AreEqual("Copa Fuego", guardado.Nombre);
+        Assert.AreEqual(16, guardado.Cupo);
+    }
+
+    [TestMethod]
+    public void Actualizar_TorneoCancelado_GuardaElEstado()
+    {
+        var torneo = GuardarYCargar(CrearTorneo("COPAAURA"));
+        torneo.Cancelar();
+
+        _repositorio.Actualizar(torneo);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.AreEqual(EstadoTorneo.Cancelado, _baseDeDatos.Contexto.Torneos.Single(t => t.Id == torneo.Id).Estado);
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroTorneos Filtro(
         EstadoTorneo? estado = null,
@@ -199,6 +227,14 @@ public sealed class RepositorioTorneosTests
         int desplazamiento = 0)
     {
         return new FiltroTorneos(estado, fechaDesde, fechaHasta, nombre, null, excluirCancelados, limite, desplazamiento);
+    }
+
+    // Deja el torneo guardado y cargado desde el contexto, como lo recibe el servicio antes de modificarlo.
+    // No usa ObtenerPorId para que estos tests no dependan de otro método del repositorio (FIRST).
+    private Torneo GuardarYCargar(Torneo torneo)
+    {
+        GuardarTorneos(torneo);
+        return _baseDeDatos.Contexto.Torneos.Include(t => t.Organizador).Single(t => t.Id == torneo.Id);
     }
 
     private void GuardarTorneos(params Torneo[] torneos)
