@@ -7,7 +7,14 @@ public sealed class Lanzamiento
 {
     public Lanzamiento(Batalla batalla, int turno, Usuario jugador, Skill skill, DateTimeOffset fecha)
     {
-        throw new NotImplementedException();
+        Batalla = batalla;
+        BatallaId = batalla.Id;
+        Turno = turno;
+        Jugador = jugador;
+        JugadorId = jugador.Id;
+        Skill = skill;
+        SkillId = skill.Id;
+        Fecha = fecha;
     }
 
     public int Id { get; init; }

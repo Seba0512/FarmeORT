@@ -55,7 +55,10 @@ public sealed class Batalla
 
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
     {
-        throw new NotImplementedException();
+        var lanzamiento = new Lanzamiento(this, _lanzamientos.Count + 1, jugador, skill, fecha);
+        _lanzamientos.Add(lanzamiento);
+        JugadorTurnoId = jugador.Id == Jugador1Id ? Jugador2Id : Jugador1Id;
+        return lanzamiento;
     }
 
     public void Cancelar()
