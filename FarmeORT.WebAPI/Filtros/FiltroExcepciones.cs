@@ -52,6 +52,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "MANDATORY_SKILLS_LIMIT_REACHED", "Un torneo puede tener como máximo 2 skills obligatorias."),
         [typeof(SkillObligatoriaNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "MANDATORY_SKILL_NOT_FOUND", "La skill no es obligatoria en este torneo."),
+
+        // Inscripciones (D-41).
+        [typeof(SkillsObligatoriasFaltantesException)] =
+            new(StatusCodes.Status409Conflict, "MISSING_MANDATORY_SKILLS", "No tenés declaradas todas las skills obligatorias del torneo."),
     };
 
     public void OnException(ExceptionContext context)
@@ -61,6 +65,7 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         {
             UserMessage = errorMapeado.UserMessage ?? context.Exception.Message,
             ErrorCode = errorMapeado.ErrorCode,
+            Detalles = (context.Exception as ExcepcionConDetalles)?.Detalles,
         };
         context.Result = new ObjectResult(error) { StatusCode = errorMapeado.Status };
     }
