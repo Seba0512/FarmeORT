@@ -13,6 +13,12 @@ public sealed class Inscripcion
             throw new TorneoNoAbiertoException();
         }
 
+        var faltantes = jugador.SkillsFaltantes(torneo.SkillsObligatorias);
+        if(faltantes.Count > 0)
+        {
+            throw new SkillsObligatoriasFaltantesException(faltantes.Select(s => s.Codigo).ToList());
+        }
+
         Torneo = torneo;
         TorneoId = torneo.Id;
         Jugador = jugador;
