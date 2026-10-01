@@ -110,6 +110,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
             .Where(u => u.Rol == Rol.Jugador && !u.Eliminado)
             .OrderByDescending(u => u.Elo)
             .ThenBy(u => u.Id)
+            .Take(cantidad)
             .ToList();
     }
 
