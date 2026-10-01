@@ -65,6 +65,28 @@ public sealed class RepositorioSkillsTests
         Assert.IsNull(resultado);
     }
 
+    [TestMethod]
+    [DataRow("SIXSEVEN")]
+    [DataRow("sixseven")]
+    public void ExistePorCodigo_CodigoGuardado_DevuelveTrueSinDistinguirMayusculas(string codigo)
+    {
+        GuardarSkills(CrearSkill("SIXSEVEN"));
+
+        var existe = _repositorio.ExistePorCodigo(codigo);
+
+        Assert.IsTrue(existe);
+    }
+
+    [TestMethod]
+    public void ExistePorCodigo_CodigoInexistente_DevuelveFalse()
+    {
+        GuardarSkills(CrearSkill("SIXSEVEN"));
+
+        var existe = _repositorio.ExistePorCodigo("TRALALERO");
+
+        Assert.IsFalse(existe);
+    }
+
     private void GuardarSkills(params Skill[] skills)
     {
         _baseDeDatos.Contexto.Skills.AddRange(skills);
