@@ -48,6 +48,32 @@ public sealed class RepositorioInscripcionesTests
         Assert.AreEqual(Ahora, guardada.Fecha);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_IdExistente_DevuelveLaInscripcionConSuTorneoYSuJugador()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var id = GuardarInscripcion(torneoId, GuardarUsuario("anaperez", Rol.Jugador));
+
+        var resultado = _repositorio.ObtenerPorId(id);
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual("COPAAURA", resultado.Torneo.Codigo);
+        Assert.AreEqual(_organizadorId, resultado.Torneo.OrganizadorId);
+        Assert.AreEqual("anaperez", resultado.Jugador.Nickname);
+        Assert.IsNull(_repositorio.ObtenerPorId(99));
+    }
+
+    // Guarda una inscripción directamente con el contexto, sin usar métodos del repositorio (FIRST).
+    private int GuardarInscripcion(int torneoId, int jugadorId, Action<Inscripcion>? cambiar = null)
+    {
+        var inscripcion = CrearInscripcion(torneoId, jugadorId);
+        cambiar?.Invoke(inscripcion);
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        return inscripcion.Id;
+    }
+
     // El torneo y el jugador se toman del contexto, como en la API: el servicio los obtiene con el mismo contexto.
     private Inscripcion CrearInscripcion(int torneoId, int jugadorId)
     {
