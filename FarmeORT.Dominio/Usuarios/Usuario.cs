@@ -49,6 +49,8 @@ public sealed partial class Usuario
 
     public int Elo { get; private set; }
 
+    public bool Eliminado { get; private set; }
+
     public void Modificar(
         string nombre,
         string apellido,

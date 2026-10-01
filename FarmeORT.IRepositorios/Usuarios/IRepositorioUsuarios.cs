@@ -15,4 +15,6 @@ public interface IRepositorioUsuarios
     void Agregar(Usuario usuario);
 
     void Actualizar(Usuario usuario);
+
+    void Eliminar(Usuario usuario);
 }

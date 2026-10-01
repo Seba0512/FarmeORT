@@ -26,6 +26,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         Rol = Rol.Administrador,
         ContrasenaHash = "3LS7NmeR5ARDHCPv9u/dfA==.SXnTh+G3L29NXz1uN1cIe0KKW2S7Mpxc1vmT7g1RKw0=",
         Elo = 1200,
+        Eliminado = false,
     };
 
     public DbSet<Usuario> Usuarios => Set<Usuario>();

@@ -62,6 +62,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         Guardar(usuario);
     }
 
+    public void Eliminar(Usuario usuario)
+    {
+        _ = usuario;
+        throw new NotImplementedException();
+    }
+
     // Otro usuario puede ocupar el email o nickname entre la validación del servicio y el guardado (D-23).
     private void Guardar(Usuario usuario)
     {
