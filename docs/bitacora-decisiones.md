@@ -835,7 +835,7 @@ producirla.
 
 ---
 
-### D-33 — Las clases del catálogo de skills son `public` y sin `sealed`
+### D-33 — Las clases del catálogo de skills son `public` y sin `sealed` (revertida)
 
 **Problema:** `AGENTS.md` pide `internal sealed` por defecto. Quien desarrolló el catálogo de skills
 prefiere clases más simples de leer y de explicar, sin modificadores que no aportan en un proyecto de
@@ -864,6 +864,14 @@ skills`.
 
 **Participación de IA:** el cambio lo pidió el integrante; Claude Code señaló el conflicto con
 `AGENTS.md` y con la regla CA1852, y aplicó el cambio solo en las clases de skills.
+
+**Actualización (revertida el 2026-10-01):** al revisar las transcripciones de clase, los docentes
+remarcan que cada assembly exponga solo su interfaz ("Independencia de librerías") y que la WebAPI no
+conozca la lógica ni el acceso a datos: en un ejemplo bajaron un diagrama de componentes de 8 a 4 por
+eso. Con `ServicioSkills` y `RepositorioSkills` públicos, la WebAPI podía usarlos directamente. Claude
+Code planteó el conflicto y el integrante eligió volver las clases de skills a `internal sealed`, igual
+que el resto del código, en lugar de mantener la excepción. Evidencia: commit `refactor [REFACTOR] (.):
+vuelve a internal sealed las clases del catálogo de skills`.
 
 ---
 
@@ -914,8 +922,7 @@ skills`.
   2.2): no puede declararse en un repertorio ni asociarse como obligatoria, sin efecto retroactivo.
 - Notificaciones: la letra 2026.2 y la especificación de la API no las piden, pero `AGENTS.md` (§8) y la
   skill de dominio sí. Se postergan (decisión del 2026-10-01); si se descartan, corregir `AGENTS.md` por PR.
-- Decidir en equipo si las clases nuevas siguen el criterio de D-33 o el de `AGENTS.md`, y dejar uno
-  solo escrito en `AGENTS.md`. Documentar en el informe de diseño qué tipos forman la interfaz de cada
-  assembly.
+- Documentar en el informe de diseño qué tipos forman la interfaz de cada assembly (letra,
+  "Independencia de librerías").
 - La colección de Postman trae `baseUrl` con el puerto 5088, pero `launchSettings.json` levanta la API
   en el 5294: unificarlo o explicarlo en la guía de instalación.
