@@ -13,7 +13,9 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
     public IReadOnlyList<Skill> Listar(FiltroSkills filtro)
     {
         _ = filtro;
-        throw new NotImplementedException();
+        return contexto.Skills
+            .OrderBy(s => s.Id)
+            .ToList();
     }
 
     // SQL Server no distingue mayúsculas y SQLite sí: se compara en minúscula para responder igual en los dos.
