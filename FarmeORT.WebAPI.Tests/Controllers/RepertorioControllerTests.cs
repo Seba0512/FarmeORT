@@ -46,6 +46,19 @@ public sealed class RepertorioControllerTests
         _servicioRepertorio.Verify(s => s.Declarar(JugadorId, request), Times.Once);
     }
 
+    [TestMethod]
+    public void Listar_JugadorAutenticado_Devuelve200ConSuRepertorio()
+    {
+        IReadOnlyList<SkillDeclaradaResponse> repertorio = [CrearResponse()];
+        _servicioRepertorio.Setup(s => s.Listar(JugadorId)).Returns(repertorio);
+
+        var resultado = _controller.Listar() as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(repertorio, resultado.Value);
+    }
+
     private static SkillDeclaradaResponse CrearResponse()
     {
         return new SkillDeclaradaResponse

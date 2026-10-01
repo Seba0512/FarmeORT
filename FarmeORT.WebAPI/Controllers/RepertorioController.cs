@@ -9,6 +9,12 @@ namespace FarmeORT.WebAPI.Controllers;
 [Route("api/v1/jugadores/actual/repertorio")]
 public sealed class RepertorioController(IServicioRepertorio servicioRepertorio) : ControllerBase
 {
+    [HttpGet]
+    public IActionResult Listar()
+    {
+        throw new NotImplementedException();
+    }
+
     [HttpPost]
     public IActionResult Declarar([FromBody] SkillDeclaradaRequest request)
     {
