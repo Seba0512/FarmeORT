@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Skills;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Tests.Skills;
 
@@ -55,6 +56,19 @@ public sealed class SkillTests
         skill.Activar();
 
         Assert.IsTrue(skill.Activa);
+    }
+
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("SIX7")]
+    [DataRow("ABCDEFGHIJKLMNOPQRSTU")]
+    [DataRow("SIX-SEVEN")]
+    [DataRow("SIX SEVEN")]
+    public void Constructor_CodigoInvalido_LanzaDatosInvalidos(string codigo)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearSkill(codigo: codigo));
+
+        Assert.AreEqual("El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.", excepcion.Message);
     }
 
     private static Skill CrearSkill(
