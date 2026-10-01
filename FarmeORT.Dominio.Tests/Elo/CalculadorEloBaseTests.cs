@@ -43,4 +43,19 @@ public sealed class CalculadorEloBaseTests
         Assert.AreEqual(nuevoEloGanador, resultado.NuevoEloGanador);
         Assert.AreEqual(nuevoEloPerdedor, resultado.NuevoEloPerdedor);
     }
+
+    [TestMethod]
+    [DataRow(100, 100, 116, 100)]
+    [DataRow(110, 105, 126, 100)]
+    public void Calcular_PerdedorQuedariaDebajoDeCien_QuedaEnCien(
+        int eloGanador,
+        int eloPerdedor,
+        int nuevoEloGanador,
+        int nuevoEloPerdedor)
+    {
+        var resultado = _calculador.Calcular(eloGanador, eloPerdedor);
+
+        Assert.AreEqual(nuevoEloGanador, resultado.NuevoEloGanador);
+        Assert.AreEqual(nuevoEloPerdedor, resultado.NuevoEloPerdedor);
+    }
 }
