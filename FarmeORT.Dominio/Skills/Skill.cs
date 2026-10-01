@@ -30,4 +30,9 @@ public sealed class Skill
         Categoria = categoria;
         Dificultad = dificultad;
     }
+
+    public void Desactivar()
+    {
+        Activa = false;
+    }
 }

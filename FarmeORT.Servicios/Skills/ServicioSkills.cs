@@ -53,6 +53,8 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
     {
         _ = request;
         var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
+        skill.Desactivar();
+        repositorioSkills.Actualizar(skill);
         return CrearResponse(skill);
     }
 
