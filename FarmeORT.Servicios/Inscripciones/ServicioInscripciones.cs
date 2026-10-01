@@ -53,6 +53,11 @@ internal sealed class ServicioInscripciones(
             throw new NoEsDuenoDeLaInscripcionException();
         }
 
+        if(rol == Roles.Organizador && inscripcion.Torneo.OrganizadorId != usuarioId)
+        {
+            throw new NoEsOrganizadorDelTorneoException();
+        }
+
         return CrearResponse(inscripcion);
     }
 
