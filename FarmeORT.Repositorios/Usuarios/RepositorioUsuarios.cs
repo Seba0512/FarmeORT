@@ -59,6 +59,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         }
         catch(DbUpdateException)
         {
+            contexto.Entry(usuario).State = EntityState.Detached;
             if(ObtenerPorEmail(usuario.Email) is not null)
             {
                 throw new EmailYaExisteException();
