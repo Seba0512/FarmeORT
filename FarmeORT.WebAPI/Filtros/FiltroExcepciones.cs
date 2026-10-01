@@ -56,6 +56,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         // Inscripciones (D-41).
         [typeof(SkillsObligatoriasFaltantesException)] =
             new(StatusCodes.Status409Conflict, "MISSING_MANDATORY_SKILLS", "No tenés declaradas todas las skills obligatorias del torneo."),
+        [typeof(JugadoresSinSkillObligatoriaException)] =
+            new(StatusCodes.Status409Conflict, "PLAYERS_MISSING_MANDATORY_SKILL", "Hay jugadores inscriptos que no tienen declarada la skill."),
     };
 
     public void OnException(ExceptionContext context)
