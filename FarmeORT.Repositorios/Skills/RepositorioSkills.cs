@@ -28,6 +28,12 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
             consulta = consulta.Where(s => s.Activa == activa);
         }
 
+        if(!string.IsNullOrWhiteSpace(filtro.Nombre))
+        {
+            var nombre = filtro.Nombre.ToLower();
+            consulta = consulta.Where(s => s.Nombre.ToLower().Contains(nombre));
+        }
+
         return consulta
             .OrderBy(s => s.Id)
             .ToList();
