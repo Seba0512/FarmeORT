@@ -151,6 +151,33 @@ public sealed class ServicioSkillsTests
         _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Modificar_DatosValidos_ReemplazaLosDatosYGuarda()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+        var request = new SkillRequest
+        {
+            Codigo = Codigo,
+            Nombre = "Six-Seven Pro",
+            Descripcion = "Versión con giro completo y aplauso final.",
+            Categoria = CategoriasSkill.Baile,
+            Dificultad = 4,
+        };
+
+        var response = _servicio.Modificar(3, request);
+
+        Assert.AreEqual(3, response.Id);
+        Assert.AreEqual(Codigo, response.Codigo);
+        Assert.AreEqual("Six-Seven Pro", response.Nombre);
+        Assert.AreEqual("Versión con giro completo y aplauso final.", response.Descripcion);
+        Assert.AreEqual(CategoriasSkill.Baile, response.Categoria);
+        Assert.AreEqual(4, response.Dificultad);
+        Assert.IsTrue(response.Activa);
+        _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
