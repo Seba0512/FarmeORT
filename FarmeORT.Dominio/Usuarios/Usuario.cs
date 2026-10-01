@@ -71,15 +71,14 @@ public sealed partial class Usuario
         string contrasenaHash,
         DateOnly fechaActual)
     {
-        _ = nombre;
-        _ = apellido;
-        _ = email;
-        _ = nickname;
-        _ = fechaNacimiento;
-        _ = rol;
-        _ = contrasenaHash;
         _ = fechaActual;
-        throw new NotImplementedException();
+        Nombre = nombre;
+        Apellido = apellido;
+        Email = email;
+        Nickname = nickname;
+        FechaNacimiento = fechaNacimiento;
+        Rol = rol;
+        ContrasenaHash = contrasenaHash;
     }
 
     private static void ValidarNombre(string nombre)
