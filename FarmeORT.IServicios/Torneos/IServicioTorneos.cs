@@ -11,4 +11,6 @@ public interface IServicioTorneos
     IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo);
 
     TorneoResponse Modificar(int id, TorneoRequest request);
+
+    TorneoResponse Cancelar(int id);
 }

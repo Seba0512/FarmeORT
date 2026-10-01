@@ -87,6 +87,20 @@ public sealed class TorneosControllerTests
         _servicioTorneos.Verify(s => s.Modificar(4, request), Times.Once);
     }
 
+    [TestMethod]
+    public void Cancelar_TorneoCancelable_Devuelve200ConElTorneoCancelado()
+    {
+        var torneo = CrearResponse();
+        _servicioTorneos.Setup(s => s.Cancelar(4)).Returns(torneo);
+
+        var resultado = _controller.Cancelar(4) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(torneo, resultado.Value);
+        _servicioTorneos.Verify(s => s.Cancelar(4), Times.Once);
+    }
+
     private void PrepararContexto(bool autenticado)
     {
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
