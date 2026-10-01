@@ -11,4 +11,6 @@ public interface IServicioSkills
     IReadOnlyList<SkillResponse> Listar(FiltroSkillsRequest filtro);
 
     SkillResponse Modificar(int id, SkillRequest request);
+
+    SkillResponse CambiarEstado(int id, SkillEstadoRequest request);
 }

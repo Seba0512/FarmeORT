@@ -100,4 +100,19 @@ public sealed class SkillsControllerTests
         Assert.AreSame(skill, resultado.Value);
         _servicioSkills.Verify(s => s.Modificar(3, request), Times.Once);
     }
+
+    [TestMethod]
+    public void CambiarEstado_Desactivar_Devuelve200ConLaSkillActualizada()
+    {
+        var request = new SkillEstadoRequest { Activa = false };
+        var skill = new SkillResponse { Id = 3, Codigo = "SIXSEVEN", Nombre = "Six-Seven", Categoria = "Gestual", Dificultad = 2, Activa = false };
+        _servicioSkills.Setup(s => s.CambiarEstado(3, request)).Returns(skill);
+
+        var resultado = _controller.CambiarEstado(3, request) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(skill, resultado.Value);
+        _servicioSkills.Verify(s => s.CambiarEstado(3, request), Times.Once);
+    }
 }
