@@ -1,5 +1,7 @@
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Repertorio;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Repertorio;
@@ -20,7 +22,7 @@ internal sealed class ServicioRepertorio(
     public SkillDeclaradaResponse Declarar(int jugadorId, SkillDeclaradaRequest request)
     {
         var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId)!;
-        var skill = repositorioSkills.ObtenerPorId(request.SkillId.GetValueOrDefault())!;
+        var skill = ObtenerSkillExistente(request.SkillId.GetValueOrDefault());
         var declarada = jugador.DeclararSkill(skill, request.Nivel.GetValueOrDefault(), ObtenerFechaActual());
         repositorioUsuarios.GuardarRepertorio(jugador);
         return CrearResponse(declarada);
@@ -31,6 +33,17 @@ internal sealed class ServicioRepertorio(
         _ = jugadorId;
         _ = skillId;
         throw new NotImplementedException();
+    }
+
+    private Skill ObtenerSkillExistente(int id)
+    {
+        var skill = repositorioSkills.ObtenerPorId(id);
+        if(skill == null)
+        {
+            throw new SkillNoEncontradaException();
+        }
+
+        return skill;
     }
 
     private DateOnly ObtenerFechaActual()
