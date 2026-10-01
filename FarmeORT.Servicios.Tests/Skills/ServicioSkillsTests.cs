@@ -66,6 +66,16 @@ public sealed class ServicioSkillsTests
         _repositorioSkills.Verify(r => r.Agregar(It.IsAny<Skill>()), Times.Never);
     }
 
+    [TestMethod]
+    [DataRow("Cocina")]
+    [DataRow("1")]
+    public void Crear_CategoriaInexistente_LanzaDatosInvalidosSinConsultarLaBase(string categoria)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(CrearRequest(categoria: categoria)));
+
+        Assert.AreEqual("La categoría debe ser Gestual, Vocal, Baile o Meme.", excepcion.Message);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
