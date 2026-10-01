@@ -80,6 +80,33 @@ public sealed class Batalla
 
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
     {
+        ValidarLanzamiento(jugador, skill);
+
+        var lanzamiento = new Lanzamiento(this, _lanzamientos.Count + 1, jugador, skill, fecha);
+        _lanzamientos.Add(lanzamiento);
+        JugadorTurnoId = jugador.Id == Jugador1Id ? Jugador2Id : Jugador1Id;
+        if(_lanzamientos.Count == LanzamientosTotales)
+        {
+            Estado = EstadoBatalla.EnArbitraje;
+            JugadorTurnoId = null;
+        }
+
+        return lanzamiento;
+    }
+
+    public void Cancelar()
+    {
+        if(Estado != EstadoBatalla.Pendiente && Estado != EstadoBatalla.EnArbitraje)
+        {
+            throw new BatallaNoCancelableException();
+        }
+
+        Estado = EstadoBatalla.Cancelada;
+        JugadorTurnoId = null;
+    }
+
+    private void ValidarLanzamiento(Usuario jugador, Skill skill)
+    {
         if(Estado != EstadoBatalla.Pendiente)
         {
             throw new BatallaNoPendienteException();
@@ -113,27 +140,5 @@ public sealed class Batalla
         {
             throw new SkillObligatoriaPendienteException();
         }
-
-        var lanzamiento = new Lanzamiento(this, _lanzamientos.Count + 1, jugador, skill, fecha);
-        _lanzamientos.Add(lanzamiento);
-        JugadorTurnoId = jugador.Id == Jugador1Id ? Jugador2Id : Jugador1Id;
-        if(_lanzamientos.Count == LanzamientosTotales)
-        {
-            Estado = EstadoBatalla.EnArbitraje;
-            JugadorTurnoId = null;
-        }
-
-        return lanzamiento;
-    }
-
-    public void Cancelar()
-    {
-        if(Estado != EstadoBatalla.Pendiente && Estado != EstadoBatalla.EnArbitraje)
-        {
-            throw new BatallaNoCancelableException();
-        }
-
-        Estado = EstadoBatalla.Cancelada;
-        JugadorTurnoId = null;
     }
 }

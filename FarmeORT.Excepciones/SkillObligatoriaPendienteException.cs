@@ -1,3 +1,5 @@
 namespace FarmeORT.Excepciones;
 
-public sealed class SkillObligatoriaPendienteException : Exception;
+public sealed class SkillObligatoriaPendienteException : Exception
+{
+}

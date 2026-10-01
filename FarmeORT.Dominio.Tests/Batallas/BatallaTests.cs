@@ -55,13 +55,6 @@ public sealed class BatallaTests
         Assert.AreEqual(0, sorteo.Llamadas);
     }
 
-    private static Usuario CrearUsuario(int id, Rol rol)
-    {
-        return new Usuario("Ana", "Pérez", $"usuario{id}@farmeort.com", $"usuario{id}",
-            new DateOnly(2000, 1, 1), rol, "hash", FechaActual)
-        { Id = id };
-    }
-
     [TestMethod]
     [DataRow(EstadoBatalla.Pendiente)]
     [DataRow(EstadoBatalla.EnArbitraje)]
@@ -87,7 +80,7 @@ public sealed class BatallaTests
         typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
         typeof(Batalla).GetProperty(nameof(Batalla.JugadorTurnoId))!.SetValue(batalla, null);
 
-        Assert.ThrowsExactly<BatallaNoCancelableException>(() => batalla.Cancelar());
+        Assert.ThrowsExactly<BatallaNoCancelableException>(batalla.Cancelar);
 
         Assert.AreEqual(estado, batalla.Estado);
         Assert.IsNull(batalla.JugadorTurnoId);
@@ -108,7 +101,7 @@ public sealed class BatallaTests
 
         var lanzamiento = batalla.Lanzar(inicial, skill, fecha);
 
-        Assert.AreEqual(1, batalla.Lanzamientos.Count);
+        Assert.HasCount(1, batalla.Lanzamientos);
         Assert.AreSame(lanzamiento, batalla.Lanzamientos.Single());
         Assert.AreSame(batalla, lanzamiento.Batalla);
         Assert.AreEqual(12, lanzamiento.BatallaId);
@@ -357,6 +350,13 @@ public sealed class BatallaTests
 
         Assert.AreEqual(99, lanzamiento.SkillId);
         Assert.AreEqual(7, lanzamiento.Turno);
+    }
+
+    private static Usuario CrearUsuario(int id, Rol rol)
+    {
+        return new Usuario("Ana", "Pérez", $"usuario{id}@farmeort.com", $"usuario{id}",
+            new DateOnly(2000, 1, 1), rol, "hash", FechaActual)
+        { Id = id };
     }
 
     private static void AsociarObligatorias(Batalla batalla)

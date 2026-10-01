@@ -37,7 +37,8 @@ public sealed class ServicioLanzamientosTests
         var jugador1 = CrearUsuario(7, Rol.Jugador);
         var jugador2 = CrearUsuario(8, Rol.Jugador);
         var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
-            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, CrearUsuario(2, Rol.Organizador), FechaActual) { Id = 5 };
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, CrearUsuario(2, Rol.Organizador), FechaActual)
+        { Id = 5 };
         var sorteo = new Mock<ISorteo>(MockBehavior.Strict);
         sorteo.Setup(s => s.ElegirEntre(jugador1, jugador2)).Returns(jugador1);
         _batalla = new Batalla(torneo, 1, jugador1, jugador2, sorteo.Object) { Id = 12 };
@@ -183,6 +184,7 @@ public sealed class ServicioLanzamientosTests
     private static Usuario CrearUsuario(int id, Rol rol)
     {
         return new Usuario("Ana", "Pérez", $"usuario{id}@farmeort.com", $"usuario{id}",
-            new DateOnly(2000, 1, 1), rol, "hash", FechaActual) { Id = id };
+            new DateOnly(2000, 1, 1), rol, "hash", FechaActual)
+        { Id = id };
     }
 }

@@ -163,7 +163,7 @@ public sealed class RepositorioBatallasTests
         var skill = new Skill("AURASTARE", "Aura Stare", "Mirada fija para farmear aura en la batalla.", CategoriaSkill.Gestual, 2) { Id = 4 };
         _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 2, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
 
-        Assert.ThrowsExactly<TurnoIncorrectoException>(() => _repositorio.Guardar());
+        Assert.ThrowsExactly<TurnoIncorrectoException>(_repositorio.Guardar);
 
         Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
     }
@@ -175,7 +175,7 @@ public sealed class RepositorioBatallasTests
         var skill = _baseDeDatos.Contexto.Skills.Single(s => s.Id == 3);
         _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 3, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
 
-        Assert.ThrowsExactly<SkillYaLanzadaException>(() => _repositorio.Guardar());
+        Assert.ThrowsExactly<SkillYaLanzadaException>(_repositorio.Guardar);
 
         Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
     }
@@ -192,7 +192,7 @@ public sealed class RepositorioBatallasTests
         cancelada.Cancelar();
         otroContexto.SaveChanges();
 
-        Assert.ThrowsExactly<BatallaModificadaException>(() => _repositorio.Guardar());
+        Assert.ThrowsExactly<BatallaModificadaException>(_repositorio.Guardar);
 
         var guardada = _baseDeDatos.Contexto.Batallas.Single(b => b.Id == batalla.Id);
         Assert.AreEqual(EstadoBatalla.Cancelada, guardada.Estado);
@@ -227,7 +227,7 @@ public sealed class RepositorioBatallasTests
         _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 9, batalla.Jugador1, skill, FechaLanzamiento));
         _baseDeDatos.Contexto.Entry(batalla).Property(b => b.JugadorTurnoId).CurrentValue = 8;
 
-        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Guardar());
+        Assert.ThrowsExactly<DbUpdateException>(_repositorio.Guardar);
 
         _baseDeDatos.Contexto.ChangeTracker.Clear();
         Assert.HasCount(2, _baseDeDatos.Contexto.Lanzamientos.ToList());
@@ -248,7 +248,8 @@ public sealed class RepositorioBatallasTests
         var jugador1 = CrearUsuario(7, Rol.Jugador);
         var jugador2 = CrearUsuario(8, Rol.Jugador);
         var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
-            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, CrearUsuario(2, Rol.Organizador), FechaActual) { Id = 5 };
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, CrearUsuario(2, Rol.Organizador), FechaActual)
+        { Id = 5 };
         var batalla = new Batalla(torneo, 2, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 12 };
         var skill = new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2) { Id = 3 };
         _baseDeDatos.Contexto.Batallas.Add(batalla);
@@ -262,7 +263,8 @@ public sealed class RepositorioBatallasTests
     private static Usuario CrearUsuario(int id, Rol rol)
     {
         return new Usuario("Ana", "Pérez", $"usuario{id}@farmeort.com", $"usuario{id}",
-            new DateOnly(2000, 1, 1), rol, "hash", FechaActual) { Id = id };
+            new DateOnly(2000, 1, 1), rol, "hash", FechaActual)
+        { Id = id };
     }
 
     private sealed class SorteoInicial(Usuario elegido) : ISorteo

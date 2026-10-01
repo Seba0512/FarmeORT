@@ -11,9 +11,11 @@ public sealed class SorteoAleatorioTests
     {
         var fecha = new DateOnly(2026, 10, 1);
         var jugador1 = new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez",
-            new DateOnly(2000, 1, 1), Rol.Jugador, "hash", fecha) { Id = 7 };
+            new DateOnly(2000, 1, 1), Rol.Jugador, "hash", fecha)
+        { Id = 7 };
         var jugador2 = new Usuario("Juan", "Pérez", "juan@farmeort.com", "juanperez",
-            new DateOnly(2000, 1, 1), Rol.Jugador, "hash", fecha) { Id = 8 };
+            new DateOnly(2000, 1, 1), Rol.Jugador, "hash", fecha)
+        { Id = 8 };
         var sorteo = new SorteoAleatorio();
 
         var elegido = sorteo.ElegirEntre(jugador1, jugador2);
