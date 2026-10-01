@@ -151,6 +151,16 @@ public sealed class RepositorioSkillsTests
         CollectionAssert.AreEqual(new[] { "SIXSEVEN", "SIXSEVENPRO" }, skills.Select(s => s.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Listar_ConLimiteYDesplazamiento_DevuelveLaPaginaEnOrdenDeId()
+    {
+        GuardarSkills(CrearSkill("SKILLUNO"), CrearSkill("SKILLDOS"), CrearSkill("SKILLTRES"), CrearSkill("SKILLCUATRO"));
+
+        var skills = _repositorio.Listar(SinFiltros() with { Limite = 2, Desplazamiento = 1 });
+
+        CollectionAssert.AreEqual(new[] { "SKILLDOS", "SKILLTRES" }, skills.Select(s => s.Codigo).ToArray());
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
