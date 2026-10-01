@@ -7,4 +7,6 @@ public interface IServicioSkills
     SkillResponse Crear(SkillRequest request);
 
     SkillResponse ObtenerPorId(int id);
+
+    IReadOnlyList<SkillResponse> Listar(FiltroSkillsRequest filtro);
 }

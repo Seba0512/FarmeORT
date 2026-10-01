@@ -64,4 +64,18 @@ public sealed class SkillsControllerTests
         Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
         Assert.AreSame(skill, resultado.Value);
     }
+
+    [TestMethod]
+    public void Listar_ConFiltros_Devuelve200ConLasSkills()
+    {
+        var filtro = new FiltroSkillsRequest { Categoria = "Gestual", Activa = true, Limit = 10, Offset = 0 };
+        IReadOnlyList<SkillResponse> skills = [new SkillResponse { Id = 3, Nombre = "Six-Seven" }];
+        _servicioSkills.Setup(s => s.Listar(filtro)).Returns(skills);
+
+        var resultado = _controller.Listar(filtro) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(skills, resultado.Value);
+    }
 }

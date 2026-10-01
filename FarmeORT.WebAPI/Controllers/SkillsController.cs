@@ -15,6 +15,13 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
         return Created($"/api/v1/skills/{response.Id}", response);
     }
 
+    [HttpGet]
+    public IActionResult Listar([FromQuery] FiltroSkillsRequest filtro)
+    {
+        _ = filtro;
+        throw new NotImplementedException();
+    }
+
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {
