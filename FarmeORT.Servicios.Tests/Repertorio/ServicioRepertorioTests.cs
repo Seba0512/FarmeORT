@@ -138,6 +138,16 @@ public sealed class ServicioRepertorioTests
         Assert.AreEqual(2, repertorio[0].Nivel);
     }
 
+    [TestMethod]
+    public void ListarYQuitar_JugadorInexistente_LanzanUsuarioNoEncontrado()
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns((Usuario?)null);
+
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(() => _servicio.Listar(JugadorId));
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(() => _servicio.Quitar(JugadorId, SkillId));
+        _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.IsAny<Usuario>()), Times.Never);
+    }
+
     private void ConfigurarDeclaracionValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
