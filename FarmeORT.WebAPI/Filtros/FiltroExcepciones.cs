@@ -52,6 +52,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "MANDATORY_SKILLS_LIMIT_REACHED", "Un torneo puede tener como máximo 2 skills obligatorias."),
         [typeof(SkillObligatoriaNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "MANDATORY_SKILL_NOT_FOUND", "La skill no es obligatoria en este torneo."),
+
+        // Persona B: batallas y lanzamientos.
+        [typeof(BatallaNoEncontradaException)] =
+            new(StatusCodes.Status404NotFound, "BATTLE_NOT_FOUND", "No existe una batalla con ese id."),
     };
 
     public void OnException(ExceptionContext context)
