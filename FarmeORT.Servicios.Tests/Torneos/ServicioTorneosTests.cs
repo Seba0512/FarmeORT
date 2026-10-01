@@ -280,6 +280,17 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void Modificar_CodigoDeOtroTorneo_LanzaCodigoTorneoYaExisteSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(OrganizadorId)).Returns(_organizador);
+        _repositorioTorneos.Setup(r => r.ExistePorCodigo("COPAFUEGO")).Returns(true);
+
+        Assert.ThrowsExactly<CodigoTorneoYaExisteException>(() => _servicio.Modificar(TorneoId, CrearRequest(codigo: "COPAFUEGO")));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();
