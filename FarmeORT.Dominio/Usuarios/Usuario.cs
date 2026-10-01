@@ -100,7 +100,12 @@ public sealed partial class Usuario
 
     private static void ValidarEdad(DateOnly fechaNacimiento, DateOnly fechaActual)
     {
-        if(fechaNacimiento > fechaActual || fechaNacimiento.AddYears(EdadMinima) > fechaActual)
+        if(fechaNacimiento > fechaActual)
+        {
+            throw new DatosInvalidosException("La fecha de nacimiento no puede ser futura.");
+        }
+
+        if(fechaNacimiento.AddYears(EdadMinima) > fechaActual)
         {
             throw new DatosInvalidosException("El usuario debe tener 13 años o más.");
         }
