@@ -9,6 +9,8 @@ public sealed class Torneo
     private const string PatronCodigo = "^[a-zA-Z0-9]{5,20}$";
     private const int LargoMinimoNombre = 5;
     private const int LargoMaximoNombre = 60;
+    private const int LargoMinimoDescripcion = 20;
+    private const int LargoMaximoDescripcion = 500;
 
     public Torneo(
         string codigo,
@@ -23,6 +25,7 @@ public sealed class Torneo
         _ = fechaActual;
         ValidarCodigo(codigo);
         ValidarNombre(nombre);
+        ValidarDescripcion(descripcion);
 
         Codigo = codigo;
         Nombre = nombre;
@@ -73,6 +76,19 @@ public sealed class Torneo
         if(nombre.Length < LargoMinimoNombre || nombre.Length > LargoMaximoNombre)
         {
             throw new DatosInvalidosException("El nombre debe tener entre 5 y 60 caracteres.");
+        }
+    }
+
+    private static void ValidarDescripcion(string descripcion)
+    {
+        if(string.IsNullOrWhiteSpace(descripcion))
+        {
+            throw new DatosInvalidosException("La descripción es obligatoria.");
+        }
+
+        if(descripcion.Length < LargoMinimoDescripcion || descripcion.Length > LargoMaximoDescripcion)
+        {
+            throw new DatosInvalidosException("La descripción debe tener entre 20 y 500 caracteres.");
         }
     }
 }
