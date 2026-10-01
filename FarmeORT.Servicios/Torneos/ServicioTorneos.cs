@@ -72,7 +72,9 @@ internal sealed class ServicioTorneos(
     {
         var torneo = ObtenerTorneoExistente(id);
         var organizador = ObtenerUsuarioExistente(request.OrganizadorId.GetValueOrDefault());
-        if(torneo.Codigo != request.Codigo)
+
+        // El índice único de SQL Server no distingue mayúsculas: cambiar solo mayúsculas no ocupa un código ajeno (D-31).
+        if(!string.Equals(torneo.Codigo, request.Codigo, StringComparison.OrdinalIgnoreCase))
         {
             ValidarCodigoDisponible(request.Codigo);
         }
