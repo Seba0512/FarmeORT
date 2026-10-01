@@ -70,9 +70,19 @@ internal sealed class ServicioTorneos(
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
     {
-        _ = id;
-        _ = request;
-        throw new NotImplementedException();
+        var torneo = repositorioTorneos.ObtenerPorId(id)!;
+        var organizador = repositorioUsuarios.ObtenerPorId(request.OrganizadorId.GetValueOrDefault())!;
+        torneo.Modificar(
+            request.Codigo,
+            request.Nombre,
+            request.Descripcion,
+            request.FechaInicio.GetValueOrDefault(),
+            request.FechaFin.GetValueOrDefault(),
+            request.Cupo.GetValueOrDefault(),
+            organizador,
+            ObtenerFechaActual());
+        repositorioTorneos.Actualizar(torneo);
+        return CrearResponse<TorneoResponse>(torneo);
     }
 
     public TorneoResponse Cancelar(int id)

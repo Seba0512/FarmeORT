@@ -73,15 +73,15 @@ public sealed class Torneo
         Usuario organizador,
         DateOnly fechaActual)
     {
-        _ = codigo;
-        _ = nombre;
-        _ = descripcion;
-        _ = fechaInicio;
-        _ = fechaFin;
-        _ = cupo;
-        _ = organizador;
         _ = fechaActual;
-        throw new NotImplementedException();
+        Codigo = codigo;
+        Nombre = nombre;
+        Descripcion = descripcion;
+        FechaInicio = fechaInicio;
+        FechaFin = fechaFin;
+        Cupo = cupo;
+        Organizador = organizador;
+        OrganizadorId = organizador.Id;
     }
 
     // Solo se cancela un torneo que todavía se puede disputar: Abierto o En curso.
