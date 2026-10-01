@@ -21,7 +21,7 @@ internal sealed class ServicioRepertorio(
 
     public SkillDeclaradaResponse Declarar(int jugadorId, SkillDeclaradaRequest request)
     {
-        var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId)!;
+        var jugador = ObtenerJugadorExistente(jugadorId);
         var skill = ObtenerSkillExistente(request.SkillId.GetValueOrDefault());
         var declarada = jugador.DeclararSkill(skill, request.Nivel.GetValueOrDefault(), ObtenerFechaActual());
         repositorioUsuarios.GuardarRepertorio(jugador);
@@ -33,6 +33,18 @@ internal sealed class ServicioRepertorio(
         _ = jugadorId;
         _ = skillId;
         throw new NotImplementedException();
+    }
+
+    // El token es válido, pero el jugador pudo haberse dado de baja después de iniciar sesión.
+    private Usuario ObtenerJugadorExistente(int id)
+    {
+        var jugador = repositorioUsuarios.ObtenerConRepertorio(id);
+        if(jugador == null)
+        {
+            throw new UsuarioNoEncontradoException();
+        }
+
+        return jugador;
     }
 
     private Skill ObtenerSkillExistente(int id)
