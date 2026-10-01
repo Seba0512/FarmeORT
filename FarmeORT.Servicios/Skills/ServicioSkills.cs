@@ -26,8 +26,10 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public IReadOnlyList<SkillResponse> Listar(FiltroSkillsRequest filtro)
     {
-        _ = filtro;
-        throw new NotImplementedException();
+        var categoria = ConvertirCategoria(filtro.Categoria!);
+        var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, filtro.Limit, filtro.Offset);
+        var skills = repositorioSkills.Listar(filtroRepositorio);
+        return [.. skills.Select(CrearResponse)];
     }
 
     public SkillResponse Modificar(int id, SkillRequest request)
