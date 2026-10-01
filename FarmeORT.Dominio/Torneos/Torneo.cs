@@ -122,7 +122,13 @@ public sealed class Torneo
     {
         ValidarModificable();
 
-        _skillsObligatorias.RemoveAll(s => s.Id == skillId);
+        var obligatoria = _skillsObligatorias.SingleOrDefault(s => s.Id == skillId);
+        if(obligatoria == null)
+        {
+            throw new SkillObligatoriaNoEncontradaException();
+        }
+
+        _skillsObligatorias.Remove(obligatoria);
     }
 
     // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
