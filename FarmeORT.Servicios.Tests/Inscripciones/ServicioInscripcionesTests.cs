@@ -126,6 +126,20 @@ public sealed class ServicioInscripcionesTests
         _repositorioInscripciones.Verify(r => r.Agregar(It.IsAny<Inscripcion>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Cancelar_InscripcionPropiaConTorneoAbierto_GuardaLaInscripcionCanceladaYLaDevuelve()
+    {
+        var inscripcion = CrearInscripcion();
+        _repositorioInscripciones.Setup(r => r.ObtenerPorId(12)).Returns(inscripcion);
+        _repositorioInscripciones.Setup(r => r.Actualizar(inscripcion));
+
+        var response = _servicio.Cancelar(12, JugadorId);
+
+        _repositorioInscripciones.Verify(r => r.Actualizar(It.Is<Inscripcion>(i => i == inscripcion && i.Estado == EstadoInscripcion.Cancelada)), Times.Once);
+        Assert.AreEqual(12, response.Id);
+        Assert.AreEqual(nameof(EstadoInscripcion.Cancelada), response.Estado);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
@@ -135,5 +149,13 @@ public sealed class ServicioInscripcionesTests
         _repositorioInscripciones.Setup(r => r.Agregar(It.Is<Inscripcion>(i => i.TorneoId == TorneoId)));
         _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(Ahora, TimeSpan.Zero));
         _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+    }
+
+    private Inscripcion CrearInscripcion()
+    {
+        return new Inscripcion(_torneo, _jugador, Ahora)
+        {
+            Id = 12,
+        };
     }
 }
