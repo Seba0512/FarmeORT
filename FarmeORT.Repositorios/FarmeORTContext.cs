@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Sesiones;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Usuarios;
 using Microsoft.EntityFrameworkCore;
 
@@ -32,6 +33,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     public DbSet<Sesion> Sesiones => Set<Sesion>();
+
+    public DbSet<Skill> Skills => Set<Skill>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
