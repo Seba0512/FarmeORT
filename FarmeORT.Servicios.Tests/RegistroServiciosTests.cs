@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Elo;
 using FarmeORT.IServicios.Repertorio;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Sesiones;
@@ -25,6 +26,7 @@ public sealed class RegistroServiciosTests
     [DataRow(typeof(IServicioSkills), typeof(ServicioSkills))]
     [DataRow(typeof(IServicioTorneos), typeof(ServicioTorneos))]
     [DataRow(typeof(IServicioRepertorio), typeof(ServicioRepertorio))]
+    [DataRow(typeof(ICalculadorElo), typeof(CalculadorEloBase))]
     public void AgregarServicios_InterfazDeServicio_RegistraImplementacionScoped(Type interfaz, Type implementacion)
     {
         var servicios = new ServiceCollection();
