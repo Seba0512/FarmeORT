@@ -30,4 +30,11 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
         var sesion = HttpContext.ObtenerSesionAutenticada();
         return Ok(servicioInscripciones.ObtenerPorId(id, sesion.UsuarioId, sesion.Rol));
     }
+
+    [HttpPost("{id:int}/cancelaciones")]
+    public IActionResult Cancelar(int id)
+    {
+        _ = id;
+        throw new NotImplementedException();
+    }
 }

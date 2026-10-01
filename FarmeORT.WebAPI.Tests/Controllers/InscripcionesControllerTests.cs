@@ -74,6 +74,21 @@ public sealed class InscripcionesControllerTests
         Assert.AreSame(inscripcion, resultado.Value);
     }
 
+    [TestMethod]
+    public void Cancelar_InscripcionPropia_Devuelve200ConLaInscripcionCancelada()
+    {
+        Autenticar(JugadorId, Roles.Jugador);
+        var cancelada = CrearResponse();
+        _servicio.Setup(s => s.Cancelar(12, JugadorId)).Returns(cancelada);
+
+        var resultado = _controller.Cancelar(12) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(cancelada, resultado.Value);
+        _servicio.Verify(s => s.Cancelar(12, JugadorId), Times.Once);
+    }
+
     private void Autenticar(int usuarioId, string rol)
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = rol };
