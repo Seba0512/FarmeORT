@@ -33,8 +33,10 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public IReadOnlyDictionary<int, int> ContarAceptadasPorTorneo(IReadOnlyCollection<int> torneoIds)
     {
-        _ = torneoIds;
-        throw new NotImplementedException();
+        return contexto.Inscripciones
+            .Where(i => torneoIds.Contains(i.TorneoId) && i.Estado == EstadoInscripcion.Aceptada)
+            .GroupBy(i => i.TorneoId)
+            .ToDictionary(g => g.Key, g => g.Count());
     }
 
     public IReadOnlyList<Inscripcion> ListarAceptadasDelTorneo(int torneoId)
