@@ -71,7 +71,12 @@ public sealed partial class Usuario
         string contrasenaHash,
         DateOnly fechaActual)
     {
-        _ = fechaActual;
+        ValidarNombre(nombre);
+        ValidarApellido(apellido);
+        ValidarEmail(email);
+        ValidarNickname(nickname);
+        ValidarEdad(fechaNacimiento, fechaActual);
+
         Nombre = nombre;
         Apellido = apellido;
         Email = email;
