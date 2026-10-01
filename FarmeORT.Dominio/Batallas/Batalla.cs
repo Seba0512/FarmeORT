@@ -9,4 +9,26 @@ public sealed class Batalla
     {
         throw new NotImplementedException();
     }
+
+    public int Id { get; init; }
+
+    public int TorneoId { get; private set; }
+
+    public Torneo Torneo { get; private set; }
+
+    public int NumeroRonda { get; private set; }
+
+    public int Jugador1Id { get; private set; }
+
+    public Usuario Jugador1 { get; private set; }
+
+    public int Jugador2Id { get; private set; }
+
+    public Usuario Jugador2 { get; private set; }
+
+    public EstadoBatalla Estado { get; private set; }
+
+    public int JugadorInicialId { get; private set; }
+
+    public int? JugadorTurnoId { get; private set; }
 }
