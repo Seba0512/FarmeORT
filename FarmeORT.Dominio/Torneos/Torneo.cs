@@ -110,6 +110,11 @@ public sealed class Torneo
             throw new SkillInactivaException();
         }
 
+        if(_skillsObligatorias.Any(s => s.Id == skill.Id))
+        {
+            throw new SkillObligatoriaYaAsociadaException();
+        }
+
         _skillsObligatorias.Add(skill);
     }
 
