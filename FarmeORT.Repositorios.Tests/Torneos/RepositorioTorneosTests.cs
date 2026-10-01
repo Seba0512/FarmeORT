@@ -233,7 +233,7 @@ public sealed class RepositorioTorneosTests
     {
         var existente = CrearTorneo("COPAAURA");
         GuardarTorneos(existente);
-        var nuevo = new Torneo("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 8, _organizador, FechaActual)
+        var nuevo = new Torneo("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 8, OrganizadorCargado(), FechaActual)
         {
             Id = existente.Id,
         };
@@ -291,10 +291,17 @@ public sealed class RepositorioTorneosTests
         _baseDeDatos.Contexto.ChangeTracker.Clear();
     }
 
+    // El organizador se toma del contexto, como en la API: el servicio lo obtiene con el mismo contexto Scoped.
+    // Si estuviera desasociado, EF intentaría insertarlo de nuevo al guardar el torneo.
     private Torneo CrearTorneo(string codigo, string nombre = "Copa Aura", DateOnly? fechaInicio = null)
     {
         var inicio = fechaInicio ?? FechaInicio;
-        return new Torneo(codigo, nombre, Descripcion, inicio, inicio.AddDays(29), 8, _organizador, FechaActual);
+        return new Torneo(codigo, nombre, Descripcion, inicio, inicio.AddDays(29), 8, OrganizadorCargado(), FechaActual);
+    }
+
+    private Usuario OrganizadorCargado()
+    {
+        return _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == _organizador.Id);
     }
 
     private Usuario GuardarOrganizador()

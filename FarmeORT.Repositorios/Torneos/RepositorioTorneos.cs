@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Torneos;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Torneos;
 using Microsoft.EntityFrameworkCore;
 
@@ -61,12 +62,38 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
     public void Agregar(Torneo torneo)
     {
         contexto.Torneos.Add(torneo);
-        contexto.SaveChanges();
+        Guardar(torneo);
     }
 
     public void Actualizar(Torneo torneo)
     {
         contexto.Torneos.Update(torneo);
-        contexto.SaveChanges();
+        Guardar(torneo);
+    }
+
+    // Otro torneo puede ocupar el código entre la validación del servicio y el guardado (D-23).
+    private void Guardar(Torneo torneo)
+    {
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateException)
+        {
+            // Se suelta el torneo que falló para que el contexto se pueda seguir usando.
+            contexto.Entry(torneo).State = EntityState.Detached;
+            if(ExisteOtroTorneoConElCodigo(torneo))
+            {
+                throw new CodigoTorneoYaExisteException();
+            }
+
+            throw;
+        }
+    }
+
+    private bool ExisteOtroTorneoConElCodigo(Torneo torneo)
+    {
+        var codigo = torneo.Codigo.ToLower();
+        return contexto.Torneos.Any(t => t.Codigo.ToLower() == codigo && t.Id != torneo.Id);
     }
 }
