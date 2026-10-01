@@ -3,6 +3,7 @@ using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Repositorios.Batallas;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Batallas;
 
@@ -65,6 +66,27 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(FechaLanzamiento, primero.Fecha);
         Assert.AreEqual(7, primero.Jugador.Id);
         Assert.AreEqual("SIXSEVEN", primero.Skill.Codigo);
+    }
+
+    [TestMethod]
+    public void Guardar_LanzamientoYCambioDeTurno_PersisteAmbosCambios()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = new Skill("AURASTARE", "Aura Stare", "Mirada fija para farmear aura en la batalla.", CategoriaSkill.Gestual, 2) { Id = 4 };
+        _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 3, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
+        _baseDeDatos.Contexto.Entry(batalla).Property(b => b.JugadorTurnoId).CurrentValue = 8;
+
+        _repositorio.Guardar();
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var guardada = _baseDeDatos.Contexto.Batallas.Single(b => b.Id == batalla.Id);
+        Assert.AreEqual(8, guardada.JugadorTurnoId);
+        Assert.AreEqual(EstadoBatalla.Pendiente, guardada.Estado);
+        var lanzamientos = _baseDeDatos.Contexto.Lanzamientos.Where(l => l.BatallaId == batalla.Id).OrderBy(l => l.Turno).ToList();
+        Assert.HasCount(3, lanzamientos);
+        Assert.AreEqual(3, lanzamientos.Last().Turno);
+        Assert.AreEqual(7, lanzamientos.Last().JugadorId);
+        Assert.AreEqual(4, lanzamientos.Last().SkillId);
     }
 
     private Batalla GuardarBatallaConHistorial()
