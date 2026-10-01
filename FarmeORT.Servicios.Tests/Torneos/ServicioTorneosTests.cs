@@ -12,6 +12,7 @@ namespace FarmeORT.Servicios.Tests.Torneos;
 [TestClass]
 public sealed class ServicioTorneosTests
 {
+    private const int TorneoId = 4;
     private const int OrganizadorId = 2;
     private const string Codigo = "COPAAURA";
     private const string Nombre = "Copa Aura";
@@ -111,6 +112,23 @@ public sealed class ServicioTorneosTests
         Assert.AreEqual(mensaje, excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void ObtenerPorId_TorneoAbierto_DevuelveSuDetalle(bool esAnonimo)
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo);
+
+        Assert.AreEqual(TorneoId, response.Id);
+        Assert.AreEqual(Codigo, response.Codigo);
+        Assert.AreEqual(nameof(EstadoTorneo.Abierto), response.Estado);
+        Assert.AreEqual(Cupo, response.Cupo);
+        Assert.AreEqual(0, response.InscripcionesAceptadas);
+        Assert.AreEqual("Laura Gomez", response.Organizador);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
@@ -123,6 +141,14 @@ public sealed class ServicioTorneosTests
     {
         _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(2026, 10, 1, 12, 0, 0, TimeSpan.Zero));
         _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+    }
+
+    private Torneo CrearTorneo()
+    {
+        return new Torneo(Codigo, Nombre, Descripcion, FechaInicio, FechaFin, Cupo, _organizador, FechaActual)
+        {
+            Id = TorneoId,
+        };
     }
 
     private static Usuario CrearUsuario(int id, Rol rol)
