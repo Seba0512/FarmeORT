@@ -44,7 +44,7 @@ public sealed class TorneosControllerTests
     [DataRow(true)]
     public void ObtenerPorId_TorneoVisible_Devuelve200IndicandoSiConsultaUnAnonimo(bool autenticado)
     {
-        var torneo = CrearResponse();
+        var torneo = new TorneoDetalleResponse { Id = 4, Codigo = "COPAAURA", Nombre = "Copa Aura", Estado = "Abierto" };
         PrepararContexto(autenticado);
         _servicioTorneos.Setup(s => s.ObtenerPorId(4, !autenticado)).Returns(torneo);
 

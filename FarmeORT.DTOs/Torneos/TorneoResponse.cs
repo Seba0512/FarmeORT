@@ -1,6 +1,7 @@
 namespace FarmeORT.DTOs.Torneos;
 
-public sealed class TorneoResponse
+// El detalle (TorneoDetalleResponse) extiende este resumen con los datos del cuadro.
+public class TorneoResponse
 {
     public int Id { get; init; }
 
