@@ -34,9 +34,9 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public SkillResponse Modificar(int id, SkillRequest request)
     {
-        _ = id;
         _ = request;
-        throw new NotImplementedException();
+        var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
+        return CrearResponse(skill);
     }
 
     public SkillResponse CambiarEstado(int id, SkillEstadoRequest request)
