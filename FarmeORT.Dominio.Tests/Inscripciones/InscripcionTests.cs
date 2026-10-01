@@ -53,6 +53,27 @@ public sealed class InscripcionTests
         CollectionAssert.AreEqual(new[] { "TRALALERO" }, excepcion.Detalles.ToArray());
     }
 
+    [TestMethod]
+    public void Constructor_JugadorConTodasLasObligatoriasAunqueUnaSeDesactivo_CreaLaInscripcionAceptada()
+    {
+        var primera = CrearSkill(3, "SIXSEVEN");
+        var segunda = CrearSkill(5, "TRALALERO");
+        _torneo.AsociarSkillObligatoria(primera);
+        _torneo.AsociarSkillObligatoria(segunda);
+        _jugador.DeclararSkill(primera, 4, FechaActual);
+        _jugador.DeclararSkill(segunda, 2, FechaActual);
+        segunda.Desactivar();
+
+        var inscripcion = new Inscripcion(_torneo, _jugador, Ahora);
+
+        Assert.AreSame(_torneo, inscripcion.Torneo);
+        Assert.AreEqual(4, inscripcion.TorneoId);
+        Assert.AreSame(_jugador, inscripcion.Jugador);
+        Assert.AreEqual(7, inscripcion.JugadorId);
+        Assert.AreEqual(Ahora, inscripcion.Fecha);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, inscripcion.Estado);
+    }
+
     private static Skill CrearSkill(int id, string codigo)
     {
         return new Skill(codigo, "Skill " + id, "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2)
