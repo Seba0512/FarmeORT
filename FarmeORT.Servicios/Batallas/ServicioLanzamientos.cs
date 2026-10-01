@@ -27,7 +27,12 @@ internal sealed class ServicioLanzamientos(
             throw new UsuarioNoEncontradoException();
         }
 
-        var skill = repositorioSkills.ObtenerPorId(request.SkillId!.Value)!;
+        var skill = repositorioSkills.ObtenerPorId(request.SkillId!.Value);
+        if(skill == null)
+        {
+            throw new SkillNoEncontradaException();
+        }
+
         var lanzamiento = batalla.Lanzar(jugador, skill, reloj.GetUtcNow());
         repositorioBatallas.Guardar();
         return new LanzamientoResultadoResponse
