@@ -220,6 +220,34 @@ public sealed class BatallaTests
         Assert.AreEqual(inicialId, batalla.JugadorTurnoId);
     }
 
+    [TestMethod]
+    public void Lanzar_SkillDesactivadaDespuesDeDeclararla_RegistraElLanzamiento()
+    {
+        var batalla = CrearBatallaConHistorial(0);
+        var skill = batalla.Jugador1.Repertorio.Single(d => d.SkillId == 1).Skill;
+        skill.Desactivar();
+
+        var lanzamiento = batalla.Lanzar(batalla.Jugador1, skill, DateTimeOffset.UtcNow);
+
+        Assert.AreEqual(1, lanzamiento.SkillId);
+        Assert.IsFalse(lanzamiento.Skill.Activa);
+        Assert.HasCount(1, batalla.Lanzamientos);
+    }
+
+    [TestMethod]
+    public void Lanzar_SkillUsadaSoloPorElRival_PermiteLanzarla()
+    {
+        var batalla = CrearBatallaConHistorial(1);
+        var skill = batalla.Jugador2.Repertorio.Single(d => d.SkillId == 1).Skill;
+
+        var lanzamiento = batalla.Lanzar(batalla.Jugador2, skill, DateTimeOffset.UtcNow);
+
+        Assert.AreEqual(2, lanzamiento.Turno);
+        Assert.HasCount(2, batalla.Lanzamientos);
+        Assert.IsTrue(batalla.Lanzamientos.All(l => l.SkillId == 1));
+        Assert.AreEqual(7, batalla.JugadorTurnoId);
+    }
+
     private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
