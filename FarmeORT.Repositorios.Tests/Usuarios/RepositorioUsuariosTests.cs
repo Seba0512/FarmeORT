@@ -235,6 +235,19 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void ConsultasDeUnicidad_UsuarioEliminado_SiguenReservandoSuEmailYNickname()
+    {
+        var usuario = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
+        usuario.Eliminar();
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.IsNotNull(_repositorio.ObtenerPorEmail(Email));
+        Assert.IsTrue(_repositorio.ExistePorNickname("jugador"));
+    }
+
+    [TestMethod]
     public void ExistePorNickname_NicknameInexistente_DevuelveFalse()
     {
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-jugador"));
