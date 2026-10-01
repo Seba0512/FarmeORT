@@ -87,6 +87,19 @@ public sealed class ServicioLanzamientosTests
         _skills.Verify(r => r.ObtenerPorId(3), Times.Never);
     }
 
+    [TestMethod]
+    public void Lanzar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
+    {
+        ConfigurarLanzamientoValido();
+        _skills.Setup(r => r.ObtenerPorId(3)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(
+            () => _servicio.Lanzar(12, 7, new LanzamientoRequest { SkillId = 3 }));
+
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.HasCount(0, _batalla.Lanzamientos);
+    }
+
     private void ConfigurarLanzamientoValido()
     {
         _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
