@@ -71,6 +71,26 @@ public sealed class SkillTests
         Assert.AreEqual("El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.", excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("     ")]
+    public void Constructor_NombreVacio_LanzaDatosInvalidos(string nombre)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearSkill(nombre: nombre));
+
+        Assert.AreEqual("El nombre es obligatorio.", excepcion.Message);
+    }
+
+    [TestMethod]
+    [DataRow(2)]
+    [DataRow(41)]
+    public void Constructor_NombreFueraDeRango_LanzaDatosInvalidos(int largo)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearSkill(nombre: new string('a', largo)));
+
+        Assert.AreEqual("El nombre debe tener entre 3 y 40 caracteres.", excepcion.Message);
+    }
+
     private static Skill CrearSkill(
         string codigo = "SIXSEVEN",
         string nombre = "Six-Seven",
