@@ -60,6 +60,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "BATTLE_NOT_CANCELLABLE", "Solo se puede cancelar una batalla Pendiente o En arbitraje."),
         [typeof(BatallaNoPendienteException)] =
             new(StatusCodes.Status409Conflict, "BATTLE_NOT_PENDING", "Solo se puede lanzar una skill en una batalla Pendiente."),
+        [typeof(JugadorNoParticipaEnBatallaException)] =
+            new(StatusCodes.Status409Conflict, "PLAYER_NOT_IN_BATTLE", "El jugador no participa de esta batalla."),
     };
 
     public void OnException(ExceptionContext context)
