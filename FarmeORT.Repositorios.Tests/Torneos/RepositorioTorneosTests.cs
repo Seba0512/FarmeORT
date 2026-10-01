@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.Repositorios.Torneos;
 
 namespace FarmeORT.Repositorios.Tests.Torneos;
@@ -96,6 +97,40 @@ public sealed class RepositorioTorneosTests
         var existe = _repositorio.ExistePorCodigo("COPAFUEGO");
 
         Assert.IsFalse(existe);
+    }
+
+    [TestMethod]
+    public void Listar_SinFiltros_DevuelveTodosOrdenadosPorIdConSuOrganizador()
+    {
+        GuardarTorneos(CrearTorneo("COPAAURA"), CrearTorneo("COPAFUEGO"), CrearTorneo("COPAHIELO"));
+
+        var torneos = _repositorio.Listar(Filtro());
+
+        CollectionAssert.AreEqual(new[] { "COPAAURA", "COPAFUEGO", "COPAHIELO" }, torneos.Select(t => t.Codigo).ToArray());
+        Assert.IsTrue(torneos.All(t => t.Organizador.Nombre == "Laura"));
+    }
+
+    [TestMethod]
+    public void Listar_ConLimiteYDesplazamiento_DevuelveLaPaginaEnOrdenDeId()
+    {
+        GuardarTorneos(CrearTorneo("COPAAURA"), CrearTorneo("COPAFUEGO"), CrearTorneo("COPAHIELO"), CrearTorneo("COPARAYO"));
+
+        var torneos = _repositorio.Listar(Filtro(limite: 2, desplazamiento: 1));
+
+        CollectionAssert.AreEqual(new[] { "COPAFUEGO", "COPAHIELO" }, torneos.Select(t => t.Codigo).ToArray());
+    }
+
+    // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
+    private static FiltroTorneos Filtro(
+        EstadoTorneo? estado = null,
+        DateOnly? fechaDesde = null,
+        DateOnly? fechaHasta = null,
+        string? nombre = null,
+        bool excluirCancelados = false,
+        int limite = 20,
+        int desplazamiento = 0)
+    {
+        return new FiltroTorneos(estado, fechaDesde, fechaHasta, nombre, null, excluirCancelados, limite, desplazamiento);
     }
 
     private void GuardarTorneos(params Torneo[] torneos)
