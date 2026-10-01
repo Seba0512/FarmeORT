@@ -3,6 +3,7 @@ using FarmeORT.IServicios.Ranking;
 using FarmeORT.WebAPI.Controllers;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Moq;
 
 namespace FarmeORT.WebAPI.Tests.Controllers;
@@ -32,5 +33,19 @@ public sealed class RankingControllerTests
         Assert.IsNotNull(resultado);
         Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
         Assert.AreSame(ranking, resultado.Value);
+    }
+
+    [TestMethod]
+    public void Obtener_ContratoPublico_ExponeGetRankingSinAutenticacion()
+    {
+        var tipo = typeof(RankingController);
+        var metodo = tipo.GetMethod(nameof(RankingController.Obtener));
+        Assert.IsNotNull(metodo);
+        var ruta = tipo.GetCustomAttributes(typeof(RouteAttribute), true).Cast<RouteAttribute>().Single();
+
+        Assert.AreEqual("api/v1/ranking", ruta.Template);
+        Assert.HasCount(1, metodo.GetCustomAttributes(typeof(HttpGetAttribute), true));
+        Assert.IsFalse(tipo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
+        Assert.IsFalse(metodo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
     }
 }
