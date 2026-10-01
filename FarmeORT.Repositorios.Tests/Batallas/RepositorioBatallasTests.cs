@@ -105,6 +105,19 @@ public sealed class RepositorioBatallasTests
         Assert.IsFalse(_baseDeDatos.Contexto.Skills.Any(s => s.Id == 4));
     }
 
+    [TestMethod]
+    public void Persistencia_SkillRepetidaPorJugador_RechazaElDuplicado()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = _baseDeDatos.Contexto.Skills.Single(s => s.Id == 3);
+        _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 3, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _baseDeDatos.Contexto.SaveChanges());
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
+    }
+
     private Batalla GuardarBatallaConHistorial()
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
