@@ -182,6 +182,18 @@ public sealed class ServicioUsuariosTests
         Assert.IsEmpty(usuarios);
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-5)]
+    public void Listar_LimitMenorAUno_UsaElValorPorDefecto(int limit)
+    {
+        _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0))).Returns([]);
+
+        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Limit = limit });
+
+        Assert.IsEmpty(usuarios);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
