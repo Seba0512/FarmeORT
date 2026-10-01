@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
+using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Inscripciones;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
@@ -19,7 +20,7 @@ internal sealed class ServicioInscripciones(
     {
         var torneoId = DatosObligatorios.Obtener(request.TorneoId, "El torneo es obligatorio.");
         var torneo = ObtenerTorneoExistente(torneoId);
-        var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId)!;
+        var jugador = ObtenerJugadorExistente(jugadorId);
         var inscripcion = new Inscripcion(torneo, jugador, reloj.GetLocalNow().DateTime);
         repositorioInscripciones.Agregar(inscripcion);
         return CrearResponse(inscripcion);
@@ -57,6 +58,18 @@ internal sealed class ServicioInscripciones(
         }
 
         return torneo;
+    }
+
+    // Se trae con el repertorio para controlar las skills obligatorias del torneo.
+    private Usuario ObtenerJugadorExistente(int jugadorId)
+    {
+        var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId);
+        if(jugador == null)
+        {
+            throw new UsuarioNoEncontradoException();
+        }
+
+        return jugador;
     }
 
     private static InscripcionResponse CrearResponse(Inscripcion inscripcion)
