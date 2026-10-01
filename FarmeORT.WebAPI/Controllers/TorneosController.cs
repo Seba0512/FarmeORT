@@ -14,4 +14,11 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
         var response = servicioTorneos.Crear(request);
         return Created($"/api/v1/torneos/{response.Id}", response);
     }
+
+    [HttpGet("{id:int}")]
+    public IActionResult ObtenerPorId(int id)
+    {
+        _ = id;
+        throw new NotImplementedException();
+    }
 }
