@@ -272,6 +272,17 @@ public sealed class BatallaTests
             () => new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(jugador1)));
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-1)]
+    public void Constructor_RondaNoPositiva_RechazaDatosInvalidos(int ronda)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+
+        Assert.ThrowsExactly<DatosInvalidosException>(
+            () => new Batalla(CrearTorneo(), ronda, jugador1, CrearUsuario(8, Rol.Jugador), new SorteoPreparado(jugador1)));
+    }
+
     private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
