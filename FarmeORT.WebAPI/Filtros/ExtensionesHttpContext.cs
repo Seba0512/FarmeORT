@@ -9,4 +9,10 @@ internal static class ExtensionesHttpContext
     {
         return (SesionAutenticada)httpContext.Items[ClavesContexto.SesionAutenticada]!;
     }
+
+    // En las acciones abiertas a anónimos devuelve null cuando no se envió un token.
+    public static SesionAutenticada? ObtenerSesionOpcional(this HttpContext httpContext)
+    {
+        return httpContext.Items[ClavesContexto.SesionAutenticada] as SesionAutenticada;
+    }
 }

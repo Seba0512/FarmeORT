@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.IServicios.Torneos;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -18,7 +19,7 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {
-        _ = id;
-        throw new NotImplementedException();
+        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
+        return Ok(servicioTorneos.ObtenerPorId(id, esAnonimo));
     }
 }
