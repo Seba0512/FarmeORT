@@ -149,6 +149,17 @@ public sealed class ServicioInscripcionesTests
         _repositorioInscripciones.Verify(r => r.Actualizar(It.IsAny<Inscripcion>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Cancelar_InscripcionDeOtroJugador_LanzaNoEsDuenoDeLaInscripcionSinGuardar()
+    {
+        var inscripcion = CrearInscripcion();
+        _repositorioInscripciones.Setup(r => r.ObtenerPorId(12)).Returns(inscripcion);
+
+        Assert.ThrowsExactly<NoEsDuenoDeLaInscripcionException>(() => _servicio.Cancelar(12, 99));
+        _repositorioInscripciones.Verify(r => r.Actualizar(It.IsAny<Inscripcion>()), Times.Never);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, inscripcion.Estado);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
