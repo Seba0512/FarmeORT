@@ -1,6 +1,6 @@
 @startuml
 hide circle
-title Diseño propuesto — Persona B, fase 1
+title Persona B — fase 1 implementada y fallo futuro
 class Batalla {
   + Id : int
   + TorneoId : int
@@ -27,6 +27,7 @@ class Lanzamiento {
   + JugadorId : int
   + SkillId : int
   + Fecha : DateTimeOffset
+  + Lanzamiento(batalla : Batalla, turno : int, jugador : Usuario, skill : Skill, fecha : DateTimeOffset)
 }
 interface ISorteo {
   + ElegirEntre(jugador1 : Usuario, jugador2 : Usuario) : Usuario

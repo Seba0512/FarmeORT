@@ -1260,21 +1260,21 @@ relaciones muchos a muchos en EF Core.
     extrajo para no modificar el catálogo de skills fuera del alcance de esta rama.
 ---
 
-### D-50 — Organizador no asignado: respuesta 403 compartida
+### D-50 — Coordinación del alcance de Persona B
 
-**Problema:** las operaciones de un organizador sobre un torneo requieren que sea el asignado, además de tener el rol. D-36 y D-37 no definían la respuesta para esta restricción.
+**Problema:** A, B y C trabajan en paralelo sobre un modelo compartido. Numerar decisiones y mantener migraciones sin coordinación puede causar conflictos y respuestas distintas para la misma autorización por torneo.
 
-**Alternativas consideradas:** 403 por falta de autorización sobre el recurso; 409 por regla de negocio. Ambas podían implementarse en el servicio, pero respuestas distintas entre skills obligatorias, rondas y fallos harían inconsistente la API.
+**Alternativas consideradas:** numeración consecutiva compartida o rangos por persona; resolver a mano el snapshot o regenerar únicamente la migración propia todavía no integrada. Para el organizador no asignado se consideraron 403 y 409; el acuerdo HTTP ya está registrado en D-40 y no se redefine aquí.
 
-**Decisión adoptada:** el usuario confirmó el 01/10/2026 usar 403 `FORBIDDEN` cuando el organizador no es el asignado. La comprobación pertenece al servicio; los filtros siguen comprobando autenticación y rol. Esta decisión es compartida por A, B y C y se registra una sola vez en el rango de B.
+**Decisión adoptada:** el usuario confirmó D-50 a D-59 para B y permite quitar/regenerar solo una migración propia que nunca llegó a develop. Se genera una por PR al final, con develop incorporado; las integradas se preservan. B reutilizará D-40: 403 `NOT_TOURNAMENT_ORGANIZER` mediante la excepción existente cuando el organizador no sea el asignado, sin volver a registrar esa decisión común. Los filtros siguen comprobando autenticación y rol.
 
-**Justificación:** el estado del torneo no cambia la autorización de quien invoca; 403 describe la falta de permiso sobre ese torneo.
+**Justificación:** los rangos evitan colisiones; regenerar la migración no integrada evita duplicar cambios del snapshot recibido. Referenciar D-40 mantiene una sola definición de la autorización compartida.
 
-**Conceptos del curso:** autorización por recurso, SRP, separación entre filtros y casos de uso, contrato REST consistente.
+**Conceptos del curso:** trabajo concurrente en GitFlow, Code First, trazabilidad y autorización por recurso.
 
-**Evidencia:** confirmación explícita del usuario en el chat de Persona B. La integración de fallos espera `Inscripcion` e `ICalculadorElo` en develop; no se afirma implementación de ese endpoint.
+**Evidencia:** confirmación explícita del usuario en el chat de Persona B e incorporación de develop `d2a5bd1` (PR #13). No se generó una migración de B ni se empezó fallos: espera `Inscripcion` e `ICalculadorElo` en develop.
 
-**Participación de IA:** Codex comprobó D-36/D-37 y presentó ambas alternativas; el usuario eligió 403. Se aceptó registrar el acuerdo común y se rechazó asumir el código por cuenta del agente. La autoría Git corresponde exclusivamente al integrante; esta declaración académica queda separada.
+**Participación de IA:** Codex comprobó las fuentes y consultó los acuerdos pendientes; el usuario confirmó los tres. Al recibir D-40 se reemplazó la definición duplicada de autorización por su referencia. La autoría Git corresponde exclusivamente al integrante; esta declaración académica queda separada.
 
 ---
 
@@ -1286,15 +1286,35 @@ relaciones muchos a muchos en EF Core.
 
 **Decisión adoptada:** `Batalla(Torneo, int, Usuario, Usuario, ISorteo)` conserva torneo, ronda y dos jugadores distintos de rol Jugador. Guarda `JugadorInicialId` según los ELO de creación; solo en empate llama al sorteo. `ISorteo` vive en Dominio/Batallas y `SorteoAleatorio` en Servicios/Batallas, registrado Scoped. No se modifica `Torneo`, no se crean rondas ni se implementa una fórmula ELO desde B.
 
-La entidad registra sus lanzamientos y aplica estado Pendiente, participación, turno, repertorio y repetición por **jugador y skill**. El rival puede lanzar la misma skill: prohibirlo globalmente impediría que ambos cumplan las obligatorias. Una skill desactivada después de declararla sigue siendo válida. El lanzamiento ocho deja cuatro por jugador y pasa a EnArbitraje; `Cancelar()` acepta Pendiente/EnArbitraje y no cambia estados finales. El servicio carga las dependencias, usa `TimeProvider.GetUtcNow()` y pide un guardado después de validar. La regla de skills obligatorias se integra al llegar el modelo de A; no se sustituye por una colección inventada.
+La entidad registra sus lanzamientos y aplica estado Pendiente, participación, turno, repertorio y repetición por **jugador y skill**. El rival puede lanzar la misma skill: prohibirlo globalmente impediría que ambos cumplan las obligatorias. Una skill desactivada después de declararla sigue siendo válida. El lanzamiento ocho deja cuatro por jugador y pasa a EnArbitraje; `Cancelar()` acepta Pendiente/EnArbitraje y no cambia estados finales. El servicio carga las dependencias, usa `TimeProvider.GetUtcNow()` y pide un guardado después de validar. Al recibir el modelo de A en `d2a5bd1`, B usa `Torneo.SkillsObligatorias` sin modificar Torneo: cuando las pendientes de ese jugador igualan sus turnos restantes, solo admite una de esas pendientes. El repositorio carga la asociación aunque la skill se haya desactivado.
 
 **Justificación:** las reglas que usan datos de la batalla quedan con el experto; las dependencias de acceso a datos y reloj permanecen fuera del dominio. El azar se reemplaza por un mock o doble preparado en tests. No hace falta una jerarquía State para estos cuatro estados.
 
 **Conceptos del curso:** Information Expert, Creator, Protected Variations, DIP, SRP, encapsulación, DI Scoped y TDD Outside-In.
 
-**Evidencia:** `BatallaTests`, `ServicioLanzamientosTests`, `SorteoAleatorioTests` y `RegistroBatallasTests`, ciclos RED/GREEN separados. Diagramas en `docs/uml/` y contrato en `docs/api/batallas-lanzamientos.md`; los diagramas siguen identificados como diseño propuesto hasta verificar su alineación y render.
+**Evidencia:** `BatallaTests`, `ServicioLanzamientosTests`, `SorteoAleatorioTests` y `RegistroBatallasTests`, ciclos RED/GREEN separados. Clases de fase 1 y secuencia de lanzamiento en `docs/uml/`, contrastadas con el código; render pendiente. El fallo se identifica como diseño futuro, sin implementación. Contrato y estado real en `docs/api/batallas-lanzamientos.md`.
 
-**Participación de IA:** Codex desarrolló los ciclos y propuso mantener las reglas en Batalla siguiendo el contrato explícito del usuario. Se aceptaron el sorteo inyectable, la no retroactividad y las excepciones existentes para datos/recursos inexistentes. No se aceptó implementar inscripciones, obligatorias o ELO fuera del alcance. No existe una excepción genérica de negocio reutilizable en el código actual: se agregan tipos para distinguir los conflictos de lanzamiento y mapear sus códigos sin alterar errores de otros recursos.
+**Participación de IA:** Codex desarrolló los ciclos y propuso mantener las reglas en Batalla siguiendo el contrato explícito del usuario. Se aceptaron el sorteo inyectable, la no retroactividad y las excepciones existentes para datos/recursos inexistentes. No se aceptó implementar inscripciones, el modelo de obligatorias de A o la fórmula ELO de C. No existe una excepción genérica de negocio reutilizable en el código actual: se agregan tipos para distinguir los conflictos de lanzamiento y mapear sus códigos sin alterar errores de otros recursos.
+
+---
+
+### D-52 — Guardado atómico y conflictos concurrentes de lanzamientos
+
+**Problema:** validar el turno en memoria no evita que dos pedidos acepten simultáneamente el mismo turno, ni que una cancelación llegue entre la lectura y el guardado. Un error debe revertir el lanzamiento y los cambios de la batalla, sin responder éxito ni ocultar errores distintos.
+
+**Alternativas consideradas:** validación solo en memoria; bloqueo manual o versión adicional; restricciones de unicidad y concurrencia optimista de EF Core sobre el estado, aprovechando un único contexto Scoped.
+
+**Decisión adoptada:** el repositorio recupera una batalla rastreada con torneo, organizador, obligatorias, jugadores e historial ordenado. ServicioLanzamientos realiza un solo `Guardar()` y el repositorio un `SaveChanges()` para todos sus cambios. El estado es token de concurrencia; `(BatallaId, Turno)` y `(BatallaId, JugadorId, SkillId)` son únicos y el turno se restringe a 1..8. No se introduce Unit of Work ni un segundo contexto en el caso de uso.
+
+Un `DbUpdateConcurrencyException` se traduce a `BatallaModificadaException` (409 `BATTLE_CHANGED`). Ante `DbUpdateException`, se consulta si hay un turno o una skill de ese jugador ya persistidos y se traduce al conflicto correspondiente, siguiendo D-23; si no, se propaga el error original. Antes de devolver un conflicto traducido se limpia el tracking para no conservar cambios rechazados.
+
+**Justificación:** el índice único impide dos lanzamientos de un turno; el token de estado impide guardar contra una cancelación o resolución concurrente. `SaveChanges` revierte todos sus cambios cuando falla. Las consultas de traducción evitan acoplarse a códigos de SQL Server y funcionan también en los tests SQLite. Las restricciones de B se configuraron en un método privado propio al final del contexto, conservando la configuración y migración integradas de A. La migración de B queda para el cierre de la rama.
+
+**Conceptos del curso:** Code First, atomicidad, concurrencia optimista, Information Expert, persistencia separada del dominio, DI Scoped y pruebas de integración con un fake SQLite.
+
+**Evidencia:** `RepositorioBatallasTests`: guardado conjunto, duplicados por turno/skill, turnos fuera de rango, cancelación desde otro contexto, rollback y propagación de un error no traducible. `ServicioLanzamientosTests`: guardado una vez, rechazo sin guardar y conflicto propagado sin respuesta exitosa. Los códigos tienen pruebas independientes en `FiltroExcepcionesBatallasTests`.
+
+**Participación de IA:** Codex propuso las restricciones y el token de estado y verificó cada cambio mediante ciclos RED/GREEN. Se aceptó la protección concurrente dentro de las entidades de B y se descartaron bloqueos manuales, fórmulas ELO y cambios al modelo de A. La revisión humana y las Actions quedan pendientes; no se sustituyen por estas validaciones locales.
 
 ---
 
