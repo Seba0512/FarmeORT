@@ -225,6 +225,21 @@ namespace FarmeORT.Repositorios.Migrations
                         });
                 });
 
+            modelBuilder.Entity("SkillsObligatorias", b =>
+                {
+                    b.Property<int>("TorneoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.HasKey("TorneoId", "SkillId");
+
+                    b.HasIndex("SkillId");
+
+                    b.ToTable("SkillsObligatorias");
+                });
+
             modelBuilder.Entity("FarmeORT.Dominio.Sesiones.Sesion", b =>
                 {
                     b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Usuario")
@@ -262,6 +277,21 @@ namespace FarmeORT.Repositorios.Migrations
                         .IsRequired();
 
                     b.Navigation("Skill");
+                });
+
+            modelBuilder.Entity("SkillsObligatorias", b =>
+                {
+                    b.HasOne("FarmeORT.Dominio.Skills.Skill", null)
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FarmeORT.Dominio.Torneos.Torneo", null)
+                        .WithMany()
+                        .HasForeignKey("TorneoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
                 });
 
             modelBuilder.Entity("FarmeORT.Dominio.Usuarios.Usuario", b =>

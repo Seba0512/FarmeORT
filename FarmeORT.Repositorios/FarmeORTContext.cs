@@ -117,5 +117,23 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
                 .HasForeignKey(t => t.OrganizadorId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+
+        ConfigurarSkillsObligatorias(modelBuilder);
+    }
+
+    // Muchos a muchos sin datos propios: una skill puede ser obligatoria en varios torneos (D-40).
+    private static void ConfigurarSkillsObligatorias(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Torneo>()
+            .HasMany(t => t.SkillsObligatorias)
+            .WithMany()
+            .UsingEntity(
+                "SkillsObligatorias",
+                skill => skill.HasOne(typeof(Skill)).WithMany().HasForeignKey("SkillId").OnDelete(DeleteBehavior.Restrict),
+                torneo => torneo.HasOne(typeof(Torneo)).WithMany().HasForeignKey("TorneoId").OnDelete(DeleteBehavior.Cascade),
+                obligatoria => obligatoria.HasKey("TorneoId", "SkillId"));
+        modelBuilder.Entity<Torneo>()
+            .Navigation(t => t.SkillsObligatorias)
+            .UsePropertyAccessMode(PropertyAccessMode.Field);
     }
 }
