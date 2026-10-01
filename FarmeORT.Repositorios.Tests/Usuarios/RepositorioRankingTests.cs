@@ -57,13 +57,27 @@ public sealed class RepositorioRankingTests
         CollectionAssert.AreEqual(new[] { "primero", "segundo", "tercero" }, ranking.Select(u => u.Nickname).ToArray());
     }
 
-    private void AgregarUsuario(string nickname, int elo, Rol rol = Rol.Jugador)
+    [TestMethod]
+    public void ListarRanking_JugadorDadoDeBaja_NoAparece()
+    {
+        AgregarUsuario("activo", 1300);
+        var dadoDeBaja = AgregarUsuario("debaja", 1500);
+        dadoDeBaja.Eliminar();
+        GuardarYLimpiar();
+
+        var ranking = _repositorio.ListarRanking(10);
+
+        CollectionAssert.AreEqual(new[] { "activo" }, ranking.Select(u => u.Nickname).ToArray());
+    }
+
+    private Usuario AgregarUsuario(string nickname, int elo, Rol rol = Rol.Jugador)
     {
         var usuario = new Usuario("Nombre", "Apellido", $"{nickname}@farmeort.com", nickname, new DateOnly(2000, 1, 15), rol, "hash", FechaActual);
         _baseDeDatos.Contexto.Usuarios.Add(usuario);
 
         // El ELO solo cambia al fallar batallas: para preparar el ranking se fija directo en la base.
         _baseDeDatos.Contexto.Entry(usuario).Property(u => u.Elo).CurrentValue = elo;
+        return usuario;
     }
 
     private void GuardarYLimpiar()
