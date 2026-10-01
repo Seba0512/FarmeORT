@@ -49,6 +49,7 @@ public sealed class Batalla
 
     public void Cancelar()
     {
-        throw new NotImplementedException();
+        Estado = EstadoBatalla.Cancelada;
+        JugadorTurnoId = null;
     }
 }
