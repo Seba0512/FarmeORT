@@ -101,6 +101,14 @@ public sealed class ServicioSkillsTests
         Assert.IsTrue(response.Activa);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_SkillInexistente_LanzaSkillNoEncontrada()
+    {
+        _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(() => _servicio.ObtenerPorId(99));
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
