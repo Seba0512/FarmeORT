@@ -21,9 +21,11 @@ internal sealed class ServicioRepertorio(
 
     public SkillDeclaradaResponse Declarar(int jugadorId, SkillDeclaradaRequest request)
     {
+        var skillId = ObtenerObligatorio(request.SkillId, "La skill es obligatoria.");
+        var nivel = ObtenerObligatorio(request.Nivel, "El nivel es obligatorio.");
         var jugador = ObtenerJugadorExistente(jugadorId);
-        var skill = ObtenerSkillExistente(request.SkillId.GetValueOrDefault());
-        var declarada = jugador.DeclararSkill(skill, request.Nivel.GetValueOrDefault(), ObtenerFechaActual());
+        var skill = ObtenerSkillExistente(skillId);
+        var declarada = jugador.DeclararSkill(skill, nivel, ObtenerFechaActual());
         repositorioUsuarios.GuardarRepertorio(jugador);
         return CrearResponse(declarada);
     }
@@ -56,6 +58,17 @@ internal sealed class ServicioRepertorio(
         }
 
         return skill;
+    }
+
+    private static T ObtenerObligatorio<T>(T? valor, string mensaje)
+        where T : struct
+    {
+        if(valor == null)
+        {
+            throw new DatosInvalidosException(mensaje);
+        }
+
+        return valor.Value;
     }
 
     private DateOnly ObtenerFechaActual()
