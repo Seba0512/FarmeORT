@@ -54,6 +54,45 @@ public sealed class RepositorioSkillsObligatoriasTests
         Assert.AreEqual("SIXSEVEN", resultadoSegundo.SkillsObligatorias.Single().Codigo);
     }
 
+    [TestMethod]
+    public void Actualizar_ObligatoriaAsociada_QuedaGuardada()
+    {
+        var skillId = GuardarSkill("SIXSEVEN");
+        var torneo = CargarConObligatorias(GuardarTorneo("COPAAURA"));
+        torneo.AsociarSkillObligatoria(_baseDeDatos.Contexto.Skills.Single(s => s.Id == skillId));
+
+        _repositorio.Actualizar(torneo);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.AreEqual(skillId, CargarConObligatorias(torneo.Id).SkillsObligatorias.Single().Id);
+    }
+
+    [TestMethod]
+    public void Actualizar_ObligatoriaQuitada_SeBorraSinBorrarLaSkill()
+    {
+        var skillId = GuardarSkill("SIXSEVEN");
+        var otraId = GuardarSkill("TRALALERO");
+        var torneoId = GuardarTorneo("COPAAURA");
+        AsociarYGuardar(torneoId, skillId);
+        AsociarYGuardar(torneoId, otraId);
+        var torneo = CargarConObligatorias(torneoId);
+        torneo.QuitarSkillObligatoria(skillId);
+
+        _repositorio.Actualizar(torneo);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.AreEqual(otraId, CargarConObligatorias(torneoId).SkillsObligatorias.Single().Id);
+        Assert.IsTrue(_baseDeDatos.Contexto.Skills.Any(s => s.Id == skillId));
+    }
+
+    private Torneo CargarConObligatorias(int torneoId)
+    {
+        return _baseDeDatos.Contexto.Torneos
+            .Include(t => t.Organizador)
+            .Include(t => t.SkillsObligatorias)
+            .Single(t => t.Id == torneoId);
+    }
+
     // Arma los datos directamente con el contexto, sin usar métodos del repositorio (FIRST).
     private void AsociarYGuardar(int torneoId, int skillId)
     {
