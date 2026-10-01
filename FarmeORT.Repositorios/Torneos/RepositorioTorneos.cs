@@ -20,10 +20,11 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
         throw new NotImplementedException();
     }
 
+    // SQL Server no distingue mayúsculas y SQLite sí: se compara en minúscula para responder igual en los dos (D-31).
     public bool ExistePorCodigo(string codigo)
     {
-        _ = codigo;
-        throw new NotImplementedException();
+        var codigoBuscado = codigo.ToLower();
+        return contexto.Torneos.Any(t => t.Codigo.ToLower() == codigoBuscado);
     }
 
     public void Agregar(Torneo torneo)
