@@ -23,6 +23,29 @@ public sealed class SkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void AsociarSkillObligatoria_HastaDosSkillsActivas_LasAsocia()
+    {
+        var primera = CrearSkill(3);
+        var segunda = CrearSkill(5);
+
+        _torneo.AsociarSkillObligatoria(primera);
+        _torneo.AsociarSkillObligatoria(segunda);
+
+        CollectionAssert.AreEqual(new[] { primera, segunda }, _torneo.SkillsObligatorias.ToArray());
+    }
+
+    [TestMethod]
+    public void QuitarSkillObligatoria_SkillAsociada_QuitaSoloEsaSkill()
+    {
+        _torneo.AsociarSkillObligatoria(CrearSkill(3));
+        _torneo.AsociarSkillObligatoria(CrearSkill(5));
+
+        _torneo.QuitarSkillObligatoria(3);
+
+        Assert.AreEqual(5, _torneo.SkillsObligatorias.Single().Id);
+    }
+
+    [TestMethod]
     public void AsociarSkillObligatoria_TorneoNoAbierto_LanzaTorneoNoModificableSinAsociarla()
     {
         _torneo.Cancelar();
