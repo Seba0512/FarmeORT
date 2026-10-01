@@ -109,6 +109,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         return contexto.Usuarios
             .Where(u => u.Rol == Rol.Jugador)
             .OrderByDescending(u => u.Elo)
+            .ThenBy(u => u.Id)
             .ToList();
     }
 
