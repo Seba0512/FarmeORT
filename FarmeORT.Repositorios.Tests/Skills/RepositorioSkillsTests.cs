@@ -175,9 +175,35 @@ public sealed class RepositorioSkillsTests
         CollectionAssert.AreEqual(new[] { "SIXSEVEN" }, skills.Select(s => s.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Actualizar_SkillModificada_GuardaLosCambios()
+    {
+        var skill = GuardarYCargar(CrearSkill("SIXSEVEN"));
+        skill.Modificar("TRALALERO", "Tralalero", "Canto con ritmo de tarantela italiana.", CategoriaSkill.Meme, 5);
+        skill.Desactivar();
+
+        _repositorio.Actualizar(skill);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var guardada = _baseDeDatos.Contexto.Skills.Single(s => s.Id == skill.Id);
+        Assert.AreEqual("TRALALERO", guardada.Codigo);
+        Assert.AreEqual("Tralalero", guardada.Nombre);
+        Assert.AreEqual("Canto con ritmo de tarantela italiana.", guardada.Descripcion);
+        Assert.AreEqual(CategoriaSkill.Meme, guardada.Categoria);
+        Assert.AreEqual(5, guardada.Dificultad);
+        Assert.IsFalse(guardada.Activa);
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
+    }
+
+    // Deja la skill guardada y cargada por el repositorio, como la recibe el servicio antes de modificarla.
+    private Skill GuardarYCargar(Skill skill)
+    {
+        GuardarSkills(skill);
+        return _repositorio.ObtenerPorId(skill.Id)!;
     }
 
     private void GuardarSkills(params Skill[] skills)
