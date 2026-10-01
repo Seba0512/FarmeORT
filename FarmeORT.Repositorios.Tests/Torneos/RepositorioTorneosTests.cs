@@ -168,6 +168,26 @@ public sealed class RepositorioTorneosTests
         CollectionAssert.AreEqual(new[] { "COPAAURA", "COPAHIELO" }, torneos.Select(t => t.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Listar_VariosFiltros_DevuelveLosQueCumplenTodos()
+    {
+        var cancelado = CrearTorneo("COPAFUEGO", "Copa Fuego");
+        cancelado.Cancelar();
+        GuardarTorneos(
+            CrearTorneo("COPAAURA", "Copa Aura"),
+            cancelado,
+            CrearTorneo("LIGAAURA", "Liga Aura"),
+            CrearTorneo("COPAHIELO", "Copa Hielo", new DateOnly(2027, 1, 10)));
+
+        var torneos = _repositorio.Listar(Filtro(
+            estado: EstadoTorneo.Abierto,
+            fechaHasta: new DateOnly(2026, 12, 31),
+            nombre: "copa",
+            excluirCancelados: true));
+
+        CollectionAssert.AreEqual(new[] { "COPAAURA" }, torneos.Select(t => t.Codigo).ToArray());
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroTorneos Filtro(
         EstadoTorneo? estado = null,
