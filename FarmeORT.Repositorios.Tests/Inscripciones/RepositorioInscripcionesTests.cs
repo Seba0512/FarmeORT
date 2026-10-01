@@ -78,6 +78,22 @@ public sealed class RepositorioInscripcionesTests
         Assert.IsFalse(_repositorio.ExisteAceptada(otroTorneoId, aceptado));
     }
 
+    [TestMethod]
+    public void ContarAceptadas_TorneoConInscripcionesEnVariosEstados_CuentaSoloLasAceptadas()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var otroTorneoId = GuardarTorneo("COPAFUEGO");
+        GuardarInscripcion(torneoId, GuardarUsuario("anaperez", Rol.Jugador));
+        GuardarInscripcion(torneoId, GuardarUsuario("brunolopez", Rol.Jugador));
+        GuardarInscripcion(torneoId, GuardarUsuario("carlagomez", Rol.Jugador), i => i.Cancelar());
+        GuardarInscripcion(torneoId, GuardarUsuario("diegoruiz", Rol.Jugador), i => i.Eliminar());
+        GuardarInscripcion(otroTorneoId, GuardarUsuario("evasosa", Rol.Jugador));
+
+        var aceptadas = _repositorio.ContarAceptadas(torneoId);
+
+        Assert.AreEqual(2, aceptadas);
+    }
+
     // Guarda una inscripción directamente con el contexto, sin usar métodos del repositorio (FIRST).
     private int GuardarInscripcion(int torneoId, int jugadorId, Action<Inscripcion>? cambiar = null)
     {
