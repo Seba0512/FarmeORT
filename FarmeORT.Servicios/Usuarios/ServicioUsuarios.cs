@@ -42,9 +42,12 @@ internal sealed class ServicioUsuarios(
 
     public UsuarioResponse Modificar(int id, UsuarioAdminRequest request, int usuarioActualId)
     {
-        _ = id;
+        if(id == usuarioActualId)
+        {
+            throw new OperacionSobreSiMismoException();
+        }
+
         _ = request;
-        _ = usuarioActualId;
         throw new NotImplementedException();
     }
 
