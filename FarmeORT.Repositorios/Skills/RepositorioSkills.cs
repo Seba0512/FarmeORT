@@ -12,8 +12,13 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
 
     public IReadOnlyList<Skill> Listar(FiltroSkills filtro)
     {
-        _ = filtro;
-        return contexto.Skills
+        var consulta = contexto.Skills.AsQueryable();
+        if(filtro.Categoria is { } categoria)
+        {
+            consulta = consulta.Where(s => s.Categoria == categoria);
+        }
+
+        return consulta
             .OrderBy(s => s.Id)
             .ToList();
     }
