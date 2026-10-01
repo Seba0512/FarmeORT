@@ -76,6 +76,10 @@ public sealed class FiltroExcepcionesTests
     [DataRow(typeof(SkillInactivaException), StatusCodes.Status409Conflict, "SKILL_INACTIVE", "No es posible utilizar la skill porque está inactiva.")]
     [DataRow(typeof(SkillYaDeclaradaException), StatusCodes.Status409Conflict, "SKILL_ALREADY_DECLARED", "La skill ya está en tu repertorio.")]
     [DataRow(typeof(SkillNoDeclaradaException), StatusCodes.Status404NotFound, "DECLARED_SKILL_NOT_FOUND", "La skill no está en tu repertorio.")]
+    [DataRow(typeof(NoEsOrganizadorDelTorneoException), StatusCodes.Status403Forbidden, "NOT_TOURNAMENT_ORGANIZER", "No sos el organizador asignado a este torneo.")]
+    [DataRow(typeof(SkillObligatoriaYaAsociadaException), StatusCodes.Status409Conflict, "MANDATORY_SKILL_ALREADY_ADDED", "La skill ya es obligatoria en este torneo.")]
+    [DataRow(typeof(LimiteSkillsObligatoriasException), StatusCodes.Status409Conflict, "MANDATORY_SKILLS_LIMIT_REACHED", "Un torneo puede tener como máximo 2 skills obligatorias.")]
+    [DataRow(typeof(SkillObligatoriaNoEncontradaException), StatusCodes.Status404NotFound, "MANDATORY_SKILL_NOT_FOUND", "La skill no es obligatoria en este torneo.")]
     public void OnException_ErrorMapeado_DevuelveSuStatusYCodigo(Type tipo, int status, string codigo, string mensaje)
     {
         var contexto = CrearContexto((Exception)Activator.CreateInstance(tipo)!);
