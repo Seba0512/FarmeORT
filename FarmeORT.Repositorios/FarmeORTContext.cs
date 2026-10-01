@@ -170,6 +170,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         {
             lanzamiento.HasKey(l => l.Id);
             lanzamiento.HasIndex(l => new { l.BatallaId, l.Turno }).IsUnique();
+            lanzamiento.HasIndex(l => new { l.BatallaId, l.JugadorId, l.SkillId }).IsUnique();
             lanzamiento.HasOne(l => l.Batalla)
                 .WithMany(b => b.Lanzamientos)
                 .HasForeignKey(l => l.BatallaId)
