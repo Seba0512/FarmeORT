@@ -96,6 +96,18 @@ public sealed class ServicioRepertorioTests
         _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.IsAny<Usuario>()), Times.Never);
     }
 
+    [TestMethod]
+    [DataRow(null, 4, "La skill es obligatoria.")]
+    [DataRow(SkillId, null, "El nivel es obligatorio.")]
+    public void Declarar_DatoObligatorioOmitido_LanzaDatosInvalidosSinConsultarLaBase(int? skillId, int? nivel, string mensaje)
+    {
+        var request = new SkillDeclaradaRequest { SkillId = skillId, Nivel = nivel };
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Declarar(JugadorId, request));
+
+        Assert.AreEqual(mensaje, excepcion.Message);
+    }
+
     private void ConfigurarDeclaracionValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
