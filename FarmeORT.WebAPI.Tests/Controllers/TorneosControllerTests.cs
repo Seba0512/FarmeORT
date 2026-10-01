@@ -72,6 +72,21 @@ public sealed class TorneosControllerTests
         Assert.AreSame(torneos, resultado.Value);
     }
 
+    [TestMethod]
+    public void Modificar_DatosValidos_Devuelve200ConElTorneoModificado()
+    {
+        var request = CrearRequest();
+        var torneo = CrearResponse();
+        _servicioTorneos.Setup(s => s.Modificar(4, request)).Returns(torneo);
+
+        var resultado = _controller.Modificar(4, request) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(torneo, resultado.Value);
+        _servicioTorneos.Verify(s => s.Modificar(4, request), Times.Once);
+    }
+
     private void PrepararContexto(bool autenticado)
     {
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };

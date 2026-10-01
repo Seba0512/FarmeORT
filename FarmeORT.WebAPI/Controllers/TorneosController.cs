@@ -29,4 +29,12 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     {
         return Ok(servicioTorneos.ObtenerPorId(id, ConsultaUnAnonimo));
     }
+
+    [HttpPut("{id:int}")]
+    public IActionResult Modificar(int id, [FromBody] TorneoRequest request)
+    {
+        _ = id;
+        _ = request;
+        throw new NotImplementedException();
+    }
 }
