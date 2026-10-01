@@ -116,6 +116,16 @@ public sealed class ServicioInscripcionesTests
         _repositorioInscripciones.Verify(r => r.Agregar(It.IsAny<Inscripcion>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Inscribir_CupoDeAceptadasCompleto_LanzaTorneoCompletoSinGuardar()
+    {
+        ConfigurarInscripcionValida();
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(4);
+
+        Assert.ThrowsExactly<TorneoCompletoException>(() => _servicio.Inscribir(JugadorId, new InscripcionRequest { TorneoId = TorneoId }));
+        _repositorioInscripciones.Verify(r => r.Agregar(It.IsAny<Inscripcion>()), Times.Never);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
