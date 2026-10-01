@@ -1,10 +1,12 @@
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Skills;
+using FarmeORT.IServicios.Torneos;
 using FarmeORT.IServicios.Usuarios;
 using FarmeORT.Servicios.Seguridad;
 using FarmeORT.Servicios.Sesiones;
 using FarmeORT.Servicios.Skills;
+using FarmeORT.Servicios.Torneos;
 using FarmeORT.Servicios.Usuarios;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -19,6 +21,7 @@ public static class RegistroServicios
         servicios.AddScoped<IGeneradorTokens, GeneradorTokens>();
         servicios.AddScoped<IServicioUsuarios, ServicioUsuarios>();
         servicios.AddScoped<IServicioSkills, ServicioSkills>();
+        servicios.AddScoped<IServicioTorneos, ServicioTorneos>();
         return servicios;
     }
 }
