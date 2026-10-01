@@ -127,6 +127,11 @@ public sealed class Torneo
 
     public void QuitarSkillObligatoria(int skillId)
     {
+        if(Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoModificableException();
+        }
+
         _skillsObligatorias.RemoveAll(s => s.Id == skillId);
     }
 
