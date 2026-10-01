@@ -42,6 +42,17 @@ public sealed class RepertorioTests
         Assert.AreEqual(4, _jugador.Repertorio.Single().Nivel);
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(6)]
+    public void DeclararSkill_NivelFueraDeRango_LanzaDatosInvalidosSinAgregarla(int nivel)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _jugador.DeclararSkill(CrearSkill(3), nivel, FechaActual));
+
+        Assert.AreEqual("El nivel debe ser un entero entre 1 y 5.", excepcion.Message);
+        Assert.IsEmpty(_jugador.Repertorio);
+    }
+
     private static Skill CrearSkill(int id)
     {
         return new Skill("SIXSEVEN", "Six-Seven", Descripcion, CategoriaSkill.Gestual, 2)
