@@ -47,9 +47,22 @@ internal sealed class ServicioUsuarios(
             throw new OperacionSobreSiMismoException();
         }
 
-        _ = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        _ = request;
-        throw new NotImplementedException();
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        var rol = ConvertirRol(request.Rol);
+        var fechaNacimiento = ObtenerFechaNacimiento(request);
+        var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
+        var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
+        usuario.Modificar(
+            request.Nombre,
+            request.Apellido,
+            request.Email,
+            request.Nickname,
+            fechaNacimiento,
+            rol,
+            contrasenaHash,
+            fechaActual);
+        repositorioUsuarios.Actualizar(usuario);
+        return CrearResponse(usuario);
     }
 
     public void Eliminar(int id, int usuarioActualId)
