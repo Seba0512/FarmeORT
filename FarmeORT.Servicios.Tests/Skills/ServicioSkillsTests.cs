@@ -222,6 +222,15 @@ public sealed class ServicioSkillsTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(3, CrearRequest(categoria: "Cocina")));
     }
 
+    [TestMethod]
+    public void CambiarEstado_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
+    {
+        _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(() => _servicio.CambiarEstado(99, new SkillEstadoRequest { Activa = false }));
+        _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
