@@ -8,6 +8,20 @@ namespace FarmeORT.WebAPI.Tests.Validaciones;
 public sealed class TorneoRequestTests
 {
     [TestMethod]
+    [DataRow("ABC12", 5, 20, 4)]
+    [DataRow("ABCDEFGHIJ0123456789", 60, 500, 64)]
+    [DataRow("CopaAura2026", 20, 100, 16)]
+    public void Validar_DatosEnLosLimites_EsValido(string codigo, int largoNombre, int largoDescripcion, int cupo)
+    {
+        var request = CrearRequest(codigo, new string('a', largoNombre), new string('a', largoDescripcion), cupo);
+        var errores = new List<ValidationResult>();
+
+        var esValido = Validator.TryValidateObject(request, new ValidationContext(request), errores, validateAllProperties: true);
+
+        Assert.IsTrue(esValido, string.Join(" ", errores.Select(e => e.ErrorMessage)));
+    }
+
+    [TestMethod]
     [DataRow("")]
     [DataRow("COPA")]
     [DataRow("ABCDEFGHIJKLMNOPQRSTU")]
