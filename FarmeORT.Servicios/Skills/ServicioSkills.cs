@@ -114,20 +114,18 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         }
     }
 
-    // Se compara por nombre para que un número como "1" no se acepte como categoría.
     private static CategoriaSkill ConvertirCategoria(string categoria)
     {
-        foreach(var valor in Enum.GetValues<CategoriaSkill>())
+        var encontrada = BuscarCategoria(categoria);
+        if(encontrada == null)
         {
-            if(valor.ToString() == categoria)
-            {
-                return valor;
-            }
+            throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
         }
 
-        throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
+        return encontrada.Value;
     }
 
+    // Se compara por nombre para que un número como "1" no se acepte como categoría.
     private static CategoriaSkill? BuscarCategoria(string categoria)
     {
         foreach(var valor in Enum.GetValues<CategoriaSkill>())
