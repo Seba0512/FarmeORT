@@ -106,8 +106,10 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Usuario> ListarRanking(int cantidad)
     {
-        _ = cantidad;
-        throw new NotImplementedException();
+        return contexto.Usuarios
+            .Where(u => u.Rol == Rol.Jugador)
+            .OrderByDescending(u => u.Elo)
+            .ToList();
     }
 
     private bool EstaGuardada(SkillDeclarada declarada)
