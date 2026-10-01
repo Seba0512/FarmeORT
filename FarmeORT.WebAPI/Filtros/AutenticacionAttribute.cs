@@ -10,9 +10,18 @@ internal class AutenticacionAttribute : Attribute, IAuthorizationFilter
 {
     private const string PrefijoBearer = "Bearer ";
 
+    // Las acciones abiertas a anónimos validan el token solo si el cliente lo envía.
+    protected virtual bool PermiteAnonimo => false;
+
     public void OnAuthorization(AuthorizationFilterContext context)
     {
-        var sesion = IntentarObtenerToken(context.HttpContext.Request.Headers.Authorization, out var token)
+        var encabezado = context.HttpContext.Request.Headers.Authorization;
+        if(PermiteAnonimo && string.IsNullOrEmpty(encabezado))
+        {
+            return;
+        }
+
+        var sesion = IntentarObtenerToken(encabezado, out var token)
             ? ObtenerSesion(context, token)
             : null;
         if(sesion is null)

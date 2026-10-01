@@ -1,8 +1,10 @@
 using FarmeORT.IRepositorios.Sesiones;
 using FarmeORT.IRepositorios.Skills;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Repositorios.Sesiones;
 using FarmeORT.Repositorios.Skills;
+using FarmeORT.Repositorios.Torneos;
 using FarmeORT.Repositorios.Usuarios;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +19,7 @@ public static class RegistroRepositorios
         servicios.AddScoped<IRepositorioUsuarios, RepositorioUsuarios>();
         servicios.AddScoped<IRepositorioSesiones, RepositorioSesiones>();
         servicios.AddScoped<IRepositorioSkills, RepositorioSkills>();
+        servicios.AddScoped<IRepositorioTorneos, RepositorioTorneos>();
         return servicios;
     }
 }
