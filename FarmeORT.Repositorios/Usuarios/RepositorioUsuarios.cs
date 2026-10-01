@@ -107,7 +107,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
     public IReadOnlyList<Usuario> ListarRanking(int cantidad)
     {
         return contexto.Usuarios
-            .Where(u => u.Rol == Rol.Jugador)
+            .Where(u => u.Rol == Rol.Jugador && !u.Eliminado)
             .OrderByDescending(u => u.Elo)
             .ThenBy(u => u.Id)
             .ToList();
