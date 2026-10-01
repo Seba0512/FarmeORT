@@ -19,6 +19,8 @@ public class TorneoResponse
 
     public int Cupo { get; init; }
 
+    public int InscripcionesAceptadas { get; init; }
+
     public int OrganizadorId { get; init; }
 
     public string Organizador { get; init; } = string.Empty;
