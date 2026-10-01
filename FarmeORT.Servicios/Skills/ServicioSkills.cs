@@ -46,7 +46,13 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
             limite = LimitePorDefecto;
         }
 
-        var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, limite, filtro.Offset);
+        var desplazamiento = filtro.Offset;
+        if(desplazamiento < 0)
+        {
+            desplazamiento = 0;
+        }
+
+        var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, limite, desplazamiento);
         var skills = repositorioSkills.Listar(filtroRepositorio);
         return skills.Select(CrearResponse).ToList();
     }
