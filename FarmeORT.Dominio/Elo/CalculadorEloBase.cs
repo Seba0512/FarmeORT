@@ -4,8 +4,6 @@ public sealed class CalculadorEloBase : ICalculadorElo
 {
     public ResultadoElo Calcular(int eloGanador, int eloPerdedor)
     {
-        _ = eloGanador;
-        _ = eloPerdedor;
-        throw new NotImplementedException();
+        return new ResultadoElo(eloGanador + 16, eloPerdedor - 16);
     }
 }
