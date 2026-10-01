@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Skills;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.Repositorios.Skills;
 
@@ -194,9 +195,30 @@ public sealed class RepositorioSkillsTests
         Assert.IsFalse(guardada.Activa);
     }
 
+    [TestMethod]
+    public void Agregar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoSkillYaExisteSinDuplicar()
+    {
+        Assert.IsFalse(_repositorio.ExistePorCodigo("SIXSEVEN"));
+        GuardarSkills(CrearSkill("SIXSEVEN"));
+        var nueva = CrearSkill("SIXSEVEN", nombre: "Otra skill");
+
+        Assert.ThrowsExactly<CodigoSkillYaExisteException>(() => _repositorio.Agregar(nueva));
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Skills.Count(s => s.Codigo == "SIXSEVEN"));
+        AssertPuedeGuardarOtraSkill();
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
+    }
+
+    private void AssertPuedeGuardarOtraSkill()
+    {
+        var siguiente = CrearSkill("SIGUIENTE");
+
+        _repositorio.Agregar(siguiente);
+
+        Assert.IsTrue(_baseDeDatos.Contexto.Skills.Any(s => s.Id == siguiente.Id && s.Codigo == "SIGUIENTE"));
     }
 
     // Deja la skill guardada y cargada por el repositorio, como la recibe el servicio antes de modificarla.
