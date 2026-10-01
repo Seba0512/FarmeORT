@@ -234,6 +234,17 @@ public sealed class ServicioInscripcionesTests
         Assert.AreEqual(12, inscripciones[0].Id);
     }
 
+    [TestMethod]
+    public void Listar_ConsultaUnJugador_PideSoloSusInscripciones()
+    {
+        var filtro = new FiltroInscripciones(null, null, null, null, JugadorId, null, 20, 0);
+        _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
+
+        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest(), JugadorId, Roles.Jugador);
+
+        Assert.IsEmpty(inscripciones);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
