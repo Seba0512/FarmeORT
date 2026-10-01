@@ -48,6 +48,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new SkillFueraDelRepertorioException(), 409, "SKILL_NOT_IN_REPERTOIRE", "La skill no está en tu repertorio.");
     }
 
+    [TestMethod]
+    public void OnException_SkillYaLanzada_Devuelve409ConSKILL_ALREADY_THROWN()
+    {
+        VerificarMapa(new SkillYaLanzadaException(), 409, "SKILL_ALREADY_THROWN", "Ya lanzaste esta skill en la batalla.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
