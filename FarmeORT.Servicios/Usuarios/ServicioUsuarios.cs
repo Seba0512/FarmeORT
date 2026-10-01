@@ -78,8 +78,11 @@ internal sealed class ServicioUsuarios(
 
     public void Eliminar(int id, int usuarioActualId)
     {
-        _ = id;
-        _ = usuarioActualId;
+        if(id == usuarioActualId)
+        {
+            throw new OperacionSobreSiMismoException();
+        }
+
         throw new NotImplementedException();
     }
 
