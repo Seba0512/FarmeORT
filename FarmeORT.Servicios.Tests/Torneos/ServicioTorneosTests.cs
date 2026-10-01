@@ -186,6 +186,17 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void Listar_ConsultaAnonima_PideExcluirLosTorneosCancelados()
+    {
+        var filtro = new FiltroTorneos(EstadoTorneo.Cancelado, null, null, null, null, true, 20, 0);
+        _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([]);
+
+        var torneos = _servicio.Listar(new FiltroTorneosRequest { Estado = nameof(EstadoTorneo.Cancelado) }, esAnonimo: true);
+
+        Assert.IsEmpty(torneos);
+    }
+
+    [TestMethod]
     [DataRow("Pausado")]
     [DataRow("abierto")]
     [DataRow("1")]
