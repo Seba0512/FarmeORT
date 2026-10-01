@@ -1278,6 +1278,26 @@ relaciones muchos a muchos en EF Core.
 
 ---
 
+### D-51 — Batalla como experto de turnos y sorteo inyectable
+
+**Problema:** C crea las batallas al generar rondas, A las cancela al cancelar el torneo y B registra lanzamientos. Las reglas de turnos y estados tienen que ser consistentes para todos esos consumidores, con pruebas deterministas del empate.
+
+**Alternativas consideradas:** reglas y azar directamente en el servicio; entidad que conozca una implementación aleatoria; entidad que valide sus datos y reciba `ISorteo` solo en la creación.
+
+**Decisión adoptada:** `Batalla(Torneo, int, Usuario, Usuario, ISorteo)` conserva torneo, ronda y dos jugadores distintos de rol Jugador. Guarda `JugadorInicialId` según los ELO de creación; solo en empate llama al sorteo. `ISorteo` vive en Dominio/Batallas y `SorteoAleatorio` en Servicios/Batallas, registrado Scoped. No se modifica `Torneo`, no se crean rondas ni se implementa una fórmula ELO desde B.
+
+La entidad registra sus lanzamientos y aplica estado Pendiente, participación, turno, repertorio y repetición por **jugador y skill**. El rival puede lanzar la misma skill: prohibirlo globalmente impediría que ambos cumplan las obligatorias. Una skill desactivada después de declararla sigue siendo válida. El lanzamiento ocho deja cuatro por jugador y pasa a EnArbitraje; `Cancelar()` acepta Pendiente/EnArbitraje y no cambia estados finales. El servicio carga las dependencias, usa `TimeProvider.GetUtcNow()` y pide un guardado después de validar. La regla de skills obligatorias se integra al llegar el modelo de A; no se sustituye por una colección inventada.
+
+**Justificación:** las reglas que usan datos de la batalla quedan con el experto; las dependencias de acceso a datos y reloj permanecen fuera del dominio. El azar se reemplaza por un mock o doble preparado en tests. No hace falta una jerarquía State para estos cuatro estados.
+
+**Conceptos del curso:** Information Expert, Creator, Protected Variations, DIP, SRP, encapsulación, DI Scoped y TDD Outside-In.
+
+**Evidencia:** `BatallaTests`, `ServicioLanzamientosTests`, `SorteoAleatorioTests` y `RegistroBatallasTests`, ciclos RED/GREEN separados. Diagramas en `docs/uml/` y contrato en `docs/api/batallas-lanzamientos.md`; los diagramas siguen identificados como diseño propuesto hasta verificar su alineación y render.
+
+**Participación de IA:** Codex desarrolló los ciclos y propuso mantener las reglas en Batalla siguiendo el contrato explícito del usuario. Se aceptaron el sorteo inyectable, la no retroactividad y las excepciones existentes para datos/recursos inexistentes. No se aceptó implementar inscripciones, obligatorias o ELO fuera del alcance. No existe una excepción genérica de negocio reutilizable en el código actual: se agregan tipos para distinguir los conflictos de lanzamiento y mapear sus códigos sin alterar errores de otros recursos.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
