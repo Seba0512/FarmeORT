@@ -49,9 +49,23 @@ internal sealed class ServicioTorneos(
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
     {
-        _ = filtro;
-        _ = esAnonimo;
-        throw new NotImplementedException();
+        EstadoTorneo? estado = null;
+        if(filtro.Estado != null)
+        {
+            estado = Enum.Parse<EstadoTorneo>(filtro.Estado);
+        }
+
+        var filtroRepositorio = new FiltroTorneos(
+            estado,
+            filtro.FechaDesde,
+            filtro.FechaHasta,
+            filtro.Nombre,
+            filtro.SkillObligatoriaId,
+            esAnonimo,
+            filtro.Limit,
+            filtro.Offset);
+        var torneos = repositorioTorneos.Listar(filtroRepositorio);
+        return torneos.Select(CrearResponse<TorneoResponse>).ToList();
     }
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
