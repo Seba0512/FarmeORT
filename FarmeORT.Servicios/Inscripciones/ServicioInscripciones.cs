@@ -42,7 +42,7 @@ internal sealed class ServicioInscripciones(
         EstadoInscripcion? estado = null;
         if(filtro.Estado != null)
         {
-            estado = BuscarEstado(filtro.Estado);
+            estado = ValoresPorNombre.Buscar<EstadoInscripcion>(filtro.Estado);
         }
 
         var filtroRepositorio = new FiltroInscripciones(
@@ -124,20 +124,6 @@ internal sealed class ServicioInscripciones(
         }
 
         return jugador;
-    }
-
-    // Se compara por nombre para que un número como "1" no se tome como estado; un estado que no existe no filtra (D-35).
-    private static EstadoInscripcion? BuscarEstado(string estado)
-    {
-        foreach(var valor in Enum.GetValues<EstadoInscripcion>())
-        {
-            if(valor.ToString() == estado)
-            {
-                return valor;
-            }
-        }
-
-        return null;
     }
 
     private static InscripcionResponse CrearResponse(Inscripcion inscripcion)
