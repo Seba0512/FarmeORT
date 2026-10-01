@@ -29,52 +29,23 @@ public sealed class FiltroSkillsRequestTests
         Assert.AreEqual(0, filtro.Offset);
     }
 
+    // Los valores fuera de rango no se rechazan en el borde: el servicio usa el tope, el valor por defecto
+    // o ignora el filtro, "para no trancar al usuario" (AGENTS.md §7).
     [TestMethod]
-    [DataRow(0)]
-    [DataRow(101)]
-    [DataRow(-1)]
-    public void Validar_LimitFueraDeRango_EsInvalido(int limit)
+    [DataRow(101, 0, null, null)]
+    [DataRow(0, 0, null, null)]
+    [DataRow(-1, 0, null, null)]
+    [DataRow(20, -1, null, null)]
+    [DataRow(20, 0, 0, null)]
+    [DataRow(20, 0, 6, null)]
+    [DataRow(20, 0, null, "Cocina")]
+    public void Validar_ValoresFueraDeRango_NoSeRechazanEnElBorde(int limit, int offset, int? dificultad, string? categoria)
     {
-        var filtro = new FiltroSkillsRequest { Limit = limit };
-
-        AssertCampoInvalido(filtro, nameof(FiltroSkillsRequest.Limit));
-    }
-
-    [TestMethod]
-    public void Validar_OffsetNegativo_EsInvalido()
-    {
-        var filtro = new FiltroSkillsRequest { Limit = 20, Offset = -1 };
-
-        AssertCampoInvalido(filtro, nameof(FiltroSkillsRequest.Offset));
-    }
-
-    [TestMethod]
-    [DataRow(0)]
-    [DataRow(6)]
-    public void Validar_DificultadFueraDeRango_EsInvalida(int dificultad)
-    {
-        var filtro = new FiltroSkillsRequest { Dificultad = dificultad, Limit = 20 };
-
-        AssertCampoInvalido(filtro, nameof(FiltroSkillsRequest.Dificultad));
-    }
-
-    [TestMethod]
-    [DataRow("Cocina")]
-    [DataRow("gestual")]
-    public void Validar_CategoriaInexistente_EsInvalida(string categoria)
-    {
-        var filtro = new FiltroSkillsRequest { Categoria = categoria, Limit = 20 };
-
-        AssertCampoInvalido(filtro, nameof(FiltroSkillsRequest.Categoria));
-    }
-
-    private static void AssertCampoInvalido(FiltroSkillsRequest filtro, string campo)
-    {
+        var filtro = new FiltroSkillsRequest { Limit = limit, Offset = offset, Dificultad = dificultad, Categoria = categoria };
         var errores = new List<ValidationResult>();
 
         var esValido = Validator.TryValidateObject(filtro, new ValidationContext(filtro), errores, validateAllProperties: true);
 
-        Assert.IsFalse(esValido);
-        Assert.IsTrue(errores.Any(e => e.MemberNames.Contains(campo)), $"No hay un error para el campo {campo}.");
+        Assert.IsTrue(esValido, string.Join(" ", errores.Select(e => e.ErrorMessage)));
     }
 }
