@@ -55,10 +55,21 @@ internal sealed class ServicioInscripciones(
     public InscripcionResponse Cancelar(int id, int jugadorId)
     {
         _ = jugadorId;
-        var inscripcion = repositorioInscripciones.ObtenerPorId(id)!;
+        var inscripcion = ObtenerInscripcionExistente(id);
         inscripcion.Cancelar();
         repositorioInscripciones.Actualizar(inscripcion);
         return CrearResponse(inscripcion);
+    }
+
+    private Inscripcion ObtenerInscripcionExistente(int id)
+    {
+        var inscripcion = repositorioInscripciones.ObtenerPorId(id);
+        if(inscripcion == null)
+        {
+            throw new InscripcionNoEncontradaException();
+        }
+
+        return inscripcion;
     }
 
     private Torneo ObtenerTorneoExistente(int torneoId)
