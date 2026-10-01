@@ -160,6 +160,17 @@ public sealed class ServicioInscripcionesTests
         Assert.AreEqual(EstadoInscripcion.Aceptada, inscripcion.Estado);
     }
 
+    [TestMethod]
+    public void Cancelar_TorneoQueYaNoEstaAbierto_LanzaTorneoNoAbiertoSinGuardar()
+    {
+        var inscripcion = CrearInscripcion();
+        _torneo.Cancelar();
+        _repositorioInscripciones.Setup(r => r.ObtenerPorId(12)).Returns(inscripcion);
+
+        Assert.ThrowsExactly<TorneoNoAbiertoException>(() => _servicio.Cancelar(12, JugadorId));
+        _repositorioInscripciones.Verify(r => r.Actualizar(It.IsAny<Inscripcion>()), Times.Never);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
