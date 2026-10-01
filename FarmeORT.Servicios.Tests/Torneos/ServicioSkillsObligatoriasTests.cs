@@ -97,6 +97,18 @@ public sealed class ServicioSkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void Listar_TorneoCanceladoConsultadoPorUsuarioAutenticado_DevuelveSusObligatorias()
+    {
+        _torneo.AsociarSkillObligatoria(_skill);
+        _torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+
+        var skills = _servicio.Listar(TorneoId, esAnonimo: false);
+
+        Assert.AreEqual(SkillId, skills.Single().Id);
+    }
+
+    [TestMethod]
     public void Quitar_SkillAsociada_LaQuitaDelTorneoYGuarda()
     {
         _torneo.AsociarSkillObligatoria(_skill);
