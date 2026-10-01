@@ -96,6 +96,23 @@ public sealed class FiltroExcepcionesTests
     }
 
     [TestMethod]
+    public void OnException_SkillsObligatoriasFaltantes_Devuelve409ConLasSkillsEnDetalles()
+    {
+        var contexto = CrearContexto(new SkillsObligatoriasFaltantesException(["SIXSEVEN", "TRALALERO"]));
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status409Conflict, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("MISSING_MANDATORY_SKILLS", error.ErrorCode);
+        Assert.AreEqual("No tenés declaradas todas las skills obligatorias del torneo.", error.UserMessage);
+        CollectionAssert.AreEqual(new[] { "SIXSEVEN", "TRALALERO" }, error.Detalles!.ToArray());
+    }
+
+    [TestMethod]
     public void OnException_DatosInvalidos_Devuelve400ConElMensajeDeLaRegla()
     {
         var contexto = CrearContexto(new DatosInvalidosException("El usuario debe tener 13 años o más."));
