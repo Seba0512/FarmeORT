@@ -65,7 +65,7 @@ public sealed class Torneo
 
     public void Cancelar()
     {
-        throw new NotImplementedException();
+        Estado = EstadoTorneo.Cancelado;
     }
 
     private static void ValidarCodigo(string codigo)
