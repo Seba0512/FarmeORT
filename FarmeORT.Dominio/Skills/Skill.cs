@@ -37,6 +37,7 @@ public sealed partial class Skill
         ValidarCodigo(codigo);
         ValidarNombre(nombre);
         ValidarDescripcion(descripcion);
+        ValidarCategoria(categoria);
         ValidarDificultad(dificultad);
 
         Codigo = codigo;
@@ -87,6 +88,14 @@ public sealed partial class Skill
         if(descripcion.Length is < LargoMinimoDescripcion or > LargoMaximoDescripcion)
         {
             throw new DatosInvalidosException("La descripción debe tener entre 20 y 300 caracteres.");
+        }
+    }
+
+    private static void ValidarCategoria(CategoriaSkill categoria)
+    {
+        if(!Enum.IsDefined(categoria))
+        {
+            throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
         }
     }
 
