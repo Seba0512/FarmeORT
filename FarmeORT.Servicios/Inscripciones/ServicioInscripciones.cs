@@ -46,10 +46,10 @@ internal sealed class ServicioInscripciones(
 
     public InscripcionResponse ObtenerPorId(int id, int usuarioId, string rol)
     {
-        _ = id;
         _ = usuarioId;
         _ = rol;
-        throw new NotImplementedException();
+        var inscripcion = ObtenerInscripcionExistente(id);
+        return CrearResponse(inscripcion);
     }
 
     public InscripcionResponse Cancelar(int id, int jugadorId)
