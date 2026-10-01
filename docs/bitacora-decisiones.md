@@ -143,6 +143,9 @@ Singleton.
 
 **Participación de IA:** propuesta de la IA, aprobada por el equipo.
 
+**Actualización (D-34):** los métodos de registro se mantienen, pero ya no los llama `Program.cs` sino
+la fábrica (`FarmeORT.Fabrica`), y la WebAPI dejó de referenciar Servicios y Repositorios.
+
 ---
 
 ### D-07 — Filtro global de excepciones con diccionario tipo → error
@@ -490,6 +493,9 @@ dos altas simultáneas.
 
 **Participación de IA:** propuesta de la IA, aprobada por el equipo.
 
+**Actualización (D-35):** `limit` y `offset` fuera de rango ya no responden 400: se ajustan al tope, al
+valor por defecto o a 0, como sugieren los docentes. El tipo de paginado se justifica en D-35.
+
 ---
 
 ### D-22 — Registro público y alta administrativa comparten creación con rol tipado
@@ -732,8 +738,10 @@ acoplamiento entre capas (D-01, D-12).
 **Evidencia:** `CategoriaSkill`, `CategoriasSkill`, `SkillRequest`, `ServicioSkills.ConvertirCategoria`,
 `Skill.ValidarCategoria`, sus tests y la migración `AgregaCatalogoDeSkills`.
 
-**Participación de IA:** Claude Code planteó las alternativas y recomendó la lista fija; el equipo la
-eligió. Pendiente: confirmar los valores contra el diagrama de clases de Dominio.
+**Participación de IA:** Claude Code planteó las tres alternativas y recomendó la lista fija; el
+integrante la aceptó. Problema que apareció en el camino: la primera implementación convertía la
+categoría con `Enum.Parse`, que aceptaba `"1"` como categoría válida; lo detectó un test y se cambió por
+la comparación por nombre. Pendiente: confirmar los valores contra el diagrama de clases de Dominio.
 
 ---
 
@@ -764,6 +772,14 @@ de la API y las convenciones que ya tiene el código de usuarios.
 - Orden en `PUT`: datos (400) → existencia (404) → unicidad del código (409) → `Skill.Modificar` →
   guardado, como D-28. El constructor de `Skill` reutiliza `Modificar`, así que alta y modificación
   comparten las validaciones del dominio.
+- El body de `PUT` no lleva `activa`. En clase se dijo que en `PUT` se manda toda la información; acá el
+  estado de la skill tiene su propia operación (`PATCH`), igual que el `Id` no va en el body, así que el
+  `PUT` reemplaza los datos editables del catálogo y conserva el estado.
+- Excepciones propias en lugar de las de .NET (por ejemplo `KeyNotFoundException`): cada una lleva su
+  `errorCode` y su mensaje, y una excepción genérica que saliera de un error de programación terminaría
+  en un 404 o un 409 falsos en lugar del 500 seguro. Es la justificación que piden los docentes para no
+  "crear excepciones por crear".
+- Actualización (D-35): los filtros y la paginación fuera de rango ya no responden 400.
 
 **Justificación:** el código implementa el contrato aprobado, y mantener las convenciones existentes
 hace que skills se lea igual que usuarios sin refactorizar lo que ya está hecho. El equipo eligió
@@ -776,9 +792,12 @@ autenticación y autorización separadas), Controller de GRASP, consistencia ent
 los tests de cada capa y la carpeta Skills de la colección de Postman.
 
 **Participación de IA:** Claude Code detectó las diferencias entre el diagrama y la especificación y
-propuso seguir el código; el equipo eligió esa opción. Claude Code implementó la funcionalidad con
-ciclos RED/GREEN/REFACTOR por commit, siguiendo `AGENTS.md` y las skills `da2-*`; el equipo revisa y
-aprueba en el PR.
+propuso seguir el código; el integrante aceptó esa opción. Claude Code implementó la funcionalidad con
+ciclos RED/GREEN/REFACTOR por commit, siguiendo `AGENTS.md` y las skills `da2-*`. Lo que el integrante
+modificó: pidió un código más simple de leer (ifs explícitos en lugar de `?? throw`, `Regex.IsMatch` común,
+`.ToList()`) y se aplicó en commits REFACTOR. Lo que se rechazó: la propuesta de clases públicas sin
+`sealed` (D-33), que se revirtió. Problema que apareció: las justificaciones del `PUT` sin `activa` y de las
+excepciones propias faltaban hasta que se revisaron las transcripciones de clase.
 
 ---
 
@@ -810,7 +829,9 @@ un error del cliente.
 `Agregar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoSkillYaExisteSinDuplicar`,
 `Agregar_ErrorDeBaseSinCodigoDuplicado_PropagaDbUpdateException` y casos de Postman.
 
-**Participación de IA:** propuesta de Claude Code a partir de D-21, D-23 y D-28.
+**Participación de IA:** propuesta de Claude Code a partir de D-21, D-23 y D-28, aceptada sin cambios.
+El problema lo mostró la prueba de punta a punta contra SQL Server: los tests con SQLite no lo detectaban
+porque SQLite sí distingue mayúsculas.
 
 ---
 
@@ -831,7 +852,8 @@ producirla.
 
 **Evidencia:** `Skill`, `RepositorioSkillsTests` (cargan skills activas e inactivas desde la base).
 
-**Participación de IA:** propuesta de Claude Code.
+**Participación de IA:** propuesta de Claude Code, aceptada. Es una decisión técnica menor; puede pasar a
+supuestos si el informe necesita espacio.
 
 ---
 
@@ -872,6 +894,85 @@ eso. Con `ServicioSkills` y `RepositorioSkills` públicos, la WebAPI podía usar
 Code planteó el conflicto y el integrante eligió volver las clases de skills a `internal sealed`, igual
 que el resto del código, en lugar de mantener la excepción. Evidencia: commit `refactor [REFACTOR] (.):
 vuelve a internal sealed las clases del catálogo de skills`.
+
+---
+
+### D-34 — La WebAPI no conoce Servicios ni Repositorios: la inyección se resuelve en una fábrica
+
+**Problema:** la WebAPI referenciaba Servicios y Repositorios para registrar las dependencias en
+`Program.cs` (D-06). En clase, un docente bajó un diagrama de componentes de 8 a 4 justamente porque la
+WebAPI conocía la lógica y el acceso a datos; la letra pide que un cambio impacte en la menor cantidad
+posible de componentes.
+
+**Alternativas consideradas:** dejar a `Program.cs` como composition root y justificarlo; un assembly
+fábrica que haga el registro; además, dentro de la fábrica, que la WebAPI igual pueda ver Servicios y
+Repositorios de forma indirecta (referencia transitiva) o impedirlo.
+
+**Decisión adoptada:** nuevo assembly `FarmeORT.Fabrica` con `AgregarDependencias(connectionString)`, que
+registra el `TimeProvider` y llama a `AgregarServicios` y `AgregarRepositorios`. La WebAPI referencia solo
+DTOs, IServicios, Excepciones y la fábrica, con `DisableTransitiveProjectReferences` para que el
+compilador no le deje usar Servicios ni Repositorios. `Program.cs` además delega el registro de los
+controllers, el filtro global y la validación en `RegistroWebApi.AgregarControllersConFiltros`.
+
+**Justificación:** la WebAPI depende solo de abstracciones (DIP) y el diagrama de componentes queda
+`WebAPI → IServicios ← Servicios`, con la fábrica como único componente que conoce las implementaciones.
+Las clases siguen siendo `internal sealed` y cada assembly sigue registrando las suyas (D-06). Se verificó
+que en ejecución las DLL se copian igual, que la API levanta y que `dotnet ef` sigue funcionando con la
+WebAPI como proyecto de arranque.
+
+**Conceptos del curso:** DIP, Indirection (GRASP), independencia de librerías, diagrama de componentes.
+
+**Evidencia:** `FarmeORT.Fabrica/RegistroDependencias.cs` y `RegistroDependenciasTests` (resuelve los
+servicios con `ValidateOnBuild` y `ValidateScopes`), `FarmeORT.WebAPI/RegistroWebApi.cs` y
+`RegistroWebApiTests`, `FarmeORT.WebAPI.csproj`, `Program.cs`; prueba de compilación que confirma que la
+WebAPI no puede usar Servicios ni Repositorios; prueba de punta a punta contra SQL Server.
+
+**Participación de IA:** Claude Code detectó el problema al revisar las transcripciones de clase y
+propuso la fábrica; el integrante la aceptó en lugar de solo justificar D-06. Claude Code agregó
+`DisableTransitiveProjectReferences` después de comprobar que, sin eso, la WebAPI seguía viendo las
+implementaciones a través de la fábrica.
+
+---
+
+### D-35 — Paginación y filtros fuera de rango se ajustan en lugar de rechazarse
+
+**Problema:** `GET /usuarios` y `GET /skills` respondían 400 ante un `limit` de 600, un `offset` negativo
+o un filtro con un valor que no existe. En clase sugirieron lo contrario: "en vez de tirarle un error…
+hacerle un fallback al límite" y anular el filtro inválido "para no trancar al usuario". Además, piden
+como obligatorio documentar el tipo de paginado con sus alternativas.
+
+**Alternativas consideradas:**
+- Para los valores fuera de rango: responder 400 (lo que había) o ajustarlos.
+- Para el tipo de paginado: `limit`/`offset`, número de página con tamaño de página, o cursor.
+
+**Decisión adoptada:**
+- `limit` mayor a 100 usa 100; `limit` menor a 1 usa el valor por defecto (20); `offset` negativo usa 0.
+- En skills, una categoría que no existe o una dificultad fuera de 1 a 5 no filtran.
+- Un tipo mal formado (`limit=abc`) sigue siendo 400, porque no hay un valor razonable que usar.
+- El ajuste vive en los servicios (`Paginacion`, compartida por skills y usuarios) y los DTOs de filtro ya
+  no tienen validaciones de rango.
+- Paginado con `limit`/`offset`, ordenado por `Id`.
+
+**Justificación:** un cliente que pide de más recibe lo que hay en lugar de un error. Un `limit` menor a 1
+se trata igual que uno ausente. Sobre el tipo de paginado:
+- El paginado por página es equivalente a `limit`/`offset`, pero menos flexible.
+- El cursor evita repetir o saltear elementos cuando se insertan datos entre dos pedidos, pero no permite
+  saltar directo a una página.
+- El catálogo de skills y los usuarios cambian poco, que es el caso en que en clase aceptan
+  `limit`/`offset`. El orden fijo por `Id` hace que las páginas sean estables.
+
+**Conceptos del curso:** buenas prácticas REST (filtros y paginación en la query, valores por defecto),
+DRY, Clean Code.
+
+**Evidencia:** `FarmeORT.Servicios/Paginacion.cs`, `ServicioSkills.Listar`, `ServicioUsuarios.Listar`, sus
+tests (`Listar_LimitMayorAlMaximo_UsaElMaximo`, `Listar_LimitMenorAUno_UsaElValorPorDefecto`,
+`Listar_OffsetNegativo_EmpiezaDesdeElPrincipio`, `Listar_CategoriaInexistente_NoFiltraPorCategoria`,
+`Listar_DificultadFueraDeRango_NoFiltraPorDificultad`), los tests de los DTOs de filtro y los casos de
+Postman.
+
+**Participación de IA:** Claude Code encontró la sugerencia en las transcripciones y la propuso; el
+integrante la aceptó para skills y usuarios. Claude Code eligió el valor por defecto (y no el mínimo) para
+un `limit` menor a 1, y que un tipo mal formado siga dando 400.
 
 ---
 
@@ -920,9 +1021,17 @@ vuelve a internal sealed las clases del catálogo de skills`.
   (D-07, D-30) y el nombre real del contexto (`FarmeORTContext`).
 - Repertorio, skills obligatorias e inscripción tienen que aplicar la regla de skill inactiva (letra
   2.2): no puede declararse en un repertorio ni asociarse como obligatoria, sin efecto retroactivo.
-- Notificaciones: la letra 2026.2 y la especificación de la API no las piden, pero `AGENTS.md` (§8) y la
-  skill de dominio sí. Se postergan (decisión del 2026-10-01); si se descartan, corregir `AGENTS.md` por PR.
+- Notificaciones: la letra oficial 2026.2 no las incluye (el borrador leído en clase sí); `AGENTS.md` §8 ya
+  lo refleja. Se postergan: confirmarlo en el foro antes de que cierre.
 - Documentar en el informe de diseño qué tipos forman la interfaz de cada assembly (letra,
   "Independencia de librerías").
 - La colección de Postman trae `baseUrl` con el puerto 5088, pero `launchSettings.json` levanta la API
   en el 5294: unificarlo o explicarlo en la guía de instalación.
+- Completar la participación de IA de D-01 a D-28 con qué se aceptó, qué se rechazó o modificó y qué
+  problemas aparecieron (lo pide la letra; no alcanza con "propuesta de la IA, aprobada"). Lo tiene que
+  escribir quien trabajó en cada una.
+- Pasar a supuestos las entradas menores (D-08, D-19, D-32): la bitácora es para decisiones con impacto.
+- Justificar en la especificación por qué `POST /jugadores` devuelve `Location: /usuarios/{id}` (D-22):
+  en clase remarcaron no representar lo mismo de dos maneras.
+- Los commits RED de las validaciones de DTOs del catálogo de skills (`0162a1f`, `eac0efa`) agrupan varios
+  tests; son anteriores a la regla de un test por RED y hay que explicarlo en el documento de TDD.
