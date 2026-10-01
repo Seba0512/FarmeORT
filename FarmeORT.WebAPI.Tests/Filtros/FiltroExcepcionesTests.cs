@@ -88,6 +88,22 @@ public sealed class FiltroExcepcionesTests
     }
 
     [TestMethod]
+    public void OnException_OperacionSobreSiMismo_Devuelve409ConSelfOperationNotAllowed()
+    {
+        var contexto = CrearContexto(new OperacionSobreSiMismoException());
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status409Conflict, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("SELF_OPERATION_NOT_ALLOWED", error.ErrorCode);
+        Assert.AreEqual("Un usuario no puede modificarse ni eliminarse a sí mismo.", error.UserMessage);
+    }
+
+    [TestMethod]
     public void OnException_ExcepcionNoMapeada_Devuelve500ConMensajeFijo()
     {
         var contexto = CrearContexto(new InvalidOperationException("detalle interno con datos sensibles"));
