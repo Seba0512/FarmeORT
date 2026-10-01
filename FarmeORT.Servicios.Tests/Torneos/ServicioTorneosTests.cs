@@ -97,6 +97,20 @@ public sealed class ServicioTorneosTests
         _repositorioTorneos.Verify(r => r.Agregar(It.IsAny<Torneo>()), Times.Never);
     }
 
+    [TestMethod]
+    [DataRow(nameof(TorneoRequest.FechaInicio), "La fecha de inicio es obligatoria.")]
+    [DataRow(nameof(TorneoRequest.FechaFin), "La fecha de fin es obligatoria.")]
+    [DataRow(nameof(TorneoRequest.Cupo), "El cupo es obligatorio.")]
+    [DataRow(nameof(TorneoRequest.OrganizadorId), "El organizador es obligatorio.")]
+    public void Crear_DatoObligatorioOmitido_LanzaDatosInvalidosSinConsultarLaBase(string campo, string mensaje)
+    {
+        var request = CrearRequestSin(campo);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(request));
+
+        Assert.AreEqual(mensaje, excepcion.Message);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
@@ -130,6 +144,20 @@ public sealed class ServicioTorneosTests
             FechaFin = FechaFin,
             Cupo = Cupo,
             OrganizadorId = organizadorId,
+        };
+    }
+
+    private static TorneoRequest CrearRequestSin(string campo)
+    {
+        return new TorneoRequest
+        {
+            Codigo = Codigo,
+            Nombre = Nombre,
+            Descripcion = Descripcion,
+            FechaInicio = campo == nameof(TorneoRequest.FechaInicio) ? null : FechaInicio,
+            FechaFin = campo == nameof(TorneoRequest.FechaFin) ? null : FechaFin,
+            Cupo = campo == nameof(TorneoRequest.Cupo) ? null : Cupo,
+            OrganizadorId = campo == nameof(TorneoRequest.OrganizadorId) ? null : OrganizadorId,
         };
     }
 }
