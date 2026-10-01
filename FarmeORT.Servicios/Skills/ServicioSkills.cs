@@ -20,7 +20,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public SkillResponse ObtenerPorId(int id)
     {
-        var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
+        var skill = ObtenerSkillExistente(id);
         return CrearResponse(skill);
     }
 
@@ -36,7 +36,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
     {
         var categoria = ConvertirCategoria(request.Categoria);
         var dificultad = ObtenerDificultad(request);
-        var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
+        var skill = ObtenerSkillExistente(id);
 
         // El índice único de SQL Server no distingue mayúsculas: cambiar solo mayúsculas no ocupa un código ajeno.
         if(!string.Equals(skill.Codigo, request.Codigo, StringComparison.OrdinalIgnoreCase))
@@ -52,7 +52,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
     public SkillResponse CambiarEstado(int id, SkillEstadoRequest request)
     {
         var activa = request.Activa ?? throw new DatosInvalidosException("El estado activa es obligatorio.");
-        var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
+        var skill = ObtenerSkillExistente(id);
         if(activa)
         {
             skill.Activar();
@@ -64,6 +64,11 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
         repositorioSkills.Actualizar(skill);
         return CrearResponse(skill);
+    }
+
+    private Skill ObtenerSkillExistente(int id)
+    {
+        return repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
     }
 
     private void ValidarCodigoDisponible(string codigo)
