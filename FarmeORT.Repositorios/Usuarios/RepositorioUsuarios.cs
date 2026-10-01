@@ -78,10 +78,11 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         contexto.SaveChanges();
     }
 
+    // El jugador viene de ObtenerConRepertorio, en seguimiento: EF detecta solas las skills agregadas y
+    // quitadas. Update() no sirve, porque marcaría como modificada una skill nueva con su clave ya asignada.
     public void GuardarRepertorio(Usuario jugador)
     {
-        _ = jugador;
-        throw new NotImplementedException();
+        contexto.SaveChanges();
     }
 
     // Otro usuario puede ocupar el email o nickname entre la validación del servicio y el guardado (D-23).
