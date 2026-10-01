@@ -189,6 +189,19 @@ public sealed class ServicioSkillsTests
         _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Modificar_SuMismoCodigoConOtrasMayusculas_NoLoConsideraDuplicado()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+
+        var response = _servicio.Modificar(3, CrearRequest(codigo: "SixSeven"));
+
+        Assert.AreEqual("SixSeven", response.Codigo);
+        _repositorioSkills.Verify(r => r.ExistePorCodigo(It.IsAny<string>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
