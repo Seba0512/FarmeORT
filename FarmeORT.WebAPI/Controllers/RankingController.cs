@@ -11,8 +11,6 @@ public sealed class RankingController(IServicioRanking servicioRanking) : Contro
     [HttpGet]
     public IActionResult Obtener([FromQuery] FiltroRankingRequest filtro)
     {
-        _ = servicioRanking;
-        _ = filtro;
-        throw new NotImplementedException();
+        return Ok(servicioRanking.Obtener(filtro));
     }
 }
