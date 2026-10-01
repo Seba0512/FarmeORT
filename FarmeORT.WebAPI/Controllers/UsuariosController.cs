@@ -28,4 +28,12 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
     {
         return Ok(servicioUsuarios.ObtenerPorId(id));
     }
+
+    [HttpPut("{id:int}")]
+    public IActionResult Modificar(int id, [FromBody] UsuarioAdminRequest request)
+    {
+        _ = id;
+        _ = request;
+        throw new NotImplementedException();
+    }
 }

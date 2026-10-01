@@ -40,6 +40,14 @@ internal sealed class ServicioUsuarios(
         return [.. usuarios.Select(CrearResponse)];
     }
 
+    public UsuarioResponse Modificar(int id, UsuarioAdminRequest request, int usuarioActualId)
+    {
+        _ = id;
+        _ = request;
+        _ = usuarioActualId;
+        throw new NotImplementedException();
+    }
+
     private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
     {
         return request.FechaNacimiento

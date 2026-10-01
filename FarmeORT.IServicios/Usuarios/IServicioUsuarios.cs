@@ -11,4 +11,6 @@ public interface IServicioUsuarios
     UsuarioResponse ObtenerPorId(int id);
 
     IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro);
+
+    UsuarioResponse Modificar(int id, UsuarioAdminRequest request, int usuarioActualId);
 }

@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Usuarios;
+using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Usuarios;
 using FarmeORT.WebAPI.Controllers;
 using FarmeORT.WebAPI.Filtros;
@@ -83,6 +84,31 @@ public sealed class UsuariosControllerTests
     }
 
     [TestMethod]
+    public void Modificar_DatosValidos_Devuelve200ConElUsuarioModificadoPorElAdministradorActual()
+    {
+        var request = new UsuarioAdminRequest
+        {
+            Nombre = "Ana",
+            Apellido = "Pérez",
+            Email = "ana@farmeort.com",
+            Nickname = "anaperez",
+            Contrasena = "ClaveSegura123!!",
+            FechaNacimiento = new DateOnly(2000, 1, 15),
+            Rol = Roles.Organizador,
+        };
+        var usuario = new UsuarioResponse { Id = 5, Nombre = "Ana", Email = "ana@farmeort.com", Rol = Roles.Organizador };
+        AutenticarAdministrador(1);
+        _servicioUsuarios.Setup(s => s.Modificar(5, request, 1)).Returns(usuario);
+
+        var resultado = _controller.Modificar(5, request) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(usuario, resultado.Value);
+        _servicioUsuarios.Verify(s => s.Modificar(5, request, 1), Times.Once);
+    }
+
+    [TestMethod]
     public void UsuariosController_TodosLosEndpoints_RequierenRolAdministrador()
     {
         var atributo = typeof(UsuariosController)
@@ -92,5 +118,12 @@ public sealed class UsuariosControllerTests
 
         Assert.IsNotNull(atributo);
         Assert.Contains(Roles.Administrador, atributo.RolesPermitidos);
+    }
+
+    private void AutenticarAdministrador(int usuarioId)
+    {
+        var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = Roles.Administrador };
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.HttpContext.Items[ClavesContexto.SesionAutenticada] = sesion;
     }
 }
