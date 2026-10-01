@@ -706,6 +706,135 @@ commit, siguiendo `AGENTS.md` y las skills `da2-*`; el equipo revisa y aprueba e
 
 ---
 
+### D-29 — Categoría de skill como lista fija
+
+**Problema:** la letra (2.2) deja la categoría "a criterio del equipo" y pide filtros "en base a sus
+atributos". Con texto libre, `Gestual`, `gestual` y `Gestos` serían categorías distintas y el filtro
+por categoría no serviría.
+
+**Alternativas consideradas:** texto libre con largo máximo; una tabla de categorías administrable
+(otro recurso con su CRUD y endpoints que la especificación no tiene); una lista fija.
+
+**Decisión adoptada:** enum `CategoriaSkill` en Dominio con los cuatro ejemplos de la letra
+(`Gestual`, `Vocal`, `Baile`, `Meme`) y las constantes `CategoriasSkill` en DTOs, igual que `Roles`
+(D-12). Se valida en tres lugares: el DTO (`AllowedValues`, 400 `VALIDATION_ERROR`), el servicio
+(compara contra los nombres del enum, para que un texto como `"1"` no se acepte, cosa que `Enum.Parse`
+sí haría) y el dominio (`Enum.IsDefined`). En la base se guarda como texto (`nvarchar(20)`), como el rol.
+
+**Justificación:** los filtros son confiables y no hace falta agregar endpoints fuera del contrato.
+Sumar una categoría es un cambio acotado (enum, constantes y mensaje) que hoy nadie pidió. La
+comparación por nombre resuelve una trampa real que dejó en evidencia el test
+`Crear_CategoriaInexistente_LanzaDatosInvalidosSinConsultarLaBase("1")`.
+
+**Conceptos del curso:** validación en el borde y en el dominio (D-16), Information Expert, bajo
+acoplamiento entre capas (D-01, D-12).
+
+**Evidencia:** `CategoriaSkill`, `CategoriasSkill`, `SkillRequest`, `ServicioSkills.ConvertirCategoria`,
+`Skill.ValidarCategoria`, sus tests y la migración `AgregaCatalogoDeSkills`.
+
+**Participación de IA:** Claude Code planteó las alternativas y recomendó la lista fija; el equipo la
+eligió. Pendiente: confirmar los valores contra el diagrama de clases de Dominio.
+
+---
+
+### D-30 — Contrato y diseño del catálogo de skills
+
+**Problema:** implementar alta, modificación, cambio de estado y consulta de skills (letra 2.2, con
+asterisco) respetando la especificación de la API, que en algunos puntos difiere del diagrama de clases.
+
+**Alternativas consideradas:** seguir el diagrama (`FiltroSkills` sin `Nombre`, métodos `Obtener`,
+`Buscar` y `ExisteCodigo`, jerarquía de excepciones con `FarmeORTExcepcion`); seguir la especificación
+de la API y las convenciones que ya tiene el código de usuarios.
+
+**Decisión adoptada:**
+- Endpoints de la especificación: `GET /skills` y `GET /skills/{id}` para cualquier usuario autenticado
+  (`[Autenticacion]`); `POST /skills`, `PUT /skills/{id}` y `PATCH /skills/{id}` solo para el
+  Administrador (`[Autorizacion(Roles.Administrador)]`). Como el controller mezcla roles, los atributos
+  van en cada método y no en la clase.
+- Filtros `categoria`, `dificultad`, `activa` y `nombre` (por contenido y sin distinguir mayúsculas),
+  combinados con Y lógico; `limit` 20 por defecto (1 a 100), `offset` desde 0 y orden por `Id`, igual
+  que D-21. `nombre` se incluye porque está en la especificación aunque falte en el diagrama.
+- Los nombres siguen el código de usuarios: `ObtenerPorId`, `Listar` y `ExistePorCodigo`.
+- Excepciones por caso, como D-07: `SkillNoEncontradaException` (404 `SKILL_NOT_FOUND`) y
+  `CodigoSkillYaExisteException` (409 `SKILL_CODE_ALREADY_EXISTS`). Las reglas del dominio usan
+  `DatosInvalidosException` (400 `INVALID_DATA`).
+- Supuesto: una skill nace activa (la letra no lo dice, y una skill recién creada que no se pueda usar
+  no tendría sentido). `PATCH` con `{ "activa": true | false }` la activa o la desactiva y devuelve 200
+  con la skill; `activa` es obligatorio.
+- Orden en `PUT`: datos (400) → existencia (404) → unicidad del código (409) → `Skill.Modificar` →
+  guardado, como D-28. El constructor de `Skill` reutiliza `Modificar`, así que alta y modificación
+  comparten las validaciones del dominio.
+
+**Justificación:** el código implementa el contrato aprobado, y mantener las convenciones existentes
+hace que skills se lea igual que usuarios sin refactorizar lo que ya está hecho. El equipo eligió
+seguir el código en lugar del diagrama, que queda por actualizar.
+
+**Conceptos del curso:** REST (`PATCH` para un cambio parcial, `PUT` como reemplazo completo,
+autenticación y autorización separadas), Controller de GRASP, consistencia entre código y UML.
+
+**Evidencia:** `SkillsController`, `ServicioSkills`, `Skill`, `RepositorioSkills`, `FiltroExcepciones`,
+los tests de cada capa y la carpeta Skills de la colección de Postman.
+
+**Participación de IA:** Claude Code detectó las diferencias entre el diagrama y la especificación y
+propuso seguir el código; el equipo eligió esa opción. Claude Code implementó la funcionalidad con
+ciclos RED/GREEN/REFACTOR por commit, siguiendo `AGENTS.md` y las skills `da2-*`; el equipo revisa y
+aprueba en el PR.
+
+---
+
+### D-31 — El código de una skill es único sin distinguir mayúsculas
+
+**Problema:** el índice único de SQL Server no distingue mayúsculas, pero el SQLite de los tests sí.
+Sin cuidado, `sixseven` pasaría la consulta de unicidad aunque exista `SIXSEVEN` y fallaría al guardar
+con un 500, y cambiar solo las mayúsculas del propio código daría un falso 409.
+
+**Alternativas consideradas:** comparar con `==` y depender de la colación de cada base; normalizar el
+código a mayúsculas al guardarlo (cambia lo que escribió el administrador); comparar en minúscula y no
+consultar la unicidad si el código no cambió.
+
+**Decisión adoptada:** `ExistePorCodigo` compara en minúscula (mismo criterio que D-21); el servicio
+consulta la unicidad solo si el código cambió sin distinguir mayúsculas (como D-28); y si otra skill
+ocupa el código entre la consulta y el guardado, el repositorio traduce el `DbUpdateException` a
+`CodigoSkillYaExisteException` y suelta la entidad del contexto (como D-23). Cualquier otro error de
+base se propaga y termina en el 500 seguro.
+
+**Justificación:** el resultado es el mismo en SQL Server y en SQLite, y nunca se devuelve un 500 por
+un error del cliente.
+
+**Conceptos del curso:** encapsulación de la persistencia, traducción de excepciones, tests repetibles
+(FIRST).
+
+**Evidencia:** `RepositorioSkills.ExistePorCodigo` y `Guardar`, `ServicioSkills.Modificar`, tests
+`ExistePorCodigo_CodigoGuardado_DevuelveTrueSinDistinguirMayusculas`,
+`Modificar_SuMismoCodigoConOtrasMayusculas_NoLoConsideraDuplicado`,
+`Agregar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoSkillYaExisteSinDuplicar`,
+`Agregar_ErrorDeBaseSinCodigoDuplicado_PropagaDbUpdateException` y casos de Postman.
+
+**Participación de IA:** propuesta de Claude Code a partir de D-21, D-23 y D-28.
+
+---
+
+### D-32 — EF Core materializa las skills con su constructor público
+
+**Problema:** `Usuario` tiene un constructor privado sin parámetros para EF porque el público recibe
+datos que no son columnas (`fechaActual`). `Skill` no tiene ese problema.
+
+**Alternativas consideradas:** agregar un constructor privado sin parámetros, como en `Usuario`;
+dejar que EF use el constructor público, cuyos parámetros se llaman igual que las propiedades.
+
+**Decisión adoptada:** EF usa el constructor público y después asigna `Id` y `Activa`. No se agrega un
+constructor que solo usaría EF.
+
+**Justificación:** hay menos código y la entidad siempre pasa por sus validaciones. La desventaja
+aceptada es que una fila inválida cargada a mano en la base fallaría al leerse; la API no puede
+producirla.
+
+**Evidencia:** `Skill`, `RepositorioSkillsTests` (cargan skills activas e inactivas desde la base).
+
+**Participación de IA:** propuesta de Claude Code.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -745,3 +874,13 @@ commit, siguiendo `AGENTS.md` y las skills `da2-*`; el equipo revisa y aprueba e
   Resuelto en D-23: conflicto detectado al guardar → 409; se desasocia el alta fallida y otros errores
   de base se propagan al tratamiento seguro de 500.
 - Registrar en AGENTS.md que Dominio referencia a Excepciones (D-16).
+- Actualizar el diagrama de clases con el catálogo de skills: `Skill`, `CategoriaSkill`,
+  `IRepositorioSkills` y `RepositorioSkills` con los nombres del código (`ObtenerPorId`, `Listar`,
+  `ExistePorCodigo`), `FiltroSkills` con `Nombre`, `Limite` y `Desplazamiento`, las excepciones por caso
+  (D-07, D-30) y el nombre real del contexto (`FarmeORTContext`).
+- Repertorio, skills obligatorias e inscripción tienen que aplicar la regla de skill inactiva (letra
+  2.2): no puede declararse en un repertorio ni asociarse como obligatoria, sin efecto retroactivo.
+- Notificaciones: la letra 2026.2 y la especificación de la API no las piden, pero `AGENTS.md` (§8) y la
+  skill de dominio sí. Se postergan (decisión del 2026-10-01); si se descartan, corregir `AGENTS.md` por PR.
+- La colección de Postman trae `baseUrl` con el puerto 5088, pero `launchSettings.json` levanta la API
+  en el 5294: unificarlo o explicarlo en la guía de instalación.
