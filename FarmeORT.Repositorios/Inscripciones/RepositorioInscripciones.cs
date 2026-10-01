@@ -51,8 +51,8 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public void Agregar(Inscripcion inscripcion)
     {
-        _ = inscripcion;
-        throw new NotImplementedException();
+        contexto.Inscripciones.Add(inscripcion);
+        contexto.SaveChanges();
     }
 
     public void Actualizar(Inscripcion inscripcion)
