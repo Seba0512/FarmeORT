@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Repertorio;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Repertorio;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +8,7 @@ namespace FarmeORT.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/v1/jugadores/actual/repertorio")]
+[Autorizacion(Roles.Jugador)]
 public sealed class RepertorioController(IServicioRepertorio servicioRepertorio) : ControllerBase
 {
     // "actual" es el jugador del token: el id nunca llega en la ruta ni en el body.
