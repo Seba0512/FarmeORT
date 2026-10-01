@@ -105,6 +105,27 @@ public sealed class UsuarioTests
         Assert.AreEqual("La fecha de nacimiento no puede ser futura.", excepcion.Message);
     }
 
+    [TestMethod]
+    public void Modificar_DatosValidos_ReemplazaLosDatosYConservaIdYElo()
+    {
+        var usuario = new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Organizador, "hash-ana", FechaActual)
+        {
+            Id = 5,
+        };
+
+        usuario.Modificar("Carla", "Gómez", "carla@farmeort.com", "carlagomez", new DateOnly(1998, 6, 3), Rol.Jugador, "hash-carla", FechaActual);
+
+        Assert.AreEqual(5, usuario.Id);
+        Assert.AreEqual("Carla", usuario.Nombre);
+        Assert.AreEqual("Gómez", usuario.Apellido);
+        Assert.AreEqual("carla@farmeort.com", usuario.Email);
+        Assert.AreEqual("carlagomez", usuario.Nickname);
+        Assert.AreEqual(new DateOnly(1998, 6, 3), usuario.FechaNacimiento);
+        Assert.AreEqual(Rol.Jugador, usuario.Rol);
+        Assert.AreEqual("hash-carla", usuario.ContrasenaHash);
+        Assert.AreEqual(1200, usuario.Elo);
+    }
+
     private static Usuario CrearUsuario(
         string nombre = "Ana",
         string apellido = "Pérez",

@@ -61,6 +61,27 @@ public sealed partial class Usuario
 
     public int Elo { get; private set; }
 
+    public void Modificar(
+        string nombre,
+        string apellido,
+        string email,
+        string nickname,
+        DateOnly fechaNacimiento,
+        Rol rol,
+        string contrasenaHash,
+        DateOnly fechaActual)
+    {
+        _ = nombre;
+        _ = apellido;
+        _ = email;
+        _ = nickname;
+        _ = fechaNacimiento;
+        _ = rol;
+        _ = contrasenaHash;
+        _ = fechaActual;
+        throw new NotImplementedException();
+    }
+
     private static void ValidarNombre(string nombre)
     {
         if(string.IsNullOrWhiteSpace(nombre))
