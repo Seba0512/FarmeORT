@@ -8,8 +8,6 @@ namespace FarmeORT.Servicios.Skills;
 
 internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSkills
 {
-    private const int LimiteMaximo = 100;
-    private const int LimitePorDefecto = 20;
     private const int DificultadMinima = 1;
     private const int DificultadMaxima = 5;
 
@@ -37,22 +35,8 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
             categoria = BuscarCategoria(filtro.Categoria);
         }
 
-        var limite = filtro.Limit;
-        if(limite > LimiteMaximo)
-        {
-            limite = LimiteMaximo;
-        }
-
-        if(limite < 1)
-        {
-            limite = LimitePorDefecto;
-        }
-
-        var desplazamiento = filtro.Offset;
-        if(desplazamiento < 0)
-        {
-            desplazamiento = 0;
-        }
+        var limite = Paginacion.AjustarLimite(filtro.Limit);
+        var desplazamiento = Paginacion.AjustarDesplazamiento(filtro.Offset);
 
         var dificultad = filtro.Dificultad;
         if(dificultad < DificultadMinima || dificultad > DificultadMaxima)
