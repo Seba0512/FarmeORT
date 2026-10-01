@@ -126,6 +126,33 @@ public sealed class UsuarioTests
         Assert.AreEqual(1200, usuario.Elo);
     }
 
+    [TestMethod]
+    [DataRow("", "Gómez", "carla@farmeort.com", "carlagomez", 1998)]
+    [DataRow("Carla", "Go", "carla@farmeort.com", "carlagomez", 1998)]
+    [DataRow("Carla", "Gómez", "no-es-un-email", "carlagomez", 1998)]
+    [DataRow("Carla", "Gómez", "carla@farmeort.com", "carla gomez", 1998)]
+    [DataRow("Carla", "Gómez", "carla@farmeort.com", "carlagomez", 2020)]
+    public void Modificar_DatosInvalidos_LanzaDatosInvalidosSinCambiarElUsuario(
+        string nombre,
+        string apellido,
+        string email,
+        string nickname,
+        int anioNacimiento)
+    {
+        var usuario = CrearUsuario();
+
+        Assert.ThrowsExactly<DatosInvalidosException>(
+            () => usuario.Modificar(nombre, apellido, email, nickname, new DateOnly(anioNacimiento, 6, 3), Rol.Organizador, "hash-carla", FechaActual));
+
+        Assert.AreEqual("Ana", usuario.Nombre);
+        Assert.AreEqual("Pérez", usuario.Apellido);
+        Assert.AreEqual("ana@farmeort.com", usuario.Email);
+        Assert.AreEqual("anaperez", usuario.Nickname);
+        Assert.AreEqual(new DateOnly(2000, 1, 15), usuario.FechaNacimiento);
+        Assert.AreEqual(Rol.Jugador, usuario.Rol);
+        Assert.AreEqual("hash-ana", usuario.ContrasenaHash);
+    }
+
     private static Usuario CrearUsuario(
         string nombre = "Ana",
         string apellido = "Pérez",
