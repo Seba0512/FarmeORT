@@ -15,19 +15,19 @@ public class RepositorioSkills(FarmeORTContext contexto) : IRepositorioSkills
     public IReadOnlyList<Skill> Listar(FiltroSkills filtro)
     {
         var consulta = contexto.Skills.AsQueryable();
-        if(filtro.Categoria is { } categoria)
+        if(filtro.Categoria != null)
         {
-            consulta = consulta.Where(s => s.Categoria == categoria);
+            consulta = consulta.Where(s => s.Categoria == filtro.Categoria.Value);
         }
 
-        if(filtro.Dificultad is { } dificultad)
+        if(filtro.Dificultad != null)
         {
-            consulta = consulta.Where(s => s.Dificultad == dificultad);
+            consulta = consulta.Where(s => s.Dificultad == filtro.Dificultad.Value);
         }
 
-        if(filtro.Activa is { } activa)
+        if(filtro.Activa != null)
         {
-            consulta = consulta.Where(s => s.Activa == activa);
+            consulta = consulta.Where(s => s.Activa == filtro.Activa.Value);
         }
 
         if(!string.IsNullOrWhiteSpace(filtro.Nombre))
@@ -71,14 +71,20 @@ public class RepositorioSkills(FarmeORTContext contexto) : IRepositorioSkills
         }
         catch(DbUpdateException)
         {
+            // Se suelta la skill que falló para que el contexto se pueda seguir usando.
             contexto.Entry(skill).State = EntityState.Detached;
-            var codigo = skill.Codigo.ToLower();
-            if(contexto.Skills.Any(s => s.Codigo.ToLower() == codigo && s.Id != skill.Id))
+            if(ExisteOtraSkillConElCodigo(skill))
             {
                 throw new CodigoSkillYaExisteException();
             }
 
             throw;
         }
+    }
+
+    private bool ExisteOtraSkillConElCodigo(Skill skill)
+    {
+        var codigo = skill.Codigo.ToLower();
+        return contexto.Skills.Any(s => s.Codigo.ToLower() == codigo && s.Id != skill.Id);
     }
 }
