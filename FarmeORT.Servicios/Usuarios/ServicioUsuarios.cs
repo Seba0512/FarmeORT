@@ -14,27 +14,40 @@ internal sealed class ServicioUsuarios(
 {
     public UsuarioResponse RegistrarJugador(RegistroJugadorRequest request)
     {
-        var fechaNacimiento = request.FechaNacimiento
-            ?? throw new DatosInvalidosException("La fecha de nacimiento es obligatoria.");
-        return Crear(new UsuarioAdminRequest
-        {
-            Nombre = request.Nombre,
-            Apellido = request.Apellido,
-            Email = request.Email,
-            Nickname = request.Nickname,
-            Contrasena = request.Contrasena,
-            FechaNacimiento = fechaNacimiento,
-            Rol = Roles.Jugador,
-        });
+        var fechaNacimiento = ObtenerFechaNacimiento(request);
+        ReglaContrasena.Validar(request.Contrasena);
+        return CrearUsuario(request, Rol.Jugador, fechaNacimiento);
     }
 
     public UsuarioResponse Crear(UsuarioAdminRequest request)
     {
         ReglaContrasena.Validar(request.Contrasena);
         var rol = ConvertirRol(request.Rol);
-        var fechaNacimiento = request.FechaNacimiento
-            ?? throw new DatosInvalidosException("La fecha de nacimiento es obligatoria.");
+        var fechaNacimiento = ObtenerFechaNacimiento(request);
+        return CrearUsuario(request, rol, fechaNacimiento);
+    }
 
+    public UsuarioResponse ObtenerPorId(int id)
+    {
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        return CrearResponse(usuario);
+    }
+
+    public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
+    {
+        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, filtro.Limit, filtro.Offset);
+        var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
+        return [.. usuarios.Select(CrearResponse)];
+    }
+
+    private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
+    {
+        return request.FechaNacimiento
+            ?? throw new DatosInvalidosException("La fecha de nacimiento es obligatoria.");
+    }
+
+    private UsuarioResponse CrearUsuario(RegistroJugadorRequest request, Rol rol, DateOnly fechaNacimiento)
+    {
         if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
         {
             throw new EmailYaExisteException();
@@ -58,19 +71,6 @@ internal sealed class ServicioUsuarios(
             fechaActual);
         repositorioUsuarios.Agregar(usuario);
         return CrearResponse(usuario);
-    }
-
-    public UsuarioResponse ObtenerPorId(int id)
-    {
-        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        return CrearResponse(usuario);
-    }
-
-    public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
-    {
-        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, filtro.Limit, filtro.Offset);
-        var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
-        return [.. usuarios.Select(CrearResponse)];
     }
 
     private static Rol ConvertirRol(string rol)
