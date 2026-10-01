@@ -7,6 +7,8 @@ namespace FarmeORT.Dominio.Torneos;
 public sealed class Torneo
 {
     private const string PatronCodigo = "^[a-zA-Z0-9]{5,20}$";
+    private const int LargoMinimoNombre = 5;
+    private const int LargoMaximoNombre = 60;
 
     public Torneo(
         string codigo,
@@ -20,6 +22,7 @@ public sealed class Torneo
     {
         _ = fechaActual;
         ValidarCodigo(codigo);
+        ValidarNombre(nombre);
 
         Codigo = codigo;
         Nombre = nombre;
@@ -57,6 +60,19 @@ public sealed class Torneo
         if(!Regex.IsMatch(codigo, PatronCodigo))
         {
             throw new DatosInvalidosException("El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.");
+        }
+    }
+
+    private static void ValidarNombre(string nombre)
+    {
+        if(string.IsNullOrWhiteSpace(nombre))
+        {
+            throw new DatosInvalidosException("El nombre es obligatorio.");
+        }
+
+        if(nombre.Length < LargoMinimoNombre || nombre.Length > LargoMaximoNombre)
+        {
+            throw new DatosInvalidosException("El nombre debe tener entre 5 y 60 caracteres.");
         }
     }
 }
