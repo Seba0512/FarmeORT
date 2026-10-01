@@ -13,4 +13,6 @@ public interface IRepositorioUsuarios
     bool ExistePorNickname(string nickname);
 
     void Agregar(Usuario usuario);
+
+    void Actualizar(Usuario usuario);
 }

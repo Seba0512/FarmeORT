@@ -73,4 +73,10 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
             throw;
         }
     }
+
+    public void Actualizar(Usuario usuario)
+    {
+        _ = usuario;
+        throw new NotImplementedException();
+    }
 }
