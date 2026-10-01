@@ -111,6 +111,32 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
     }
 
+    [TestMethod]
+    [DataRow("ana@farmeort.com", "anaperez")]
+    [DataRow("ANA@farmeort.com", "AnaPerez")]
+    public void Modificar_ConservaSuEmailYNickname_NoLoConsideraDuplicado(string email, string nickname)
+    {
+        var usuario = ConfigurarModificacionValida();
+        _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(email)).Returns(usuario);
+        _repositorioUsuarios.Setup(r => r.ExistePorNickname(nickname)).Returns(true);
+        var request = new UsuarioAdminRequest
+        {
+            Nombre = "Ana María",
+            Apellido = "Gómez",
+            Email = email,
+            Nickname = nickname,
+            Contrasena = Contrasena,
+            FechaNacimiento = new DateOnly(1999, 4, 20),
+            Rol = Roles.Jugador,
+        };
+
+        var response = _servicio.Modificar(UsuarioId, request, AdministradorActualId);
+
+        Assert.AreEqual(email, response.Email);
+        Assert.AreEqual(nickname, response.Nickname);
+        _repositorioUsuarios.Verify(r => r.Actualizar(usuario), Times.Once);
+    }
+
     private Usuario ConfigurarModificacionValida()
     {
         var usuario = CrearUsuarioExistente();
