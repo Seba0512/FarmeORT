@@ -91,6 +91,26 @@ public sealed class SkillTests
         Assert.AreEqual("El nombre debe tener entre 3 y 40 caracteres.", excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("                         ")]
+    public void Constructor_DescripcionVacia_LanzaDatosInvalidos(string descripcion)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearSkill(descripcion: descripcion));
+
+        Assert.AreEqual("La descripción es obligatoria.", excepcion.Message);
+    }
+
+    [TestMethod]
+    [DataRow(19)]
+    [DataRow(301)]
+    public void Constructor_DescripcionFueraDeRango_LanzaDatosInvalidos(int largo)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearSkill(descripcion: new string('a', largo)));
+
+        Assert.AreEqual("La descripción debe tener entre 20 y 300 caracteres.", excepcion.Message);
+    }
+
     private static Skill CrearSkill(
         string codigo = "SIXSEVEN",
         string nombre = "Six-Seven",
