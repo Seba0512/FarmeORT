@@ -374,6 +374,19 @@ public sealed class ServicioTorneosTests
         Assert.AreEqual(3, response.InscripcionesAceptadas);
     }
 
+    [TestMethod]
+    public void Listar_TorneosConInscripciones_DevuelveLaCantidadDeAceptadasDeCadaUno()
+    {
+        var filtro = new FiltroTorneos(null, null, null, null, null, false, 20, 0);
+        _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([CrearTorneo()]);
+        _repositorioInscripciones.Setup(r => r.ContarAceptadasPorTorneo(new[] { TorneoId }))
+            .Returns(new Dictionary<int, int> { [TorneoId] = 2 });
+
+        var torneos = _servicio.Listar(new FiltroTorneosRequest(), esAnonimo: false);
+
+        Assert.AreEqual(2, torneos.Single().InscripcionesAceptadas);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();

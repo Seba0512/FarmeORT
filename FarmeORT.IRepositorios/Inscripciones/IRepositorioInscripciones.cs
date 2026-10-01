@@ -12,6 +12,9 @@ public interface IRepositorioInscripciones
 
     int ContarAceptadas(int torneoId);
 
+    // Una sola consulta para toda la página del listado de torneos; un torneo sin aceptadas no figura.
+    IReadOnlyDictionary<int, int> ContarAceptadasPorTorneo(IReadOnlyCollection<int> torneoIds);
+
     // Trae a cada jugador con su repertorio, para controlar las skills obligatorias.
     IReadOnlyList<Inscripcion> ListarAceptadasDelTorneo(int torneoId);
 
