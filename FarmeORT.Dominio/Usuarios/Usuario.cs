@@ -22,19 +22,7 @@ public sealed partial class Usuario
         string contrasenaHash,
         DateOnly fechaActual)
     {
-        ValidarNombre(nombre);
-        ValidarApellido(apellido);
-        ValidarEmail(email);
-        ValidarNickname(nickname);
-        ValidarEdad(fechaNacimiento, fechaActual);
-
-        Nombre = nombre;
-        Apellido = apellido;
-        Email = email;
-        Nickname = nickname;
-        FechaNacimiento = fechaNacimiento;
-        Rol = rol;
-        ContrasenaHash = contrasenaHash;
+        Modificar(nombre, apellido, email, nickname, fechaNacimiento, rol, contrasenaHash, fechaActual);
         Elo = EloInicial;
     }
 
