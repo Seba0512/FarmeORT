@@ -50,12 +50,12 @@ internal sealed class ServicioUsuarios(
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
-        if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
+        if(!MismoTexto(usuario.Email, request.Email) && repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
         {
             throw new EmailYaExisteException();
         }
 
-        if(repositorioUsuarios.ExistePorNickname(request.Nickname))
+        if(!MismoTexto(usuario.Nickname, request.Nickname) && repositorioUsuarios.ExistePorNickname(request.Nickname))
         {
             throw new NicknameYaExisteException();
         }
@@ -123,6 +123,12 @@ internal sealed class ServicioUsuarios(
         }
 
         return rolConvertido;
+    }
+
+    // Los índices únicos de SQL Server no distinguen mayúsculas: cambiar solo mayúsculas no ocupa un valor ajeno.
+    private static bool MismoTexto(string actual, string nuevo)
+    {
+        return string.Equals(actual, nuevo, StringComparison.OrdinalIgnoreCase);
     }
 
     private static UsuarioResponse CrearResponse(Usuario usuario)
