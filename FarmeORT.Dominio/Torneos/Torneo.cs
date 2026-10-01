@@ -15,6 +15,7 @@ public sealed class Torneo
     private const int LargoMaximoDescripcion = 500;
     private const int CupoMinimo = 4;
     private const int CupoMaximo = 64;
+    private const int MaximoSkillsObligatorias = 2;
 
     private readonly List<Skill> _skillsObligatorias = [];
 
@@ -113,6 +114,12 @@ public sealed class Torneo
         if(_skillsObligatorias.Any(s => s.Id == skill.Id))
         {
             throw new SkillObligatoriaYaAsociadaException();
+        }
+
+        // Con 2 obligatorias, a cada jugador le quedan al menos 2 de sus 4 lanzamientos libres.
+        if(_skillsObligatorias.Count == MaximoSkillsObligatorias)
+        {
+            throw new LimiteSkillsObligatoriasException();
         }
 
         _skillsObligatorias.Add(skill);
