@@ -47,4 +47,9 @@ public sealed class Inscripcion
     public EstadoInscripcion Estado { get; private set; }
 
     public DateTime Fecha { get; private set; }
+
+    public void Cancelar()
+    {
+        throw new NotImplementedException();
+    }
 }
