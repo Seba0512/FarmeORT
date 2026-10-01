@@ -55,6 +55,23 @@ public sealed class TorneosControllerTests
         Assert.AreSame(torneo, resultado.Value);
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Listar_ConFiltros_Devuelve200IndicandoSiConsultaUnAnonimo(bool autenticado)
+    {
+        var filtro = new FiltroTorneosRequest { Estado = "Abierto", Nombre = "copa", Limit = 10, Offset = 0 };
+        IReadOnlyList<TorneoResponse> torneos = [CrearResponse()];
+        PrepararContexto(autenticado);
+        _servicioTorneos.Setup(s => s.Listar(filtro, !autenticado)).Returns(torneos);
+
+        var resultado = _controller.Listar(filtro) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(torneos, resultado.Value);
+    }
+
     private void PrepararContexto(bool autenticado)
     {
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };

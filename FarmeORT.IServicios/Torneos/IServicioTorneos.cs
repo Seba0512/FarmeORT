@@ -7,4 +7,6 @@ public interface IServicioTorneos
     TorneoResponse Crear(TorneoRequest request);
 
     TorneoResponse ObtenerPorId(int id, bool esAnonimo);
+
+    IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo);
 }

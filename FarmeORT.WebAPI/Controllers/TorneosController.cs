@@ -16,6 +16,13 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
         return Created($"/api/v1/torneos/{response.Id}", response);
     }
 
+    [HttpGet]
+    public IActionResult Listar([FromQuery] FiltroTorneosRequest filtro)
+    {
+        _ = filtro;
+        throw new NotImplementedException();
+    }
+
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {
