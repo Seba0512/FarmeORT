@@ -89,6 +89,21 @@ public sealed class InscripcionesControllerTests
         _servicio.Verify(s => s.Cancelar(12, JugadorId), Times.Once);
     }
 
+    [TestMethod]
+    [DataRow(nameof(InscripcionesController.Inscribir))]
+    [DataRow(nameof(InscripcionesController.Cancelar))]
+    public void InscribirYCancelar_RequierenRolJugador(string accion)
+    {
+        var metodo = typeof(InscripcionesController).GetMethod(accion);
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>()
+            .SingleOrDefault();
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
+    }
+
     private void Autenticar(int usuarioId, string rol)
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = rol };
