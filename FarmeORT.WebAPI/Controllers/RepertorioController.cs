@@ -27,7 +27,8 @@ public sealed class RepertorioController(IServicioRepertorio servicioRepertorio)
     [HttpDelete("{skillId:int}")]
     public IActionResult Quitar(int skillId)
     {
-        _ = skillId;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        servicioRepertorio.Quitar(sesion.UsuarioId, skillId);
+        return NoContent();
     }
 }
