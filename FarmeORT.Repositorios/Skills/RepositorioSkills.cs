@@ -59,7 +59,7 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
     public void Actualizar(Skill skill)
     {
         contexto.Skills.Update(skill);
-        contexto.SaveChanges();
+        Guardar(skill);
     }
 
     // Otra skill puede ocupar el código entre la validación del servicio y el guardado (D-23).
