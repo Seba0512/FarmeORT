@@ -125,6 +125,23 @@ public sealed class RepositorioUsuariosTests
     }
 
     [TestMethod]
+    public void Listar_ConUsuarioEliminado_LoOmite()
+    {
+        var eliminado = CrearUsuario("carlos@farmeort.com", Rol.Jugador, "hash-carlos");
+        eliminado.Eliminar();
+        _baseDeDatos.Contexto.Usuarios.AddRange(
+            CrearUsuario("laura@farmeort.com", Rol.Organizador, "hash-laura"),
+            eliminado);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroUsuarios(null, null, null, 20, 0));
+
+        string[] emailsEsperados = ["admin@farmeort.com", "laura@farmeort.com"];
+        CollectionAssert.AreEqual(emailsEsperados, resultado.Select(u => u.Email).ToArray());
+    }
+
+    [TestMethod]
     public void Listar_FiltroPorNombre_DevuelveLosQueLoContienenSinDistinguirMayusculas()
     {
         _baseDeDatos.Contexto.Usuarios.AddRange(
