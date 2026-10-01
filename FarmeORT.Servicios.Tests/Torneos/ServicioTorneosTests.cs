@@ -403,6 +403,19 @@ public sealed class ServicioTorneosTests
         Assert.AreEqual(5, response.InscripcionesAceptadas);
     }
 
+    [TestMethod]
+    public void Cancelar_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    {
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(2);
+
+        var response = _servicio.Cancelar(TorneoId);
+
+        Assert.AreEqual(2, response.InscripcionesAceptadas);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
