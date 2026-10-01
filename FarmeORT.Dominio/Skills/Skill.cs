@@ -15,4 +15,13 @@ public sealed class Skill(string codigo, string nombre, string descripcion, Cate
     public int Dificultad { get; private set; } = dificultad;
 
     public bool Activa { get; private set; } = true;
+
+    public void Modificar(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
+    {
+        Codigo = codigo;
+        Nombre = nombre;
+        Descripcion = descripcion;
+        Categoria = categoria;
+        Dificultad = dificultad;
+    }
 }

@@ -34,8 +34,11 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public SkillResponse Modificar(int id, SkillRequest request)
     {
-        _ = request;
+        var categoria = ConvertirCategoria(request.Categoria);
+        var dificultad = ObtenerDificultad(request);
         var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
+        skill.Modificar(request.Codigo, request.Nombre, request.Descripcion, categoria, dificultad);
+        repositorioSkills.Actualizar(skill);
         return CrearResponse(skill);
     }
 
