@@ -53,30 +53,18 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
     public void Agregar(Usuario usuario)
     {
         contexto.Usuarios.Add(usuario);
-        try
-        {
-            contexto.SaveChanges();
-        }
-        catch(DbUpdateException)
-        {
-            contexto.Entry(usuario).State = EntityState.Detached;
-            if(ObtenerPorEmail(usuario.Email) is not null)
-            {
-                throw new EmailYaExisteException();
-            }
-
-            if(ExistePorNickname(usuario.Nickname))
-            {
-                throw new NicknameYaExisteException();
-            }
-
-            throw;
-        }
+        Guardar(usuario);
     }
 
     public void Actualizar(Usuario usuario)
     {
         contexto.Usuarios.Update(usuario);
+        Guardar(usuario);
+    }
+
+    // Otro usuario puede ocupar el email o nickname entre la validación del servicio y el guardado (D-23).
+    private void Guardar(Usuario usuario)
+    {
         try
         {
             contexto.SaveChanges();
