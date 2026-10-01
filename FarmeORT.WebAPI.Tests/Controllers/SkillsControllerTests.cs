@@ -1,6 +1,7 @@
 using FarmeORT.DTOs.Skills;
 using FarmeORT.IServicios.Skills;
 using FarmeORT.WebAPI.Controllers;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Moq;
@@ -114,5 +115,18 @@ public sealed class SkillsControllerTests
         Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
         Assert.AreSame(skill, resultado.Value);
         _servicioSkills.Verify(s => s.CambiarEstado(3, request), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(nameof(SkillsController.Listar))]
+    [DataRow(nameof(SkillsController.ObtenerPorId))]
+    public void Consultas_CualquierRol_RequierenSoloAutenticacion(string accion)
+    {
+        var metodo = typeof(SkillsController).GetMethod(accion);
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        Assert.IsNotNull(atributo);
+        Assert.IsNotInstanceOfType<AutorizacionAttribute>(atributo);
     }
 }
