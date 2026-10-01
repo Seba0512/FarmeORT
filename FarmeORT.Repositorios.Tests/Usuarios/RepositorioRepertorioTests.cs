@@ -111,6 +111,18 @@ public sealed class RepositorioRepertorioTests
         Assert.AreEqual(2, _baseDeDatos.Contexto.Set<SkillDeclarada>().AsNoTracking().Count(d => d.JugadorId == jugador.Id));
     }
 
+    [TestMethod]
+    public void GuardarRepertorio_ErrorDeBaseSinSkillDuplicada_PropagaDbUpdateException()
+    {
+        var jugador = CargarConRepertorio(GuardarJugador("ana@farmeort.com", "anaperez").Id);
+        var skillNoGuardada = new Skill("FANTASMA", "Fantasma", Descripcion, CategoriaSkill.Meme, 1) { Id = 999 };
+        jugador.DeclararSkill(skillNoGuardada, 3, FechaActual);
+        _baseDeDatos.Contexto.Entry(skillNoGuardada).State = EntityState.Unchanged;
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.GuardarRepertorio(jugador));
+        Assert.IsFalse(_baseDeDatos.Contexto.Set<SkillDeclarada>().AsNoTracking().Any(d => d.JugadorId == jugador.Id));
+    }
+
     // Simula otro pedido que declaró la misma skill entre la carga y el guardado.
     private void InsertarDeclaracionDeOtroPedido(int jugadorId, int skillId)
     {
