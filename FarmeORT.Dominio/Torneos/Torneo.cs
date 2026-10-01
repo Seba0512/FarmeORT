@@ -24,7 +24,7 @@ public sealed class Torneo
         Usuario organizador,
         DateOnly fechaActual)
     {
-        _ = fechaActual;
+        ValidarInicioNoPasado(fechaInicio, fechaActual);
         ValidarCodigo(codigo);
         ValidarNombre(nombre);
         ValidarDescripcion(descripcion);
@@ -110,6 +110,14 @@ public sealed class Torneo
         if(fechaFin <= fechaInicio)
         {
             throw new DatosInvalidosException("La fecha de fin debe ser posterior a la de inicio.");
+        }
+    }
+
+    private static void ValidarInicioNoPasado(DateOnly fechaInicio, DateOnly fechaActual)
+    {
+        if(fechaInicio < fechaActual)
+        {
+            throw new DatosInvalidosException("La fecha de inicio no puede ser anterior a la fecha actual.");
         }
     }
 }
