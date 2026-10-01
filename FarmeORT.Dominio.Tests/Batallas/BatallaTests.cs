@@ -59,6 +59,21 @@ public sealed class BatallaTests
         { Id = id };
     }
 
+    [TestMethod]
+    [DataRow(EstadoBatalla.Pendiente)]
+    [DataRow(EstadoBatalla.EnArbitraje)]
+    public void Cancelar_BatallaSinResolver_PasaACanceladaYSinTurno(EstadoBatalla estado)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var batalla = new Batalla(CrearTorneo(), 1, jugador1, CrearUsuario(8, Rol.Jugador), new SorteoPreparado(jugador1));
+        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
+
+        batalla.Cancelar();
+
+        Assert.AreEqual(EstadoBatalla.Cancelada, batalla.Estado);
+        Assert.IsNull(batalla.JugadorTurnoId);
+    }
+
     private static Torneo CrearTorneo()
     {
         return new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",

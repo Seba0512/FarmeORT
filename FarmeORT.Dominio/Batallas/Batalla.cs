@@ -46,4 +46,9 @@ public sealed class Batalla
     public int JugadorInicialId { get; private set; }
 
     public int? JugadorTurnoId { get; private set; }
+
+    public void Cancelar()
+    {
+        throw new NotImplementedException();
+    }
 }
