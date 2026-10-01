@@ -48,8 +48,9 @@ public sealed class Inscripcion
 
     public DateTime Fecha { get; private set; }
 
+    // No controla el estado del torneo: también se usa al cancelar un torneo En curso.
     public void Cancelar()
     {
-        throw new NotImplementedException();
+        Estado = EstadoInscripcion.Cancelada;
     }
 }
