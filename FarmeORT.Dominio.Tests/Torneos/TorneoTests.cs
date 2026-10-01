@@ -197,6 +197,23 @@ public sealed class TorneoTests
     }
 
     [TestMethod]
+    public void Modificar_FechaInicioSinCambiosYaPasada_ReemplazaLosDemasDatos()
+    {
+        var torneo = CrearTorneo();
+        var fechaPosterior = new DateOnly(2026, 11, 10);
+        var otroOrganizador = CrearOrganizador(Rol.Organizador);
+
+        torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, otroOrganizador, fechaPosterior);
+
+        Assert.AreEqual("COPAFUEGO", torneo.Codigo);
+        Assert.AreEqual("Copa Fuego", torneo.Nombre);
+        Assert.AreEqual(FechaInicio, torneo.FechaInicio);
+        Assert.AreEqual(16, torneo.Cupo);
+        Assert.AreSame(otroOrganizador, torneo.Organizador);
+        Assert.AreEqual(EstadoTorneo.Abierto, torneo.Estado);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_QuedaCancelado()
     {
         var torneo = CrearTorneo();
