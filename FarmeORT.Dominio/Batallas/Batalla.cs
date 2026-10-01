@@ -105,6 +105,15 @@ public sealed class Batalla
             throw new SkillYaLanzadaException();
         }
 
+        var propios = _lanzamientos.Where(l => l.JugadorId == jugador.Id).ToList();
+        var pendientes = Torneo.SkillsObligatorias
+            .Where(obligatoria => propios.All(l => l.SkillId != obligatoria.Id)).ToList();
+        var turnosRestantes = (LanzamientosTotales / 2) - propios.Count;
+        if(pendientes.Count == turnosRestantes && pendientes.All(obligatoria => obligatoria.Id != skill.Id))
+        {
+            throw new SkillObligatoriaPendienteException();
+        }
+
         var lanzamiento = new Lanzamiento(this, _lanzamientos.Count + 1, jugador, skill, fecha);
         _lanzamientos.Add(lanzamiento);
         JugadorTurnoId = jugador.Id == Jugador1Id ? Jugador2Id : Jugador1Id;
