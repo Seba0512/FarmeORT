@@ -72,7 +72,7 @@ public sealed class Torneo
             throw new TorneoNoModificableException();
         }
 
-        // Una fecha de inicio que ya pasó y no cambia no impide editar el resto (D-36).
+        // Una fecha de inicio que ya pasó y no cambia no impide editar el resto (D-37).
         if(fechaInicio != FechaInicio)
         {
             ValidarInicioNoPasado(fechaInicio, fechaActual);
