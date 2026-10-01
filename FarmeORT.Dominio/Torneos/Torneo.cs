@@ -29,6 +29,7 @@ public sealed class Torneo
         ValidarNombre(nombre);
         ValidarDescripcion(descripcion);
         ValidarCupo(cupo);
+        ValidarFechas(fechaInicio, fechaFin);
 
         Codigo = codigo;
         Nombre = nombre;
@@ -101,6 +102,14 @@ public sealed class Torneo
         if(cupo < CupoMinimo || cupo > CupoMaximo || !int.IsPow2(cupo))
         {
             throw new DatosInvalidosException("El cupo debe ser una potencia de 2 entre 4 y 64.");
+        }
+    }
+
+    private static void ValidarFechas(DateOnly fechaInicio, DateOnly fechaFin)
+    {
+        if(fechaFin <= fechaInicio)
+        {
+            throw new DatosInvalidosException("La fecha de fin debe ser posterior a la de inicio.");
         }
     }
 }
