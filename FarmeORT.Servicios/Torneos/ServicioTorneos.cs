@@ -57,7 +57,7 @@ internal sealed class ServicioTorneos(
 
     public TorneoResponse Cancelar(int id)
     {
-        var torneo = repositorioTorneos.ObtenerPorId(id)!;
+        var torneo = ObtenerTorneoExistente(id);
         torneo.Cancelar();
         repositorioTorneos.Actualizar(torneo);
         return CrearResponse<TorneoResponse>(torneo);
