@@ -140,6 +140,15 @@ public sealed class ServicioInscripcionesTests
         Assert.AreEqual(nameof(EstadoInscripcion.Cancelada), response.Estado);
     }
 
+    [TestMethod]
+    public void Cancelar_InscripcionInexistente_LanzaInscripcionNoEncontradaSinGuardar()
+    {
+        _repositorioInscripciones.Setup(r => r.ObtenerPorId(99)).Returns((Inscripcion?)null);
+
+        Assert.ThrowsExactly<InscripcionNoEncontradaException>(() => _servicio.Cancelar(99, JugadorId));
+        _repositorioInscripciones.Verify(r => r.Actualizar(It.IsAny<Inscripcion>()), Times.Never);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
