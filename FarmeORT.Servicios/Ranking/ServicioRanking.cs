@@ -7,6 +7,7 @@ namespace FarmeORT.Servicios.Ranking;
 internal sealed class ServicioRanking(IRepositorioUsuarios repositorioUsuarios) : IServicioRanking
 {
     private const int CantidadMaxima = 100;
+    private const int CantidadPorDefecto = 10;
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
@@ -14,6 +15,11 @@ internal sealed class ServicioRanking(IRepositorioUsuarios repositorioUsuarios) 
         if(cantidad > CantidadMaxima)
         {
             cantidad = CantidadMaxima;
+        }
+
+        if(cantidad < 1)
+        {
+            cantidad = CantidadPorDefecto;
         }
 
         var jugadores = repositorioUsuarios.ListarRanking(cantidad);
