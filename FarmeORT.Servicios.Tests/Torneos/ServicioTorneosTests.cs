@@ -160,6 +160,32 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void Listar_ConFiltros_DevuelveLosTorneosDelRepositorio()
+    {
+        var desde = new DateOnly(2026, 11, 1);
+        var hasta = new DateOnly(2026, 12, 31);
+        var filtro = new FiltroTorneos(EstadoTorneo.Abierto, desde, hasta, "copa", 3, false, 10, 5);
+        _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([CrearTorneo()]);
+        var request = new FiltroTorneosRequest
+        {
+            Estado = nameof(EstadoTorneo.Abierto),
+            FechaDesde = desde,
+            FechaHasta = hasta,
+            Nombre = "copa",
+            SkillObligatoriaId = 3,
+            Limit = 10,
+            Offset = 5,
+        };
+
+        var torneos = _servicio.Listar(request, esAnonimo: false);
+
+        Assert.HasCount(1, torneos);
+        Assert.AreEqual(TorneoId, torneos[0].Id);
+        Assert.AreEqual(Codigo, torneos[0].Codigo);
+        Assert.AreEqual("Laura Gomez", torneos[0].Organizador);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();

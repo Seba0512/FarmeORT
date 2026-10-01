@@ -10,6 +10,8 @@ public sealed class FiltroTorneosRequest
 
     public string? Nombre { get; init; }
 
+    public int? SkillObligatoriaId { get; init; }
+
     public int Limit { get; init; } = 20;
 
     public int Offset { get; init; }

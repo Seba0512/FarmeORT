@@ -6,6 +6,8 @@ public interface IRepositorioTorneos
 {
     Torneo? ObtenerPorId(int id);
 
+    IReadOnlyList<Torneo> Listar(FiltroTorneos filtro);
+
     bool ExistePorCodigo(string codigo);
 
     void Agregar(Torneo torneo);
