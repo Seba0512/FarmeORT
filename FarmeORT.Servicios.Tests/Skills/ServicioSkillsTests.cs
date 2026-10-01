@@ -109,6 +109,29 @@ public sealed class ServicioSkillsTests
         Assert.ThrowsExactly<SkillNoEncontradaException>(() => _servicio.ObtenerPorId(99));
     }
 
+    [TestMethod]
+    public void Listar_ConFiltros_DevuelveLasSkillsDelRepositorio()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(CategoriaSkill.Gestual, 2, true, "six", 10, 5))).Returns([skill]);
+        var filtro = new FiltroSkillsRequest
+        {
+            Categoria = CategoriasSkill.Gestual,
+            Dificultad = 2,
+            Activa = true,
+            Nombre = "six",
+            Limit = 10,
+            Offset = 5,
+        };
+
+        var skills = _servicio.Listar(filtro);
+
+        Assert.HasCount(1, skills);
+        Assert.AreEqual(3, skills[0].Id);
+        Assert.AreEqual(Codigo, skills[0].Codigo);
+        Assert.AreEqual(CategoriasSkill.Gestual, skills[0].Categoria);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
