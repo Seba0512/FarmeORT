@@ -18,10 +18,14 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status401Unauthorized, "INVALID_CREDENTIALS", "Email o contraseña incorrectos."),
         [typeof(UsuarioNoEncontradoException)] =
             new(StatusCodes.Status404NotFound, "USER_NOT_FOUND", "No existe un usuario con ese id."),
+        [typeof(SkillNoEncontradaException)] =
+            new(StatusCodes.Status404NotFound, "SKILL_NOT_FOUND", "No existe una skill con ese id."),
         [typeof(EmailYaExisteException)] =
             new(StatusCodes.Status409Conflict, "EMAIL_ALREADY_EXISTS", "Ya existe un usuario con ese email."),
         [typeof(NicknameYaExisteException)] =
             new(StatusCodes.Status409Conflict, "NICKNAME_ALREADY_EXISTS", "Ya existe un usuario con ese nickname."),
+        [typeof(CodigoSkillYaExisteException)] =
+            new(StatusCodes.Status409Conflict, "SKILL_CODE_ALREADY_EXISTS", "Ya existe una skill con ese código."),
         [typeof(OperacionSobreSiMismoException)] =
             new(StatusCodes.Status409Conflict, "SELF_OPERATION_NOT_ALLOWED", "Un usuario no puede modificarse ni eliminarse a sí mismo."),
     };
