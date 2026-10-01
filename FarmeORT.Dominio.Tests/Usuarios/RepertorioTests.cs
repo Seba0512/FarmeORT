@@ -23,6 +23,23 @@ public sealed class RepertorioTests
     }
 
     [TestMethod]
+    [DataRow(1)]
+    [DataRow(5)]
+    public void DeclararSkill_NivelEnLosLimites_LaAgregaConSusDatos(int nivel)
+    {
+        var skill = CrearSkill(3);
+
+        var declarada = _jugador.DeclararSkill(skill, nivel, FechaActual);
+
+        Assert.AreSame(declarada, _jugador.Repertorio.Single());
+        Assert.AreEqual(7, declarada.JugadorId);
+        Assert.AreEqual(3, declarada.SkillId);
+        Assert.AreSame(skill, declarada.Skill);
+        Assert.AreEqual(nivel, declarada.Nivel);
+        Assert.AreEqual(FechaActual, declarada.FechaDeclaracion);
+    }
+
+    [TestMethod]
     public void DeclararSkill_SkillInactiva_LanzaSkillInactivaSinAgregarla()
     {
         var skill = CrearSkill(3);
