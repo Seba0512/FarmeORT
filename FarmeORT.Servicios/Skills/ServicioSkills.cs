@@ -10,6 +10,8 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 {
     private const int LimiteMaximo = 100;
     private const int LimitePorDefecto = 20;
+    private const int DificultadMinima = 1;
+    private const int DificultadMaxima = 5;
 
     public SkillResponse Crear(SkillRequest request)
     {
@@ -52,7 +54,13 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
             desplazamiento = 0;
         }
 
-        var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, limite, desplazamiento);
+        var dificultad = filtro.Dificultad;
+        if(dificultad < DificultadMinima || dificultad > DificultadMaxima)
+        {
+            dificultad = null;
+        }
+
+        var filtroRepositorio = new FiltroSkills(categoria, dificultad, filtro.Activa, filtro.Nombre, limite, desplazamiento);
         var skills = repositorioSkills.Listar(filtroRepositorio);
         return skills.Select(CrearResponse).ToList();
     }
