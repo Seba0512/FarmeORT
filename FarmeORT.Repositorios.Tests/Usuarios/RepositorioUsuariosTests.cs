@@ -11,6 +11,8 @@ public sealed class RepositorioUsuariosTests
 {
     private const string Email = "jugador@farmeort.com";
 
+    private static readonly DateOnly FechaActual = new(2026, 9, 30);
+
     private BaseDeDatosEnMemoria _baseDeDatos = null!;
     private RepositorioUsuarios _repositorio = null!;
 
@@ -272,6 +274,37 @@ public sealed class RepositorioUsuariosTests
         Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Agregar(nuevo));
         Assert.IsFalse(_baseDeDatos.Contexto.Usuarios.Any(u => u.Email == nuevo.Email));
         AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Actualizar_UsuarioModificado_GuardaLosCambios()
+    {
+        var usuario = GuardarUsuario(Email, "jugador");
+        var fechaNacimiento = new DateOnly(1998, 6, 3);
+        usuario.Modificar("Carla", "Gómez", "carla@farmeort.com", "carlagomez", fechaNacimiento, Rol.Organizador, "hash-nuevo", FechaActual);
+
+        _repositorio.Actualizar(usuario);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var guardado = _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id);
+        Assert.AreEqual("Carla", guardado.Nombre);
+        Assert.AreEqual("Gómez", guardado.Apellido);
+        Assert.AreEqual("carla@farmeort.com", guardado.Email);
+        Assert.AreEqual("carlagomez", guardado.Nickname);
+        Assert.AreEqual(fechaNacimiento, guardado.FechaNacimiento);
+        Assert.AreEqual(Rol.Organizador, guardado.Rol);
+        Assert.AreEqual("hash-nuevo", guardado.ContrasenaHash);
+        Assert.AreEqual(1200, guardado.Elo);
+    }
+
+    // Deja el usuario guardado y cargado por el repositorio, como lo recibe el servicio antes de modificarlo.
+    private Usuario GuardarUsuario(string email, string nickname)
+    {
+        var usuario = new Usuario("Ana", "Pérez", email, nickname, new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        return _repositorio.ObtenerPorId(usuario.Id)!;
     }
 
     private void AssertPuedeGuardarOtraAlta()
