@@ -85,6 +85,21 @@ public sealed class ServicioModificacionUsuariosTests
         Assert.AreEqual(1200, response.Elo);
     }
 
+    [TestMethod]
+    public void Modificar_EmailDeOtroUsuario_LanzaEmailYaExisteSinGuardar()
+    {
+        ConfigurarModificacionValida();
+        var otro = new Usuario("Otra", "Persona", "anamaria@farmeort.com", "otrapersona", new DateOnly(1995, 5, 20), Rol.Jugador, "hash", FechaActual)
+        {
+            Id = 8,
+        };
+        _repositorioUsuarios.Setup(r => r.ObtenerPorEmail("anamaria@farmeort.com")).Returns(otro);
+
+        Assert.ThrowsExactly<EmailYaExisteException>(() => _servicio.Modificar(UsuarioId, CrearRequest(), AdministradorActualId));
+
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
     private Usuario ConfigurarModificacionValida()
     {
         var usuario = CrearUsuarioExistente();
