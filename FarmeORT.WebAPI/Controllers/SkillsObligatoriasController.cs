@@ -23,4 +23,12 @@ public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias ser
         var response = servicioSkillsObligatorias.Asociar(torneoId, request, sesion.UsuarioId);
         return Created($"/api/v1/torneos/{torneoId}/skills-obligatorias/{response.Id}", response);
     }
+
+    [HttpDelete("{skillId:int}")]
+    public IActionResult Quitar(int torneoId, int skillId)
+    {
+        _ = torneoId;
+        _ = skillId;
+        throw new NotImplementedException();
+    }
 }

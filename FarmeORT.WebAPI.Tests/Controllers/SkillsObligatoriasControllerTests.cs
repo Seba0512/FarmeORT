@@ -67,6 +67,19 @@ public sealed class SkillsObligatoriasControllerTests
         Assert.AreSame(skills, resultado.Value);
     }
 
+    [TestMethod]
+    public void Quitar_SkillAsociada_Devuelve204YLaQuitaConElOrganizadorAutenticado()
+    {
+        AutenticarOrganizador();
+        _servicio.Setup(s => s.Quitar(TorneoId, 3, OrganizadorId));
+
+        var resultado = _controller.Quitar(TorneoId, 3) as NoContentResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status204NoContent, resultado.StatusCode);
+        _servicio.Verify(s => s.Quitar(TorneoId, 3, OrganizadorId), Times.Once);
+    }
+
     private void AutenticarOrganizador()
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = OrganizadorId, Rol = Roles.Organizador };
