@@ -19,8 +19,8 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     [HttpGet]
     public IActionResult Listar([FromQuery] FiltroTorneosRequest filtro)
     {
-        _ = filtro;
-        throw new NotImplementedException();
+        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
+        return Ok(servicioTorneos.Listar(filtro, esAnonimo));
     }
 
     [HttpGet("{id:int}")]
