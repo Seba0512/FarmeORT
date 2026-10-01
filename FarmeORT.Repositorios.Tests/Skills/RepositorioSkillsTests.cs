@@ -42,4 +42,42 @@ public sealed class RepositorioSkillsTests
         Assert.AreEqual(2, guardada.Dificultad);
         Assert.IsTrue(guardada.Activa);
     }
+
+    [TestMethod]
+    public void ObtenerPorId_IdExistente_DevuelveLaSkill()
+    {
+        var otra = CrearSkill("TRALALERO");
+        var skill = CrearSkill("SIXSEVEN");
+        GuardarSkills(otra, skill);
+
+        var resultado = _repositorio.ObtenerPorId(skill.Id);
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(skill.Id, resultado.Id);
+        Assert.AreEqual("SIXSEVEN", resultado.Codigo);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_IdInexistente_DevuelveNull()
+    {
+        var resultado = _repositorio.ObtenerPorId(99);
+
+        Assert.IsNull(resultado);
+    }
+
+    private void GuardarSkills(params Skill[] skills)
+    {
+        _baseDeDatos.Contexto.Skills.AddRange(skills);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+    }
+
+    private static Skill CrearSkill(
+        string codigo,
+        string nombre = "Six-Seven",
+        CategoriaSkill categoria = CategoriaSkill.Gestual,
+        int dificultad = 2)
+    {
+        return new Skill(codigo, nombre, Descripcion, categoria, dificultad);
+    }
 }
