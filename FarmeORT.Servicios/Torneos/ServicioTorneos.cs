@@ -52,7 +52,7 @@ internal sealed class ServicioTorneos(
         EstadoTorneo? estado = null;
         if(filtro.Estado != null)
         {
-            estado = Enum.Parse<EstadoTorneo>(filtro.Estado);
+            estado = BuscarEstado(filtro.Estado);
         }
 
         var filtroRepositorio = new FiltroTorneos(
@@ -111,6 +111,20 @@ internal sealed class ServicioTorneos(
         {
             throw new CodigoTorneoYaExisteException();
         }
+    }
+
+    // Se compara por nombre para que un número como "1" no se tome como estado; un estado que no existe no filtra (D-35).
+    private static EstadoTorneo? BuscarEstado(string estado)
+    {
+        foreach(var valor in Enum.GetValues<EstadoTorneo>())
+        {
+            if(valor.ToString() == estado)
+            {
+                return valor;
+            }
+        }
+
+        return null;
     }
 
     // El DTO ya exige estos datos; el servicio los vuelve a controlar porque no depende de quién lo invoque.
