@@ -51,6 +51,11 @@ public sealed class Inscripcion
     // No controla el estado del torneo: también se usa al cancelar un torneo En curso.
     public void Cancelar()
     {
+        if(Estado != EstadoInscripcion.Aceptada)
+        {
+            throw new InscripcionNoActivaException();
+        }
+
         Estado = EstadoInscripcion.Cancelada;
     }
 }
