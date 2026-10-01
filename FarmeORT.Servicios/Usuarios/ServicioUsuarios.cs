@@ -12,6 +12,8 @@ internal sealed class ServicioUsuarios(
     IHasheadorContrasenas hasheadorContrasenas,
     TimeProvider reloj) : IServicioUsuarios
 {
+    private const int LimiteMaximo = 100;
+
     public UsuarioResponse RegistrarJugador(RegistroJugadorRequest request)
     {
         var fechaNacimiento = ObtenerFechaNacimiento(request);
@@ -35,7 +37,13 @@ internal sealed class ServicioUsuarios(
 
     public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
     {
-        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, filtro.Limit, filtro.Offset);
+        var limite = filtro.Limit;
+        if(limite > LimiteMaximo)
+        {
+            limite = LimiteMaximo;
+        }
+
+        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, limite, filtro.Offset);
         var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
         return [.. usuarios.Select(CrearResponse)];
     }
