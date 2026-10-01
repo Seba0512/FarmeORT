@@ -95,7 +95,7 @@ public class RepositorioSkillsTests
     {
         GuardarSkills(CrearSkill("TRALALERO"), CrearSkill("SIXSEVEN"));
 
-        var skills = _repositorio.Listar(SinFiltros());
+        var skills = _repositorio.Listar(Filtro());
 
         CollectionAssert.AreEqual(new[] { "TRALALERO", "SIXSEVEN" }, skills.Select(s => s.Codigo).ToArray());
     }
@@ -108,7 +108,7 @@ public class RepositorioSkillsTests
             CrearSkill("TRALALERO", categoria: CategoriaSkill.Meme),
             CrearSkill("AURASTARE", categoria: CategoriaSkill.Gestual));
 
-        var skills = _repositorio.Listar(SinFiltros() with { Categoria = CategoriaSkill.Gestual });
+        var skills = _repositorio.Listar(Filtro(categoria: CategoriaSkill.Gestual));
 
         CollectionAssert.AreEqual(new[] { "SIXSEVEN", "AURASTARE" }, skills.Select(s => s.Codigo).ToArray());
     }
@@ -121,7 +121,7 @@ public class RepositorioSkillsTests
             CrearSkill("TRALALERO", dificultad: 5),
             CrearSkill("AURASTARE", dificultad: 2));
 
-        var skills = _repositorio.Listar(SinFiltros() with { Dificultad = 2 });
+        var skills = _repositorio.Listar(Filtro(dificultad: 2));
 
         CollectionAssert.AreEqual(new[] { "SIXSEVEN", "AURASTARE" }, skills.Select(s => s.Codigo).ToArray());
     }
@@ -135,7 +135,7 @@ public class RepositorioSkillsTests
         inactiva.Desactivar();
         GuardarSkills(CrearSkill("SIXSEVEN"), inactiva);
 
-        var skills = _repositorio.Listar(SinFiltros() with { Activa = activa });
+        var skills = _repositorio.Listar(Filtro(activa: activa));
 
         CollectionAssert.AreEqual(new[] { codigoEsperado }, skills.Select(s => s.Codigo).ToArray());
     }
@@ -148,7 +148,7 @@ public class RepositorioSkillsTests
             CrearSkill("TRALALERO", nombre: "Tralalero"),
             CrearSkill("SIXSEVENPRO", nombre: "Six-Seven Pro"));
 
-        var skills = _repositorio.Listar(SinFiltros() with { Nombre = "SEVEN" });
+        var skills = _repositorio.Listar(Filtro(nombre: "SEVEN"));
 
         CollectionAssert.AreEqual(new[] { "SIXSEVEN", "SIXSEVENPRO" }, skills.Select(s => s.Codigo).ToArray());
     }
@@ -158,7 +158,7 @@ public class RepositorioSkillsTests
     {
         GuardarSkills(CrearSkill("SKILLUNO"), CrearSkill("SKILLDOS"), CrearSkill("SKILLTRES"), CrearSkill("SKILLCUATRO"));
 
-        var skills = _repositorio.Listar(SinFiltros() with { Limite = 2, Desplazamiento = 1 });
+        var skills = _repositorio.Listar(Filtro(limite: 2, desplazamiento: 1));
 
         CollectionAssert.AreEqual(new[] { "SKILLDOS", "SKILLTRES" }, skills.Select(s => s.Codigo).ToArray());
     }
@@ -171,7 +171,7 @@ public class RepositorioSkillsTests
             CrearSkill("SIXSEVENPRO", nombre: "Six-Seven Pro", categoria: CategoriaSkill.Gestual, dificultad: 4),
             CrearSkill("SIXSEVENVOZ", nombre: "Six-Seven cantado", categoria: CategoriaSkill.Vocal, dificultad: 2));
 
-        var filtro = SinFiltros() with { Categoria = CategoriaSkill.Gestual, Dificultad = 2, Activa = true, Nombre = "six" };
+        var filtro = Filtro(categoria: CategoriaSkill.Gestual, dificultad: 2, activa: true, nombre: "six");
         var skills = _repositorio.Listar(filtro);
 
         CollectionAssert.AreEqual(new[] { "SIXSEVEN" }, skills.Select(s => s.Codigo).ToArray());
@@ -231,9 +231,16 @@ public class RepositorioSkillsTests
         Assert.AreEqual("SIXSEVEN", _baseDeDatos.Contexto.Skills.AsNoTracking().Single(s => s.Id == skill.Id).Codigo);
     }
 
-    private static FiltroSkills SinFiltros()
+    // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
+    private static FiltroSkills Filtro(
+        CategoriaSkill? categoria = null,
+        int? dificultad = null,
+        bool? activa = null,
+        string? nombre = null,
+        int limite = 20,
+        int desplazamiento = 0)
     {
-        return new FiltroSkills(null, null, null, null, 20, 0);
+        return new FiltroSkills(categoria, dificultad, activa, nombre, limite, desplazamiento);
     }
 
     private void AssertPuedeGuardarOtraSkill()
