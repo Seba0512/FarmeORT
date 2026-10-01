@@ -835,6 +835,38 @@ producirla.
 
 ---
 
+### D-33 — Las clases del catálogo de skills son `public` y sin `sealed`
+
+**Problema:** `AGENTS.md` pide `internal sealed` por defecto. Quien desarrolló el catálogo de skills
+prefiere clases más simples de leer y de explicar, sin modificadores que no aportan en un proyecto de
+este tamaño, pero sin obligar al resto del equipo a cambiar el código que ya escribió.
+
+**Alternativas consideradas:** mantener `internal sealed` también en skills; pasar todo el repositorio a
+`public` sin `sealed` (se probó y se descartó porque modificaba código de otros integrantes sin
+acordarlo); `internal` sin `sealed` (no es posible: CA1852 lo marca y `dotnet format` vuelve a agregar
+`sealed`, así que falla el check `Analysis`); `public` sin `sealed` solo en las clases nuevas de skills.
+
+**Decisión adoptada:** las clases y records creados para el catálogo de skills (controller, DTOs,
+servicio, entidad, filtro, repositorio, excepciones y sus tests) son `public` y sin `sealed`. El código
+existente conserva `internal sealed` y `AGENTS.md` no cambia.
+
+**Justificación:** el código nuevo queda más simple sin tocar lo que hicieron otros integrantes. La
+independencia entre assemblies no depende de esto: cada capa sigue dependiendo de interfaces
+(`IServicioSkills`, `IRepositorioSkills`) y cada assembly registra sus implementaciones (D-06). Las
+desventajas aceptadas son que conviven dos criterios en el repositorio y que `ServicioSkills` y
+`RepositorioSkills` quedan visibles desde otros assemblies; por eso la documentación de diseño indica
+qué tipos forman la interfaz de cada assembly.
+
+**Conceptos del curso:** encapsulamiento, DIP, independencia de librerías.
+
+**Evidencia:** commit `refactor [REFACTOR] (.): quita sealed e internal de las clases del catálogo de
+skills`.
+
+**Participación de IA:** el cambio lo pidió el integrante; Claude Code señaló el conflicto con
+`AGENTS.md` y con la regla CA1852, y aplicó el cambio solo en las clases de skills.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -882,5 +914,8 @@ producirla.
   2.2): no puede declararse en un repertorio ni asociarse como obligatoria, sin efecto retroactivo.
 - Notificaciones: la letra 2026.2 y la especificación de la API no las piden, pero `AGENTS.md` (§8) y la
   skill de dominio sí. Se postergan (decisión del 2026-10-01); si se descartan, corregir `AGENTS.md` por PR.
+- Decidir en equipo si las clases nuevas siguen el criterio de D-33 o el de `AGENTS.md`, y dejar uno
+  solo escrito en `AGENTS.md`. Documentar en el informe de diseño qué tipos forman la interfaz de cada
+  assembly.
 - La colección de Postman trae `baseUrl` con el puerto 5088, pero `launchSettings.json` levanta la API
   en el 5294: unificarlo o explicarlo en la guía de instalación.
