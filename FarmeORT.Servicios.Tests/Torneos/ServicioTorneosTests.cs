@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Servicios.Torneos;
@@ -75,6 +76,15 @@ public sealed class ServicioTorneosTests
         Assert.AreEqual(0, response.InscripcionesAceptadas);
         Assert.AreEqual(OrganizadorId, response.OrganizadorId);
         Assert.AreEqual("Laura Gomez", response.Organizador);
+    }
+
+    [TestMethod]
+    public void Crear_CodigoExistente_LanzaCodigoTorneoYaExisteSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ExistePorCodigo(Codigo)).Returns(true);
+
+        Assert.ThrowsExactly<CodigoTorneoYaExisteException>(() => _servicio.Crear(CrearRequest()));
+        _repositorioTorneos.Verify(r => r.Agregar(It.IsAny<Torneo>()), Times.Never);
     }
 
     private void ConfigurarAltaValida()
