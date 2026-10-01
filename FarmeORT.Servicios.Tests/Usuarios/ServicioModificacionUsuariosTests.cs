@@ -137,6 +137,40 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioUsuarios.Verify(r => r.Actualizar(usuario), Times.Once);
     }
 
+    [TestMethod]
+    public void Modificar_ContrasenaInvalida_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var request = CrearRequest(contrasena: "corta");
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(UsuarioId, request, AdministradorActualId));
+    }
+
+    [TestMethod]
+    public void Modificar_RolInexistente_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var request = CrearRequest(rol: "Superusuario");
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(UsuarioId, request, AdministradorActualId));
+    }
+
+    [TestMethod]
+    public void Modificar_FechaNacimientoOmitida_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var request = new UsuarioAdminRequest
+        {
+            Nombre = "Ana María",
+            Apellido = "Gómez",
+            Email = "anamaria@farmeort.com",
+            Nickname = "anamaria",
+            Contrasena = Contrasena,
+            Rol = Roles.Jugador,
+        };
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(UsuarioId, request, AdministradorActualId));
+
+        Assert.AreEqual("La fecha de nacimiento es obligatoria.", excepcion.Message);
+    }
+
     private Usuario ConfigurarModificacionValida()
     {
         var usuario = CrearUsuarioExistente();
@@ -158,7 +192,7 @@ public sealed class ServicioModificacionUsuariosTests
         };
     }
 
-    private static UsuarioAdminRequest CrearRequest()
+    private static UsuarioAdminRequest CrearRequest(string contrasena = Contrasena, string rol = Roles.Jugador)
     {
         return new UsuarioAdminRequest
         {
@@ -166,9 +200,9 @@ public sealed class ServicioModificacionUsuariosTests
             Apellido = "Gómez",
             Email = "anamaria@farmeort.com",
             Nickname = "anamaria",
-            Contrasena = Contrasena,
+            Contrasena = contrasena,
             FechaNacimiento = new DateOnly(1999, 4, 20),
-            Rol = Roles.Jugador,
+            Rol = rol,
         };
     }
 }
