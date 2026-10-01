@@ -76,7 +76,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public void Actualizar(Usuario usuario)
     {
-        _ = usuario;
-        throw new NotImplementedException();
+        contexto.Usuarios.Update(usuario);
+        contexto.SaveChanges();
     }
 }
