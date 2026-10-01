@@ -52,8 +52,8 @@ internal sealed class ServicioInscripciones(
             filtro.FechaHasta,
             rol == Roles.Jugador ? usuarioId : null,
             rol == Roles.Organizador ? usuarioId : null,
-            filtro.Limit,
-            filtro.Offset);
+            Paginacion.AjustarLimite(filtro.Limit),
+            Paginacion.AjustarDesplazamiento(filtro.Offset));
         return repositorioInscripciones.Listar(filtroRepositorio).Select(CrearResponse).ToList();
     }
 
