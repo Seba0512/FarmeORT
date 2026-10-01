@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Batallas;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IServicios.Batallas;
 
@@ -8,6 +9,12 @@ internal sealed class ServicioLanzamientos(IRepositorioBatallas repositorioBatal
 {
     public LanzamientoResultadoResponse Lanzar(int batallaId, int jugadorId, LanzamientoRequest request)
     {
-        throw new NotImplementedException(repositorioBatallas.GetType().Name);
+        var batalla = repositorioBatallas.ObtenerPorId(batallaId);
+        if(batalla == null)
+        {
+            throw new BatallaNoEncontradaException();
+        }
+
+        throw new NotImplementedException();
     }
 }
