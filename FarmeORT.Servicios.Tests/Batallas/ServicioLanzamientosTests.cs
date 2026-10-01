@@ -119,6 +119,33 @@ public sealed class ServicioLanzamientosTests
         _batallas.Verify(r => r.Guardar(), Times.Never);
     }
 
+    [TestMethod]
+    public void Lanzar_DosObligatoriasPendientesYDosTurnosRestantes_RechazaSkillLibreSinGuardar()
+    {
+        ConfigurarLanzamientoValido();
+        var historial = (List<Lanzamiento>)typeof(Batalla)
+            .GetField("_lanzamientos", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
+            .GetValue(_batalla)!;
+        for(var id = 1; id <= 2; id++)
+        {
+            var usada = new Skill($"USADA{id}", $"Skill {id}", "Skill ya lanzada en la batalla de aura.", CategoriaSkill.Gestual, 2) { Id = id };
+            _batalla.Jugador1.DeclararSkill(usada, 4, FechaActual);
+            _batalla.Jugador2.DeclararSkill(usada, 4, FechaActual);
+            historial.Add(new Lanzamiento(_batalla, (id * 2) - 1, _batalla.Jugador1, usada, FechaLanzamiento));
+            historial.Add(new Lanzamiento(_batalla, id * 2, _batalla.Jugador2, usada, FechaLanzamiento));
+            var obligatoria = new Skill($"OBLIG{id}", $"Obligatoria {id}", "Skill obligatoria del torneo de aura.", CategoriaSkill.Gestual, 2) { Id = id + 4 };
+            _batalla.Jugador1.DeclararSkill(obligatoria, 4, FechaActual);
+            _batalla.Torneo.AsociarSkillObligatoria(obligatoria);
+        }
+
+        Assert.ThrowsExactly<SkillObligatoriaPendienteException>(
+            () => _servicio.Lanzar(12, 7, new LanzamientoRequest { SkillId = 3 }));
+
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.HasCount(4, _batalla.Lanzamientos);
+        Assert.AreEqual(7, _batalla.JugadorTurnoId);
+    }
+
     private void ConfigurarLanzamientoValido()
     {
         _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
