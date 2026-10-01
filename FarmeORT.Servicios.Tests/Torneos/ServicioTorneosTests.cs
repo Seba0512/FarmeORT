@@ -291,6 +291,22 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void Modificar_CodigoNuevoLibre_GuardaElTorneoConElCodigoNuevo()
+    {
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(OrganizadorId)).Returns(_organizador);
+        _repositorioTorneos.Setup(r => r.ExistePorCodigo("COPAFUEGO")).Returns(false);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+        ConfigurarFechaActual();
+
+        var response = _servicio.Modificar(TorneoId, CrearRequest(codigo: "COPAFUEGO"));
+
+        Assert.AreEqual("COPAFUEGO", response.Codigo);
+        _repositorioTorneos.Verify(r => r.Actualizar(It.Is<Torneo>(t => t.Codigo == "COPAFUEGO")), Times.Once);
+    }
+
+    [TestMethod]
     public void Modificar_SuMismoCodigoConOtrasMayusculas_NoLoConsideraDuplicado()
     {
         var torneo = CrearTorneo();
