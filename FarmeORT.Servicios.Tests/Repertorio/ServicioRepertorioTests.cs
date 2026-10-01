@@ -86,6 +86,16 @@ public sealed class ServicioRepertorioTests
         _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.IsAny<Usuario>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Declarar_JugadorInexistente_LanzaUsuarioNoEncontradoSinGuardar()
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns((Usuario?)null);
+
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(
+            () => _servicio.Declarar(JugadorId, new SkillDeclaradaRequest { SkillId = SkillId, Nivel = 4 }));
+        _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.IsAny<Usuario>()), Times.Never);
+    }
+
     private void ConfigurarDeclaracionValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
