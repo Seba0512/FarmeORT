@@ -83,6 +83,12 @@ public sealed partial class Usuario
 
     public SkillDeclarada DeclararSkill(Skill skill, int nivel, DateOnly fechaActual)
     {
+        // Una skill inactiva no entra en repertorios nuevos; las ya declaradas se conservan (no es retroactivo).
+        if(!skill.Activa)
+        {
+            throw new SkillInactivaException();
+        }
+
         var declarada = new SkillDeclarada(this, skill, nivel, fechaActual);
         _repertorio.Add(declarada);
         return declarada;
