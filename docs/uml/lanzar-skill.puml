@@ -1,0 +1,40 @@
+@startuml
+title Diseño propuesto — lanzar skill (fase 1)
+actor Jugador
+participant ":LanzamientosController" as C
+participant ":ServicioLanzamientos" as S
+participant ":RepositorioBatallas" as R
+participant ":RepositorioUsuarios" as U
+participant ":RepositorioSkills" as K
+participant ":Batalla" as B
+participant ":TimeProvider" as T
+Jugador -> C : POST /api/v1/batallas/{id}/lanzamientos\nAuthorization + { skillId }
+note over C : Autorizacion exige token válido y rol Jugador.
+C -> S : Lanzar(id, jugadorAutenticadoId, request)
+S -> R : ObtenerPorId(id)
+R --> S : batalla
+S -> U : ObtenerConRepertorio(jugadorAutenticadoId)
+U --> S : jugador
+S -> K : ObtenerPorId(skillId)
+K --> S : skill
+S -> T : GetUtcNow()
+T --> S : fecha
+S -> B : Lanzar(jugador, skill, fecha)
+alt alguna precondición incumplida
+  B --> S : excepción de negocio
+  S --> C : excepción
+  C --> Jugador : error del filtro global
+else válido
+  create participant ":Lanzamiento" as L
+  B -> L : crear y agregar al historial
+  B --> S : lanzamiento
+  S -> R : Guardar()
+  note over R : Un SaveChanges del contexto scoped.
+  S --> C : turno, estado, jugadorTurnoId
+  C --> Jugador : 201 + Location del historial
+end
+note over B
+  La regla de skills obligatorias se integra
+  cuando Persona A la incorpore a Torneo.
+end note
+@enduml

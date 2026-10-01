@@ -1258,6 +1258,23 @@ relaciones muchos a muchos en EF Core.
     van al final de los públicos y no al final de la clase, sin reordenar código existente.
   - `CrearResponse` de skills queda repetido entre `ServicioSkills` y `ServicioSkillsObligatorias`. No se
     extrajo para no modificar el catálogo de skills fuera del alcance de esta rama.
+---
+
+### D-50 — Organizador no asignado: respuesta 403 compartida
+
+**Problema:** las operaciones de un organizador sobre un torneo requieren que sea el asignado, además de tener el rol. D-36 y D-37 no definían la respuesta para esta restricción.
+
+**Alternativas consideradas:** 403 por falta de autorización sobre el recurso; 409 por regla de negocio. Ambas podían implementarse en el servicio, pero respuestas distintas entre skills obligatorias, rondas y fallos harían inconsistente la API.
+
+**Decisión adoptada:** el usuario confirmó el 01/10/2026 usar 403 `FORBIDDEN` cuando el organizador no es el asignado. La comprobación pertenece al servicio; los filtros siguen comprobando autenticación y rol. Esta decisión es compartida por A, B y C y se registra una sola vez en el rango de B.
+
+**Justificación:** el estado del torneo no cambia la autorización de quien invoca; 403 describe la falta de permiso sobre ese torneo.
+
+**Conceptos del curso:** autorización por recurso, SRP, separación entre filtros y casos de uso, contrato REST consistente.
+
+**Evidencia:** confirmación explícita del usuario en el chat de Persona B. La integración de fallos espera `Inscripcion` e `ICalculadorElo` en develop; no se afirma implementación de ese endpoint.
+
+**Participación de IA:** Codex comprobó D-36/D-37 y presentó ambas alternativas; el usuario eligió 403. Se aceptó registrar el acuerdo común y se rechazó asumir el código por cuenta del agente. La autoría Git corresponde exclusivamente al integrante; esta declaración académica queda separada.
 
 ---
 
