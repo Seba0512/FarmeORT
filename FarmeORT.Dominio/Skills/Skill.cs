@@ -9,6 +9,8 @@ public sealed partial class Skill
     private const int LargoMaximoNombre = 40;
     private const int LargoMinimoDescripcion = 20;
     private const int LargoMaximoDescripcion = 300;
+    private const int DificultadMinima = 1;
+    private const int DificultadMaxima = 5;
 
     public Skill(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
     {
@@ -35,6 +37,7 @@ public sealed partial class Skill
         ValidarCodigo(codigo);
         ValidarNombre(nombre);
         ValidarDescripcion(descripcion);
+        ValidarDificultad(dificultad);
 
         Codigo = codigo;
         Nombre = nombre;
@@ -84,6 +87,14 @@ public sealed partial class Skill
         if(descripcion.Length is < LargoMinimoDescripcion or > LargoMaximoDescripcion)
         {
             throw new DatosInvalidosException("La descripción debe tener entre 20 y 300 caracteres.");
+        }
+    }
+
+    private static void ValidarDificultad(int dificultad)
+    {
+        if(dificultad is < DificultadMinima or > DificultadMaxima)
+        {
+            throw new DatosInvalidosException("La dificultad debe ser un entero entre 1 y 5.");
         }
     }
 
