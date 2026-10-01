@@ -1,3 +1,5 @@
+using FarmeORT.Repositorios;
+using FarmeORT.Servicios;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace FarmeORT.Fabrica;
@@ -6,8 +8,9 @@ public static class RegistroDependencias
 {
     public static IServiceCollection AgregarDependencias(this IServiceCollection servicios, string connectionString)
     {
-        _ = servicios;
-        _ = connectionString;
-        throw new NotImplementedException();
+        servicios.AddSingleton(TimeProvider.System);
+        servicios.AgregarServicios();
+        servicios.AgregarRepositorios(connectionString);
+        return servicios;
     }
 }
