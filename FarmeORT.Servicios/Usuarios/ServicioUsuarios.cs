@@ -47,9 +47,10 @@ internal sealed class ServicioUsuarios(
             throw new OperacionSobreSiMismoException();
         }
 
-        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        ReglaContrasena.Validar(request.Contrasena);
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
         if(!MismoTexto(usuario.Email, request.Email) && repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
         {
             throw new EmailYaExisteException();
