@@ -18,6 +18,11 @@ public sealed class Batalla
             throw new DatosInvalidosException("La batalla requiere dos jugadores distintos.");
         }
 
+        if(jugador1.Rol != Rol.Jugador || jugador2.Rol != Rol.Jugador)
+        {
+            throw new DatosInvalidosException("Los participantes de la batalla deben tener rol Jugador.");
+        }
+
         Torneo = torneo;
         TorneoId = torneo.Id;
         NumeroRonda = numeroRonda;
