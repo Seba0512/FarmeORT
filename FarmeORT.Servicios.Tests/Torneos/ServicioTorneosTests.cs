@@ -261,6 +261,25 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void Modificar_TorneoInexistente_LanzaTorneoNoEncontradoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Modificar(99, CrearRequest()));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_OrganizadorInexistente_LanzaUsuarioNoEncontradoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(99)).Returns((Usuario?)null);
+
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(() => _servicio.Modificar(TorneoId, CrearRequest(organizadorId: 99)));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();
