@@ -199,6 +199,19 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    [DataRow(600, -3, 100, 0)]
+    [DataRow(0, 0, 20, 0)]
+    public void Listar_PaginacionFueraDeRango_LaAjusta(int limit, int offset, int limiteEsperado, int desplazamientoEsperado)
+    {
+        var filtro = new FiltroTorneos(null, null, null, null, null, false, limiteEsperado, desplazamientoEsperado);
+        _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([]);
+
+        var torneos = _servicio.Listar(new FiltroTorneosRequest { Limit = limit, Offset = offset }, esAnonimo: false);
+
+        Assert.IsEmpty(torneos);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();
