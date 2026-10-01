@@ -80,6 +80,14 @@ public sealed class ServicioSkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void Listar_TorneoInexistente_LanzaTorneoNoEncontrado()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Listar(99, esAnonimo: false));
+    }
+
+    [TestMethod]
     public void Quitar_SkillAsociada_LaQuitaDelTorneoYGuarda()
     {
         _torneo.AsociarSkillObligatoria(_skill);
