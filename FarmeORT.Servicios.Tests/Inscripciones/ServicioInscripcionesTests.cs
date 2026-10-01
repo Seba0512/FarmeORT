@@ -88,6 +88,14 @@ public sealed class ServicioInscripcionesTests
         _repositorioInscripciones.Verify(r => r.Agregar(It.IsAny<Inscripcion>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Inscribir_SinTorneo_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Inscribir(JugadorId, new InscripcionRequest()));
+
+        Assert.AreEqual("El torneo es obligatorio.", excepcion.Message);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
