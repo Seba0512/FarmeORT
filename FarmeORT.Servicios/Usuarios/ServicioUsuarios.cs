@@ -83,8 +83,9 @@ internal sealed class ServicioUsuarios(
             throw new OperacionSobreSiMismoException();
         }
 
-        _ = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        throw new NotImplementedException();
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        usuario.Eliminar();
+        repositorioUsuarios.Eliminar(usuario);
     }
 
     private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
