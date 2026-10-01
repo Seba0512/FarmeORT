@@ -21,7 +21,7 @@ internal class AutenticacionAttribute : Attribute, IAuthorizationFilter
             return;
         }
 
-        var sesion = IntentarObtenerToken(context.HttpContext.Request.Headers.Authorization, out var token)
+        var sesion = IntentarObtenerToken(encabezado, out var token)
             ? ObtenerSesion(context, token)
             : null;
         if(sesion is null)
