@@ -50,6 +50,11 @@ internal sealed class ServicioUsuarios(
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
+        if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
+        {
+            throw new EmailYaExisteException();
+        }
+
         var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
         var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
         usuario.Modificar(
