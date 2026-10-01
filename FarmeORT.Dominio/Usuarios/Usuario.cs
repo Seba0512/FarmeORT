@@ -89,6 +89,11 @@ public sealed partial class Usuario
             throw new SkillInactivaException();
         }
 
+        if(_repertorio.Any(d => d.SkillId == skill.Id))
+        {
+            throw new SkillYaDeclaradaException();
+        }
+
         var declarada = new SkillDeclarada(this, skill, nivel, fechaActual);
         _repertorio.Add(declarada);
         return declarada;
