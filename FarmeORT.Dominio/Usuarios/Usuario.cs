@@ -83,10 +83,9 @@ public sealed partial class Usuario
 
     public SkillDeclarada DeclararSkill(Skill skill, int nivel, DateOnly fechaActual)
     {
-        _ = skill;
-        _ = nivel;
-        _ = fechaActual;
-        throw new NotImplementedException();
+        var declarada = new SkillDeclarada(this, skill, nivel, fechaActual);
+        _repertorio.Add(declarada);
+        return declarada;
     }
 
     // Baja lógica: se conservan los datos para el historial de batallas y torneos.

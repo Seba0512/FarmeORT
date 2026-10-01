@@ -61,6 +61,23 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
             usuario.Property(u => u.ContrasenaHash).HasMaxLength(LargoMaximoContrasenaHash).IsRequired();
             usuario.Property(u => u.Rol).HasConversion<string>().HasMaxLength(LargoMaximoRol);
             usuario.HasData(AdministradorPrecargado);
+
+            // El repertorio se lee y se escribe a través del campo: la colección pública es de solo lectura.
+            usuario.Navigation(u => u.Repertorio).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<SkillDeclarada>(declarada =>
+        {
+            // La clave compuesta impide declarar dos veces la misma skill también en la base.
+            declarada.HasKey(d => new { d.JugadorId, d.SkillId });
+            declarada.HasOne<Usuario>()
+                .WithMany(u => u.Repertorio)
+                .HasForeignKey(d => d.JugadorId)
+                .OnDelete(DeleteBehavior.Cascade);
+            declarada.HasOne(d => d.Skill)
+                .WithMany()
+                .HasForeignKey(d => d.SkillId)
+                .OnDelete(DeleteBehavior.Restrict);
         });
 
         modelBuilder.Entity<Sesion>(sesion =>
