@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Sesiones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
@@ -22,6 +23,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     private const int LargoMaximoNombreTorneo = 60;
     private const int LargoMaximoDescripcionTorneo = 500;
     private const int LargoMaximoEstadoTorneo = 20;
+    private const int LargoMaximoEstadoInscripcion = 20;
 
     // Objeto anónimo porque HasData necesita fijar el Id, que el constructor de Usuario no recibe.
     // Hash PBKDF2 (formato de HasheadorContrasenas) calculado una sola vez, para que la migración no cambie en cada build.
@@ -46,6 +48,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     public DbSet<Skill> Skills => Set<Skill>();
 
     public DbSet<Torneo> Torneos => Set<Torneo>();
+
+    public DbSet<Inscripcion> Inscripciones => Set<Inscripcion>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -119,6 +123,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         });
 
         ConfigurarSkillsObligatorias(modelBuilder);
+        ConfigurarInscripciones(modelBuilder);
     }
 
     // Muchos a muchos sin datos propios: una skill puede ser obligatoria en varios torneos (D-40).
@@ -135,5 +140,24 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         modelBuilder.Entity<Torneo>()
             .Navigation(t => t.SkillsObligatorias)
             .UsePropertyAccessMode(PropertyAccessMode.Field);
+    }
+
+    // Inscripciones (D-41): torneos y jugadores no se borran físicamente, así que las FK son Restrict.
+    private static void ConfigurarInscripciones(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Inscripcion>(inscripcion =>
+        {
+            inscripcion.HasKey(i => i.Id);
+            inscripcion.Property(i => i.Estado).HasConversion<string>().HasMaxLength(LargoMaximoEstadoInscripcion);
+            inscripcion.HasIndex(i => new { i.TorneoId, i.JugadorId });
+            inscripcion.HasOne(i => i.Torneo)
+                .WithMany()
+                .HasForeignKey(i => i.TorneoId)
+                .OnDelete(DeleteBehavior.Restrict);
+            inscripcion.HasOne(i => i.Jugador)
+                .WithMany()
+                .HasForeignKey(i => i.JugadorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
     }
 }
