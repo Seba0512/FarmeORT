@@ -71,6 +71,17 @@ public sealed class RepertorioTests
     }
 
     [TestMethod]
+    public void QuitarSkill_SkillDeclarada_QuitaSoloEsaSkill()
+    {
+        _jugador.DeclararSkill(CrearSkill(3), 4, FechaActual);
+        _jugador.DeclararSkill(CrearSkill(5), 2, FechaActual);
+
+        _jugador.QuitarSkill(3);
+
+        Assert.AreEqual(5, _jugador.Repertorio.Single().SkillId);
+    }
+
+    [TestMethod]
     public void QuitarSkill_SkillNoDeclarada_LanzaSkillNoDeclaradaSinCambiarElRepertorio()
     {
         _jugador.DeclararSkill(CrearSkill(3), 4, FechaActual);
