@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Sesiones;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
@@ -333,6 +334,29 @@ public sealed class RepositorioUsuariosTests
 
         Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Actualizar(usuario));
         AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Eliminar_UsuarioConSesiones_GuardaLaBajaYCierraSoloSusSesiones()
+    {
+        var guardado = CrearUsuario(Email, Rol.Jugador, "hash-jugador");
+        var otro = CrearUsuario("otro@farmeort.com", Rol.Jugador, "hash-otro");
+        var sesionDelOtro = Guid.NewGuid();
+        _baseDeDatos.Contexto.Sesiones.AddRange(
+            new Sesion(Guid.NewGuid(), guardado),
+            new Sesion(Guid.NewGuid(), guardado),
+            new Sesion(sesionDelOtro, otro));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var usuario = _repositorio.ObtenerPorId(guardado.Id)!;
+        usuario.Eliminar();
+
+        _repositorio.Eliminar(usuario);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.IsTrue(_baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id).Eliminado);
+        Assert.IsFalse(_baseDeDatos.Contexto.Sesiones.Any(s => s.UsuarioId == usuario.Id));
+        Assert.IsTrue(_baseDeDatos.Contexto.Sesiones.Any(s => s.Token == sesionDelOtro));
     }
 
     // Deja el usuario guardado y cargado por el repositorio, como lo recibe el servicio antes de modificarlo.
