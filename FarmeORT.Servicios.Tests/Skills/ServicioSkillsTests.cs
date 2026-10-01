@@ -142,6 +142,15 @@ public sealed class ServicioSkillsTests
         Assert.IsEmpty(skills);
     }
 
+    [TestMethod]
+    public void Modificar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
+    {
+        _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(() => _servicio.Modificar(99, CrearRequest()));
+        _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);

@@ -11,4 +11,6 @@ public interface IRepositorioSkills
     bool ExistePorCodigo(string codigo);
 
     void Agregar(Skill skill);
+
+    void Actualizar(Skill skill);
 }
