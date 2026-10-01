@@ -1,10 +1,15 @@
+using FarmeORT.WebAPI.Filtros;
+using FarmeORT.WebAPI.Validaciones;
+
 namespace FarmeORT.WebAPI;
 
 internal static class RegistroWebApi
 {
     public static IServiceCollection AgregarControllersConFiltros(this IServiceCollection servicios)
     {
-        _ = servicios;
-        throw new NotImplementedException();
+        servicios
+            .AddControllers(opciones => opciones.Filters.Add<FiltroExcepciones>())
+            .ConfigureApiBehaviorOptions(opciones => opciones.InvalidModelStateResponseFactory = RespuestaValidacion.Crear);
+        return servicios;
     }
 }
