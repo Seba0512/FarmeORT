@@ -18,6 +18,7 @@ public sealed class RegistroDependenciasTests
     [DataRow(typeof(IServicioSkills))]
     [DataRow(typeof(IServicioTorneos))]
     [DataRow(typeof(IServicioRepertorio))]
+    [DataRow(typeof(IServicioSkillsObligatorias))]
     public void AgregarDependencias_ServicioQueUsaLaApi_SeResuelveConLifetimesValidos(Type servicio)
     {
         var servicios = new ServiceCollection();
