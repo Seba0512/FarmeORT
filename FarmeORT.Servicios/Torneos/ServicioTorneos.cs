@@ -30,6 +30,8 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Agregar(torneo);
+
+        // Un torneo recién creado todavía no tiene inscripciones.
         return CrearResponse<TorneoResponse>(torneo, 0);
     }
 
@@ -95,7 +97,7 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo, 0);
+        return CrearResponse<TorneoResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }
 
     public TorneoResponse Cancelar(int id)
