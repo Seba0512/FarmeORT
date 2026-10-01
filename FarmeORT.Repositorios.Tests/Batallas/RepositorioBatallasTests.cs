@@ -118,6 +118,21 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(9)]
+    public void Persistencia_TurnoFueraDeUnoAOcho_RechazaDatos(int turno)
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = new Skill("AURASTARE", "Aura Stare", "Mirada fija para farmear aura en la batalla.", CategoriaSkill.Gestual, 2) { Id = 4 };
+        _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, turno, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _baseDeDatos.Contexto.SaveChanges());
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
+    }
+
     private Batalla GuardarBatallaConHistorial()
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
