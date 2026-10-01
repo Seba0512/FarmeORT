@@ -125,6 +125,12 @@ public sealed class Torneo
         _skillsObligatorias.Add(skill);
     }
 
+    public void QuitarSkillObligatoria(int skillId)
+    {
+        _ = skillId;
+        throw new NotImplementedException();
+    }
+
     // Valida todo antes de asignar: un dato inválido no deja el torneo a medio cambiar.
     [MemberNotNull(nameof(Organizador))]
     private void AsignarDatos(

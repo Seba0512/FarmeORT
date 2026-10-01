@@ -63,6 +63,18 @@ public sealed class ServicioSkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void Quitar_SkillAsociada_LaQuitaDelTorneoYGuarda()
+    {
+        _torneo.AsociarSkillObligatoria(_skill);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
+
+        _servicio.Quitar(TorneoId, SkillId, OrganizadorId);
+
+        _repositorioTorneos.Verify(r => r.Actualizar(It.Is<Torneo>(t => t == _torneo && t.SkillsObligatorias.Count == 0)), Times.Once);
+    }
+
+    [TestMethod]
     public void Asociar_TorneoInexistente_LanzaTorneoNoEncontradoSinGuardar()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
