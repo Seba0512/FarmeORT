@@ -37,7 +37,7 @@ internal sealed class ServicioTorneos(
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
     {
         _ = esAnonimo;
-        var torneo = repositorioTorneos.ObtenerPorId(id)!;
+        var torneo = ObtenerTorneoExistente(id);
         return CrearResponse<TorneoDetalleResponse>(torneo);
     }
 
@@ -59,6 +59,17 @@ internal sealed class ServicioTorneos(
     {
         _ = id;
         throw new NotImplementedException();
+    }
+
+    private Torneo ObtenerTorneoExistente(int id)
+    {
+        var torneo = repositorioTorneos.ObtenerPorId(id);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
+        return torneo;
     }
 
     private Usuario ObtenerUsuarioExistente(int id)
