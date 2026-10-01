@@ -1,28 +1,18 @@
 namespace FarmeORT.Dominio.Skills;
 
-public sealed class Skill
+public sealed class Skill(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
 {
-    public Skill(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
-    {
-        _ = codigo;
-        _ = nombre;
-        _ = descripcion;
-        _ = categoria;
-        _ = dificultad;
-        throw new NotImplementedException();
-    }
-
     public int Id { get; init; }
 
-    public string Codigo { get; private set; } = string.Empty;
+    public string Codigo { get; private set; } = codigo;
 
-    public string Nombre { get; private set; } = string.Empty;
+    public string Nombre { get; private set; } = nombre;
 
-    public string Descripcion { get; private set; } = string.Empty;
+    public string Descripcion { get; private set; } = descripcion;
 
-    public CategoriaSkill Categoria { get; private set; }
+    public CategoriaSkill Categoria { get; private set; } = categoria;
 
-    public int Dificultad { get; private set; }
+    public int Dificultad { get; private set; } = dificultad;
 
-    public bool Activa { get; private set; }
+    public bool Activa { get; private set; } = true;
 }

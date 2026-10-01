@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Skills;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IServicios.Skills;
@@ -8,9 +9,10 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 {
     public SkillResponse Crear(SkillRequest request)
     {
-        _ = repositorioSkills;
-        _ = request;
-        throw new NotImplementedException();
+        var categoria = Enum.Parse<CategoriaSkill>(request.Categoria);
+        var skill = new Skill(request.Codigo, request.Nombre, request.Descripcion, categoria, request.Dificultad.GetValueOrDefault());
+        repositorioSkills.Agregar(skill);
+        return CrearResponse(skill);
     }
 
     public SkillResponse ObtenerPorId(int id)
@@ -37,5 +39,19 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         _ = id;
         _ = request;
         throw new NotImplementedException();
+    }
+
+    private static SkillResponse CrearResponse(Skill skill)
+    {
+        return new SkillResponse
+        {
+            Id = skill.Id,
+            Codigo = skill.Codigo,
+            Nombre = skill.Nombre,
+            Descripcion = skill.Descripcion,
+            Categoria = skill.Categoria.ToString(),
+            Dificultad = skill.Dificultad,
+            Activa = skill.Activa,
+        };
     }
 }
