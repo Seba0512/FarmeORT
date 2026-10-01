@@ -69,6 +69,26 @@ public sealed class FiltroExcepcionesTests
     }
 
     [TestMethod]
+    [DataRow(typeof(TorneoNoEncontradoException), StatusCodes.Status404NotFound, "TOURNAMENT_NOT_FOUND", "No existe un torneo con ese id.")]
+    [DataRow(typeof(CodigoTorneoYaExisteException), StatusCodes.Status409Conflict, "TOURNAMENT_CODE_ALREADY_EXISTS", "Ya existe un torneo con ese código.")]
+    [DataRow(typeof(TorneoNoModificableException), StatusCodes.Status409Conflict, "TOURNAMENT_NOT_MODIFIABLE", "Solo se puede modificar un torneo Abierto.")]
+    [DataRow(typeof(TorneoNoCancelableException), StatusCodes.Status409Conflict, "TOURNAMENT_NOT_CANCELLABLE", "Solo se puede cancelar un torneo Abierto o En curso.")]
+    public void OnException_ErrorDeTorneo_DevuelveSuStatusYCodigo(Type tipo, int status, string codigo, string mensaje)
+    {
+        var contexto = CrearContexto((Exception)Activator.CreateInstance(tipo)!);
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(status, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual(codigo, error.ErrorCode);
+        Assert.AreEqual(mensaje, error.UserMessage);
+    }
+
+    [TestMethod]
     public void OnException_DatosInvalidos_Devuelve400ConElMensajeDeLaRegla()
     {
         var contexto = CrearContexto(new DatosInvalidosException("El usuario debe tener 13 años o más."));
