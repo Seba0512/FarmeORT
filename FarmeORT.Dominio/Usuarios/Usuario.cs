@@ -101,7 +101,13 @@ public sealed partial class Usuario
 
     public void QuitarSkill(int skillId)
     {
-        _repertorio.RemoveAll(d => d.SkillId == skillId);
+        var declarada = _repertorio.SingleOrDefault(d => d.SkillId == skillId);
+        if(declarada == null)
+        {
+            throw new SkillNoDeclaradaException();
+        }
+
+        _repertorio.Remove(declarada);
     }
 
     // Baja lógica: se conservan los datos para el historial de batallas y torneos.
