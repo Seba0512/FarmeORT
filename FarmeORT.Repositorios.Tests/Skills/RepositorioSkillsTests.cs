@@ -124,6 +124,20 @@ public sealed class RepositorioSkillsTests
         CollectionAssert.AreEqual(new[] { "SIXSEVEN", "AURASTARE" }, skills.Select(s => s.Codigo).ToArray());
     }
 
+    [TestMethod]
+    [DataRow(true, "SIXSEVEN")]
+    [DataRow(false, "TRALALERO")]
+    public void Listar_FiltroPorEstado_DevuelveSoloLasDeEseEstado(bool activa, string codigoEsperado)
+    {
+        var inactiva = CrearSkill("TRALALERO");
+        inactiva.Desactivar();
+        GuardarSkills(CrearSkill("SIXSEVEN"), inactiva);
+
+        var skills = _repositorio.Listar(SinFiltros() with { Activa = activa });
+
+        CollectionAssert.AreEqual(new[] { codigoEsperado }, skills.Select(s => s.Codigo).ToArray());
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
