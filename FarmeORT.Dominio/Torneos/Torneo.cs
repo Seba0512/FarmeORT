@@ -72,11 +72,7 @@ public sealed class Torneo
         Usuario organizador,
         DateOnly fechaActual)
     {
-        // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
-        if(Estado != EstadoTorneo.Abierto)
-        {
-            throw new TorneoNoModificableException();
-        }
+        ValidarModificable();
 
         // Una fecha de inicio que ya pasó y no cambia no impide editar el resto (D-37).
         if(fechaInicio != FechaInicio)
@@ -100,10 +96,7 @@ public sealed class Torneo
 
     public void AsociarSkillObligatoria(Skill skill)
     {
-        if(Estado != EstadoTorneo.Abierto)
-        {
-            throw new TorneoNoModificableException();
-        }
+        ValidarModificable();
 
         // Una skill inactiva no se agrega como obligatoria nueva; las ya asociadas se conservan (no es retroactivo).
         if(!skill.Activa)
@@ -127,12 +120,18 @@ public sealed class Torneo
 
     public void QuitarSkillObligatoria(int skillId)
     {
+        ValidarModificable();
+
+        _skillsObligatorias.RemoveAll(s => s.Id == skillId);
+    }
+
+    // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
+    private void ValidarModificable()
+    {
         if(Estado != EstadoTorneo.Abierto)
         {
             throw new TorneoNoModificableException();
         }
-
-        _skillsObligatorias.RemoveAll(s => s.Id == skillId);
     }
 
     // Valida todo antes de asignar: un dato inválido no deja el torneo a medio cambiar.
