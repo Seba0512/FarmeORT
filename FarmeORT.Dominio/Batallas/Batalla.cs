@@ -7,6 +7,8 @@ namespace FarmeORT.Dominio.Batallas;
 
 public sealed class Batalla
 {
+    private const int LanzamientosTotales = 8;
+
     private readonly List<Lanzamiento> _lanzamientos = [];
 
     public Batalla(Torneo torneo, int numeroRonda, Usuario jugador1, Usuario jugador2, ISorteo sorteo)
@@ -58,6 +60,12 @@ public sealed class Batalla
         var lanzamiento = new Lanzamiento(this, _lanzamientos.Count + 1, jugador, skill, fecha);
         _lanzamientos.Add(lanzamiento);
         JugadorTurnoId = jugador.Id == Jugador1Id ? Jugador2Id : Jugador1Id;
+        if(_lanzamientos.Count == LanzamientosTotales)
+        {
+            Estado = EstadoBatalla.EnArbitraje;
+            JugadorTurnoId = null;
+        }
+
         return lanzamiento;
     }
 
