@@ -89,7 +89,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
                 throw new EmailYaExisteException();
             }
 
-            if(ExistePorNickname(usuario.Nickname))
+            if(contexto.Usuarios.Any(u => u.Nickname == usuario.Nickname && u.Id != usuario.Id))
             {
                 throw new NicknameYaExisteException();
             }
