@@ -1,6 +1,8 @@
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Repositorios.Usuarios;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Usuarios;
 
@@ -229,6 +231,56 @@ public sealed class RepositorioUsuariosTests
         Assert.AreEqual(Rol.Jugador, guardado.Rol);
         Assert.AreEqual("hash-ana", guardado.ContrasenaHash);
         Assert.AreEqual(1200, guardado.Elo);
+    }
+
+    [TestMethod]
+    public void Agregar_EmailOcupadoDespuesDeConsultar_LanzaEmailYaExisteSinDuplicar()
+    {
+        Assert.IsNull(_repositorio.ObtenerPorEmail(Email));
+        _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-existente"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var nuevo = new Usuario("Ana", "Pérez", Email, "otronickname", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-nuevo", new DateOnly(2026, 9, 30));
+
+        Assert.ThrowsExactly<EmailYaExisteException>(() => _repositorio.Agregar(nuevo));
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Usuarios.Count(u => u.Email == Email));
+        AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Agregar_NicknameOcupadoDespuesDeConsultar_LanzaNicknameYaExisteSinDuplicar()
+    {
+        Assert.IsFalse(_repositorio.ExistePorNickname("jugador"));
+        _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-existente"));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var nuevo = new Usuario("Ana", "Pérez", "otro@farmeort.com", "jugador", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-nuevo", new DateOnly(2026, 9, 30));
+
+        Assert.ThrowsExactly<NicknameYaExisteException>(() => _repositorio.Agregar(nuevo));
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Usuarios.Count(u => u.Nickname == "jugador"));
+        AssertPuedeGuardarOtraAlta();
+    }
+
+    [TestMethod]
+    public void Agregar_ErrorDeBaseSinDuplicados_PropagaDbUpdateException()
+    {
+        var nuevo = new Usuario("Ana", "Pérez", "otro@farmeort.com", "otronickname", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-nuevo", new DateOnly(2026, 9, 30))
+        {
+            Id = 1,
+        };
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Agregar(nuevo));
+        Assert.IsFalse(_baseDeDatos.Contexto.Usuarios.Any(u => u.Email == nuevo.Email));
+        AssertPuedeGuardarOtraAlta();
+    }
+
+    private void AssertPuedeGuardarOtraAlta()
+    {
+        var siguiente = CrearUsuario("siguiente@farmeort.com", Rol.Jugador, "hash-siguiente");
+
+        _repositorio.Agregar(siguiente);
+
+        Assert.IsTrue(_baseDeDatos.Contexto.Usuarios.Any(u => u.Id == siguiente.Id && u.Email == siguiente.Email));
     }
 
     private static Usuario CrearUsuario(

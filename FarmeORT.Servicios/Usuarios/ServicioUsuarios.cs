@@ -12,11 +12,42 @@ internal sealed class ServicioUsuarios(
     IHasheadorContrasenas hasheadorContrasenas,
     TimeProvider reloj) : IServicioUsuarios
 {
+    public UsuarioResponse RegistrarJugador(RegistroJugadorRequest request)
+    {
+        var fechaNacimiento = ObtenerFechaNacimiento(request);
+        ReglaContrasena.Validar(request.Contrasena);
+        return CrearUsuario(request, Rol.Jugador, fechaNacimiento);
+    }
+
     public UsuarioResponse Crear(UsuarioAdminRequest request)
     {
         ReglaContrasena.Validar(request.Contrasena);
         var rol = ConvertirRol(request.Rol);
+        var fechaNacimiento = ObtenerFechaNacimiento(request);
+        return CrearUsuario(request, rol, fechaNacimiento);
+    }
 
+    public UsuarioResponse ObtenerPorId(int id)
+    {
+        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        return CrearResponse(usuario);
+    }
+
+    public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
+    {
+        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, filtro.Limit, filtro.Offset);
+        var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
+        return [.. usuarios.Select(CrearResponse)];
+    }
+
+    private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
+    {
+        return request.FechaNacimiento
+            ?? throw new DatosInvalidosException("La fecha de nacimiento es obligatoria.");
+    }
+
+    private UsuarioResponse CrearUsuario(RegistroJugadorRequest request, Rol rol, DateOnly fechaNacimiento)
+    {
         if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
         {
             throw new EmailYaExisteException();
@@ -34,25 +65,12 @@ internal sealed class ServicioUsuarios(
             request.Apellido,
             request.Email,
             request.Nickname,
-            request.FechaNacimiento,
+            fechaNacimiento,
             rol,
             contrasenaHash,
             fechaActual);
         repositorioUsuarios.Agregar(usuario);
         return CrearResponse(usuario);
-    }
-
-    public UsuarioResponse ObtenerPorId(int id)
-    {
-        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        return CrearResponse(usuario);
-    }
-
-    public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
-    {
-        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, filtro.Limit, filtro.Offset);
-        var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
-        return [.. usuarios.Select(CrearResponse)];
     }
 
     private static Rol ConvertirRol(string rol)
