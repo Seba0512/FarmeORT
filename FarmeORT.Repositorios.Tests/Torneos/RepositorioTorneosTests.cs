@@ -76,6 +76,28 @@ public sealed class RepositorioTorneosTests
         Assert.IsNull(resultado);
     }
 
+    [TestMethod]
+    [DataRow("COPAAURA")]
+    [DataRow("copaaura")]
+    public void ExistePorCodigo_CodigoGuardado_DevuelveTrueSinDistinguirMayusculas(string codigo)
+    {
+        GuardarTorneos(CrearTorneo("COPAAURA"));
+
+        var existe = _repositorio.ExistePorCodigo(codigo);
+
+        Assert.IsTrue(existe);
+    }
+
+    [TestMethod]
+    public void ExistePorCodigo_CodigoInexistente_DevuelveFalse()
+    {
+        GuardarTorneos(CrearTorneo("COPAAURA"));
+
+        var existe = _repositorio.ExistePorCodigo("COPAFUEGO");
+
+        Assert.IsFalse(existe);
+    }
+
     private void GuardarTorneos(params Torneo[] torneos)
     {
         _baseDeDatos.Contexto.Torneos.AddRange(torneos);
