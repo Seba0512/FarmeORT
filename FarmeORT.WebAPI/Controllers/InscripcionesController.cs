@@ -23,12 +23,14 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
     }
 
     [HttpGet]
+    [Autenticacion]
     public IActionResult Listar([FromQuery] FiltroInscripcionesRequest filtro)
     {
         return Ok(servicioInscripciones.Listar(filtro, Sesion.UsuarioId, Sesion.Rol));
     }
 
     [HttpGet("{id:int}")]
+    [Autenticacion]
     public IActionResult ObtenerPorId(int id)
     {
         return Ok(servicioInscripciones.ObtenerPorId(id, Sesion.UsuarioId, Sesion.Rol));
