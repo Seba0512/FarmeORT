@@ -129,6 +129,14 @@ public sealed class ServicioTorneosTests
         Assert.AreEqual("Laura Gomez", response.Organizador);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_TorneoInexistente_LanzaTorneoNoEncontrado()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.ObtenerPorId(99, esAnonimo: false));
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
