@@ -23,6 +23,11 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
         {
             contexto.SaveChanges();
         }
+        catch(DbUpdateConcurrencyException)
+        {
+            contexto.ChangeTracker.Clear();
+            throw new BatallaModificadaException();
+        }
         catch(DbUpdateException)
         {
             var nuevos = contexto.ChangeTracker.Entries<Lanzamiento>()
