@@ -32,6 +32,16 @@ public sealed class RepertorioTests
         Assert.IsEmpty(_jugador.Repertorio);
     }
 
+    [TestMethod]
+    public void DeclararSkill_SkillYaDeclarada_LanzaSkillYaDeclaradaSinDuplicarla()
+    {
+        _jugador.DeclararSkill(CrearSkill(3), 4, FechaActual);
+
+        Assert.ThrowsExactly<SkillYaDeclaradaException>(() => _jugador.DeclararSkill(CrearSkill(3), 2, FechaActual));
+        Assert.HasCount(1, _jugador.Repertorio);
+        Assert.AreEqual(4, _jugador.Repertorio.Single().Nivel);
+    }
+
     private static Skill CrearSkill(int id)
     {
         return new Skill("SIXSEVEN", "Six-Seven", Descripcion, CategoriaSkill.Gestual, 2)
