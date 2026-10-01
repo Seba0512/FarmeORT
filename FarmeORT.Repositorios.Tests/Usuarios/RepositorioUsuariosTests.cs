@@ -323,6 +323,18 @@ public sealed class RepositorioUsuariosTests
         AssertPuedeGuardarOtraAlta();
     }
 
+    [TestMethod]
+    public void Actualizar_ErrorDeBaseConservandoEmailYNickname_PropagaDbUpdateException()
+    {
+        var usuario = GuardarUsuario(Email, "jugador");
+        _baseDeDatos.Contexto.Database.ExecuteSqlRaw(
+            "CREATE TRIGGER RechazaActualizaciones BEFORE UPDATE ON Usuarios BEGIN SELECT RAISE(ABORT, 'error de base'); END;");
+        usuario.Modificar("Carla", "Gómez", Email, "jugador", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Actualizar(usuario));
+        AssertPuedeGuardarOtraAlta();
+    }
+
     // Deja el usuario guardado y cargado por el repositorio, como lo recibe el servicio antes de modificarlo.
     private Usuario GuardarUsuario(string email, string nickname)
     {
