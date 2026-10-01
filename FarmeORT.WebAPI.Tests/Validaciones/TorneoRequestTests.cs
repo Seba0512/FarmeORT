@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using FarmeORT.DTOs.Torneos;
 
 namespace FarmeORT.WebAPI.Tests.Validaciones;
@@ -17,6 +18,55 @@ public sealed class TorneoRequestTests
         var request = CrearRequest(codigo: codigo);
 
         AssertCampoInvalido(request, nameof(TorneoRequest.Codigo));
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(4)]
+    [DataRow(61)]
+    public void Validar_NombreFueraDeRango_EsInvalido(int largo)
+    {
+        var request = CrearRequest(nombre: new string('a', largo));
+
+        AssertCampoInvalido(request, nameof(TorneoRequest.Nombre));
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(19)]
+    [DataRow(501)]
+    public void Validar_DescripcionFueraDeRango_EsInvalida(int largo)
+    {
+        var request = CrearRequest(descripcion: new string('a', largo));
+
+        AssertCampoInvalido(request, nameof(TorneoRequest.Descripcion));
+    }
+
+    [TestMethod]
+    [DataRow(2)]
+    [DataRow(128)]
+    public void Validar_CupoFueraDeRango_EsInvalido(int cupo)
+    {
+        var request = CrearRequest(cupo: cupo);
+
+        AssertCampoInvalido(request, nameof(TorneoRequest.Cupo));
+    }
+
+    [TestMethod]
+    [DataRow(nameof(TorneoRequest.FechaInicio))]
+    [DataRow(nameof(TorneoRequest.FechaFin))]
+    [DataRow(nameof(TorneoRequest.Cupo))]
+    [DataRow(nameof(TorneoRequest.OrganizadorId))]
+    public void Validar_JsonSinDatosObligatorios_RechazaElCampoOmitido(string campo)
+    {
+        var json = """
+            { "codigo": "COPAAURA", "nombre": "Copa Aura",
+              "descripcion": "Torneo eliminatorio de batallas de aura." }
+            """;
+        var request = JsonSerializer.Deserialize<TorneoRequest>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.IsNotNull(request);
+        AssertCampoInvalido(request, campo);
     }
 
     private static TorneoRequest CrearRequest(
