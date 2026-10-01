@@ -244,6 +244,7 @@ public sealed class RepositorioUsuariosTests
 
         Assert.ThrowsExactly<EmailYaExisteException>(() => _repositorio.Agregar(nuevo));
         Assert.AreEqual(1, _baseDeDatos.Contexto.Usuarios.Count(u => u.Email == Email));
+        AssertPuedeGuardarOtraAlta();
     }
 
     [TestMethod]
@@ -257,6 +258,7 @@ public sealed class RepositorioUsuariosTests
 
         Assert.ThrowsExactly<NicknameYaExisteException>(() => _repositorio.Agregar(nuevo));
         Assert.AreEqual(1, _baseDeDatos.Contexto.Usuarios.Count(u => u.Nickname == "jugador"));
+        AssertPuedeGuardarOtraAlta();
     }
 
     [TestMethod]
@@ -269,6 +271,16 @@ public sealed class RepositorioUsuariosTests
 
         Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Agregar(nuevo));
         Assert.IsFalse(_baseDeDatos.Contexto.Usuarios.Any(u => u.Email == nuevo.Email));
+        AssertPuedeGuardarOtraAlta();
+    }
+
+    private void AssertPuedeGuardarOtraAlta()
+    {
+        var siguiente = CrearUsuario("siguiente@farmeort.com", Rol.Jugador, "hash-siguiente");
+
+        _repositorio.Agregar(siguiente);
+
+        Assert.IsTrue(_baseDeDatos.Contexto.Usuarios.Any(u => u.Id == siguiente.Id && u.Email == siguiente.Email));
     }
 
     private static Usuario CrearUsuario(
