@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Skills;
 using FarmeORT.DTOs.Skills;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.Servicios.Skills;
 using Moq;
@@ -54,6 +55,15 @@ public sealed class ServicioSkillsTests
         Assert.AreEqual(CategoriasSkill.Gestual, response.Categoria);
         Assert.AreEqual(2, response.Dificultad);
         Assert.IsTrue(response.Activa);
+    }
+
+    [TestMethod]
+    public void Crear_CodigoExistente_LanzaCodigoSkillYaExisteSinGuardar()
+    {
+        _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(true);
+
+        Assert.ThrowsExactly<CodigoSkillYaExisteException>(() => _servicio.Crear(CrearRequest()));
+        _repositorioSkills.Verify(r => r.Agregar(It.IsAny<Skill>()), Times.Never);
     }
 
     private void ConfigurarAltaValida()
