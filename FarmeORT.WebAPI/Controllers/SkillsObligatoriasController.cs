@@ -9,6 +9,13 @@ namespace FarmeORT.WebAPI.Controllers;
 [Route("api/v1/torneos/{torneoId:int}/skills-obligatorias")]
 public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias servicioSkillsObligatorias) : ControllerBase
 {
+    [HttpGet]
+    public IActionResult Listar(int torneoId)
+    {
+        _ = torneoId;
+        throw new NotImplementedException();
+    }
+
     [HttpPost]
     public IActionResult Asociar(int torneoId, [FromBody] SkillObligatoriaRequest request)
     {

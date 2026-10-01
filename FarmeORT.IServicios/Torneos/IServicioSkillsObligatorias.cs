@@ -5,5 +5,7 @@ namespace FarmeORT.IServicios.Torneos;
 
 public interface IServicioSkillsObligatorias
 {
+    IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo);
+
     SkillResponse Asociar(int torneoId, SkillObligatoriaRequest request, int organizadorId);
 }

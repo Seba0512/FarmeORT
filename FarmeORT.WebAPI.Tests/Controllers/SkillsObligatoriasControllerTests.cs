@@ -47,6 +47,26 @@ public sealed class SkillsObligatoriasControllerTests
         _servicio.Verify(s => s.Asociar(TorneoId, request, OrganizadorId), Times.Once);
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Listar_TorneoVisible_Devuelve200IndicandoSiConsultaUnAnonimo(bool autenticado)
+    {
+        if(autenticado)
+        {
+            AutenticarOrganizador();
+        }
+
+        IReadOnlyList<SkillResponse> skills = [CrearSkill()];
+        _servicio.Setup(s => s.Listar(TorneoId, !autenticado)).Returns(skills);
+
+        var resultado = _controller.Listar(TorneoId) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(skills, resultado.Value);
+    }
+
     private void AutenticarOrganizador()
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = OrganizadorId, Rol = Roles.Organizador };
