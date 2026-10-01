@@ -191,6 +191,19 @@ public sealed class BatallaTests
         Assert.AreEqual(inicialId, batalla.JugadorTurnoId);
     }
 
+    [TestMethod]
+    public void Lanzar_SkillNoDeclarada_RechazaSinConsumirTurno()
+    {
+        var batalla = CrearBatallaConHistorial(0);
+        var skill = CrearSkill(99);
+
+        Assert.ThrowsExactly<SkillFueraDelRepertorioException>(
+            () => batalla.Lanzar(batalla.Jugador1, skill, DateTimeOffset.UtcNow));
+
+        Assert.HasCount(0, batalla.Lanzamientos);
+        Assert.AreEqual(7, batalla.JugadorTurnoId);
+    }
+
     private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
