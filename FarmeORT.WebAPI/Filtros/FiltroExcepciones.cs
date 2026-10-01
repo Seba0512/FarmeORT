@@ -56,6 +56,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         // Persona B: batallas y lanzamientos.
         [typeof(BatallaNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "BATTLE_NOT_FOUND", "No existe una batalla con ese id."),
+        [typeof(BatallaNoCancelableException)] =
+            new(StatusCodes.Status409Conflict, "BATTLE_NOT_CANCELLABLE", "Solo se puede cancelar una batalla Pendiente o En arbitraje."),
     };
 
     public void OnException(ExceptionContext context)
