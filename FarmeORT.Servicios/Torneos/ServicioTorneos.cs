@@ -36,8 +36,14 @@ internal sealed class ServicioTorneos(
 
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
     {
-        _ = esAnonimo;
         var torneo = ObtenerTorneoExistente(id);
+
+        // Para el anónimo un torneo cancelado no existe: se responde igual que si no estuviera (D-36).
+        if(esAnonimo && torneo.Estado == EstadoTorneo.Cancelado)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
         return CrearResponse<TorneoDetalleResponse>(torneo);
     }
 
