@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Repertorio;
 using FarmeORT.DTOs.Skills;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Servicios.Repertorio;
@@ -72,6 +73,17 @@ public sealed class ServicioRepertorioTests
         Assert.IsTrue(response.Activa);
         Assert.AreEqual(4, response.Nivel);
         Assert.AreEqual(FechaActual, response.FechaDeclaracion);
+    }
+
+    [TestMethod]
+    public void Declarar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
+        _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(
+            () => _servicio.Declarar(JugadorId, new SkillDeclaradaRequest { SkillId = 99, Nivel = 4 }));
+        _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.IsAny<Usuario>()), Times.Never);
     }
 
     private void ConfigurarDeclaracionValida()
