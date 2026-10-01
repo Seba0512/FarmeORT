@@ -23,4 +23,11 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
         var sesion = HttpContext.ObtenerSesionAutenticada();
         return Ok(servicioInscripciones.Listar(filtro, sesion.UsuarioId, sesion.Rol));
     }
+
+    [HttpGet("{id:int}")]
+    public IActionResult ObtenerPorId(int id)
+    {
+        _ = id;
+        throw new NotImplementedException();
+    }
 }

@@ -60,6 +60,20 @@ public sealed class InscripcionesControllerTests
         Assert.AreSame(inscripciones, resultado.Value);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_InscripcionVisible_Devuelve200ConLaInscripcion()
+    {
+        Autenticar(1, Roles.Administrador);
+        var inscripcion = CrearResponse();
+        _servicio.Setup(s => s.ObtenerPorId(12, 1, Roles.Administrador)).Returns(inscripcion);
+
+        var resultado = _controller.ObtenerPorId(12) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(inscripcion, resultado.Value);
+    }
+
     private void Autenticar(int usuarioId, string rol)
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = rol };
