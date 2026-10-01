@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Inscripciones;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -169,6 +170,17 @@ public sealed class ServicioInscripcionesTests
 
         Assert.ThrowsExactly<TorneoNoAbiertoException>(() => _servicio.Cancelar(12, JugadorId));
         _repositorioInscripciones.Verify(r => r.Actualizar(It.IsAny<Inscripcion>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_ConsultaElAdministrador_DevuelveLaInscripcion()
+    {
+        _repositorioInscripciones.Setup(r => r.ObtenerPorId(12)).Returns(CrearInscripcion());
+
+        var response = _servicio.ObtenerPorId(12, 1, Roles.Administrador);
+
+        Assert.AreEqual(12, response.Id);
+        Assert.AreEqual("anaperez", response.Nickname);
     }
 
     private void ConfigurarInscripcionValida()
