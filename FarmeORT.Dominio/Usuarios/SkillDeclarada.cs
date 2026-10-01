@@ -1,11 +1,20 @@
 using FarmeORT.Dominio.Skills;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Usuarios;
 
 public sealed class SkillDeclarada
 {
+    private const int NivelMinimo = 1;
+    private const int NivelMaximo = 5;
+
     public SkillDeclarada(Usuario jugador, Skill skill, int nivel, DateOnly fechaDeclaracion)
     {
+        if(nivel < NivelMinimo || nivel > NivelMaximo)
+        {
+            throw new DatosInvalidosException("El nivel debe ser un entero entre 1 y 5.");
+        }
+
         JugadorId = jugador.Id;
         SkillId = skill.Id;
         Skill = skill;
