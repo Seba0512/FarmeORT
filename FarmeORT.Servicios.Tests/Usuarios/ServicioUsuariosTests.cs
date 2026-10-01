@@ -194,6 +194,16 @@ public sealed class ServicioUsuariosTests
         Assert.IsEmpty(usuarios);
     }
 
+    [TestMethod]
+    public void Listar_OffsetNegativo_EmpiezaDesdeElPrincipio()
+    {
+        _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0))).Returns([]);
+
+        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Offset = -5 });
+
+        Assert.IsEmpty(usuarios);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
