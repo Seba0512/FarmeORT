@@ -211,6 +211,29 @@ public sealed class ServicioInscripcionesTests
         Assert.AreEqual(12, response.Id);
     }
 
+    [TestMethod]
+    public void Listar_ConsultaElAdministrador_DevuelveLasInscripcionesConLosFiltrosDelPedido()
+    {
+        var desde = new DateOnly(2026, 10, 1);
+        var hasta = new DateOnly(2026, 10, 31);
+        var filtro = new FiltroInscripciones(TorneoId, EstadoInscripcion.Aceptada, desde, hasta, null, null, 10, 5);
+        _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([CrearInscripcion()]);
+        var request = new FiltroInscripcionesRequest
+        {
+            TorneoId = TorneoId,
+            Estado = nameof(EstadoInscripcion.Aceptada),
+            FechaDesde = desde,
+            FechaHasta = hasta,
+            Limit = 10,
+            Offset = 5,
+        };
+
+        var inscripciones = _servicio.Listar(request, 1, Roles.Administrador);
+
+        Assert.HasCount(1, inscripciones);
+        Assert.AreEqual(12, inscripciones[0].Id);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
