@@ -52,6 +52,37 @@ public sealed class RepositorioTorneosTests
         Assert.AreEqual(_organizador.Id, guardado.OrganizadorId);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_IdExistente_DevuelveElTorneoConSuOrganizador()
+    {
+        var otro = CrearTorneo("COPAFUEGO");
+        var torneo = CrearTorneo("COPAAURA");
+        GuardarTorneos(otro, torneo);
+
+        var resultado = _repositorio.ObtenerPorId(torneo.Id);
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(torneo.Id, resultado.Id);
+        Assert.AreEqual("COPAAURA", resultado.Codigo);
+        Assert.IsNotNull(resultado.Organizador);
+        Assert.AreEqual("Laura", resultado.Organizador.Nombre);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_IdInexistente_DevuelveNull()
+    {
+        var resultado = _repositorio.ObtenerPorId(99);
+
+        Assert.IsNull(resultado);
+    }
+
+    private void GuardarTorneos(params Torneo[] torneos)
+    {
+        _baseDeDatos.Contexto.Torneos.AddRange(torneos);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+    }
+
     private Torneo CrearTorneo(string codigo, string nombre = "Copa Aura", DateOnly? fechaInicio = null)
     {
         var inicio = fechaInicio ?? FechaInicio;
