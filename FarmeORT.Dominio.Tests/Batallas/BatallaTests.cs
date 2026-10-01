@@ -142,6 +142,24 @@ public sealed class BatallaTests
         Assert.IsNull(batalla.JugadorTurnoId);
     }
 
+    [TestMethod]
+    [DataRow(EstadoBatalla.EnArbitraje)]
+    [DataRow(EstadoBatalla.Finalizada)]
+    [DataRow(EstadoBatalla.Cancelada)]
+    public void Lanzar_BatallaNoPendiente_RechazaSinModificarHistorial(EstadoBatalla estado)
+    {
+        var batalla = CrearBatallaConHistorial(0);
+        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
+        var skill = batalla.Jugador1.Repertorio.First().Skill;
+
+        Assert.ThrowsExactly<BatallaNoPendienteException>(
+            () => batalla.Lanzar(batalla.Jugador1, skill, DateTimeOffset.UtcNow));
+
+        Assert.HasCount(0, batalla.Lanzamientos);
+        Assert.AreEqual(estado, batalla.Estado);
+        Assert.AreEqual(7, batalla.JugadorTurnoId);
+    }
+
     private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
