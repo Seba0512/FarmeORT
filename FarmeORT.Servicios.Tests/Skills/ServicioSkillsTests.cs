@@ -132,6 +132,16 @@ public sealed class ServicioSkillsTests
         Assert.AreEqual(CategoriasSkill.Gestual, skills[0].Categoria);
     }
 
+    [TestMethod]
+    public void Listar_SinFiltros_NoFiltraYUsaLaPaginacionPorDefecto()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest());
+
+        Assert.IsEmpty(skills);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
