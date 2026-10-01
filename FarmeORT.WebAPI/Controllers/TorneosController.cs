@@ -11,8 +11,7 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     [HttpPost]
     public IActionResult Crear([FromBody] TorneoRequest request)
     {
-        _ = servicioTorneos;
-        _ = request;
-        throw new NotImplementedException();
+        var response = servicioTorneos.Crear(request);
+        return Created($"/api/v1/torneos/{response.Id}", response);
     }
 }
