@@ -40,7 +40,8 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
     [HttpDelete("{id:int}")]
     public IActionResult Eliminar(int id)
     {
-        _ = id;
-        throw new NotImplementedException();
+        var sesion = (SesionAutenticada)HttpContext.Items[ClavesContexto.SesionAutenticada]!;
+        servicioUsuarios.Eliminar(id, sesion.UsuarioId);
+        return NoContent();
     }
 }
