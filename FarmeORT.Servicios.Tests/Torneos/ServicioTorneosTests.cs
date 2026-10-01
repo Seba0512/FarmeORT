@@ -137,6 +137,19 @@ public sealed class ServicioTorneosTests
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.ObtenerPorId(99, esAnonimo: false));
     }
 
+    [TestMethod]
+    public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
+    {
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+
+        var response = _servicio.Cancelar(TorneoId);
+
+        _repositorioTorneos.Verify(r => r.Actualizar(It.Is<Torneo>(t => t == torneo && t.Estado == EstadoTorneo.Cancelado)), Times.Once);
+        Assert.AreEqual(nameof(EstadoTorneo.Cancelado), response.Estado);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();

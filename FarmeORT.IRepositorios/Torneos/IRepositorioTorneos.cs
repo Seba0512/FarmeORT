@@ -9,4 +9,6 @@ public interface IRepositorioTorneos
     bool ExistePorCodigo(string codigo);
 
     void Agregar(Torneo torneo);
+
+    void Actualizar(Torneo torneo);
 }

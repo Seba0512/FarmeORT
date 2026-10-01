@@ -63,6 +63,11 @@ public sealed class Torneo
 
     public Usuario Organizador { get; private set; }
 
+    public void Cancelar()
+    {
+        throw new NotImplementedException();
+    }
+
     private static void ValidarCodigo(string codigo)
     {
         if(!Regex.IsMatch(codigo, PatronCodigo))
