@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Repositorios.Inscripciones;
@@ -111,6 +112,27 @@ public sealed class RepositorioInscripcionesTests
         Assert.HasCount(2, aceptadas);
         Assert.AreEqual(2, aceptadas[primero]);
         Assert.AreEqual(1, aceptadas[segundo]);
+    }
+
+    [TestMethod]
+    public void ListarAceptadasDelTorneo_TraeSoloLasAceptadasConElRepertorioDeCadaJugador()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var skill = new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2);
+        _baseDeDatos.Contexto.Skills.Add(skill);
+        _baseDeDatos.Contexto.SaveChanges();
+        var conSkill = _baseDeDatos.Contexto.Usuarios.Include(u => u.Repertorio).Single(u => u.Id == GuardarUsuario("anaperez", Rol.Jugador));
+        conSkill.DeclararSkill(skill, 3, FechaActual);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        GuardarInscripcion(torneoId, conSkill.Id);
+        GuardarInscripcion(torneoId, GuardarUsuario("brunolopez", Rol.Jugador), i => i.Cancelar());
+
+        var aceptadas = _repositorio.ListarAceptadasDelTorneo(torneoId);
+
+        var inscripcion = aceptadas.Single();
+        Assert.AreEqual("anaperez", inscripcion.Jugador.Nickname);
+        Assert.AreEqual(skill.Id, inscripcion.Jugador.Repertorio.Single().SkillId);
     }
 
     // Guarda una inscripción directamente con el contexto, sin usar métodos del repositorio (FIRST).
