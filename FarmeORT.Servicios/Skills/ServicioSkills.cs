@@ -8,6 +8,8 @@ namespace FarmeORT.Servicios.Skills;
 
 internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSkills
 {
+    private const int LimiteMaximo = 100;
+
     public SkillResponse Crear(SkillRequest request)
     {
         var categoria = ConvertirCategoria(request.Categoria);
@@ -32,7 +34,13 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
             categoria = ConvertirCategoria(filtro.Categoria);
         }
 
-        var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, filtro.Limit, filtro.Offset);
+        var limite = filtro.Limit;
+        if(limite > LimiteMaximo)
+        {
+            limite = LimiteMaximo;
+        }
+
+        var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, limite, filtro.Offset);
         var skills = repositorioSkills.Listar(filtroRepositorio);
         return skills.Select(CrearResponse).ToList();
     }
