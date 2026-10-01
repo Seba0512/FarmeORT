@@ -62,6 +62,9 @@ public sealed class Torneo
 
     public IReadOnlyCollection<Skill> SkillsObligatorias => _skillsObligatorias;
 
+    // El anónimo solo ve torneos Abiertos, En curso o Finalizados (letra 1.3).
+    public bool EsVisibleParaAnonimos => Estado != EstadoTorneo.Cancelado;
+
     public void Modificar(
         string codigo,
         string nombre,

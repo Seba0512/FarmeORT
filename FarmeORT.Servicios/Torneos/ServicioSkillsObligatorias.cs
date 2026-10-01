@@ -16,7 +16,7 @@ internal sealed class ServicioSkillsObligatorias(
     public IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo)
     {
         var torneo = ObtenerTorneoExistente(torneoId);
-        if(esAnonimo && torneo.Estado == EstadoTorneo.Cancelado)
+        if(esAnonimo && !torneo.EsVisibleParaAnonimos)
         {
             throw new TorneoNoEncontradoException();
         }

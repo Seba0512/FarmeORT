@@ -36,7 +36,7 @@ internal sealed class ServicioTorneos(
         var torneo = ObtenerTorneoExistente(id);
 
         // Para el anónimo un torneo cancelado no existe: se responde igual que si no estuviera (D-36).
-        if(esAnonimo && torneo.Estado == EstadoTorneo.Cancelado)
+        if(esAnonimo && !torneo.EsVisibleParaAnonimos)
         {
             throw new TorneoNoEncontradoException();
         }
