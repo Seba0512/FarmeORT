@@ -153,6 +153,18 @@ public sealed class UsuarioTests
         Assert.AreEqual("hash-ana", usuario.ContrasenaHash);
     }
 
+    [TestMethod]
+    public void Eliminar_UsuarioActivo_QuedaEliminadoConservandoSusDatos()
+    {
+        var usuario = CrearUsuario();
+
+        usuario.Eliminar();
+
+        Assert.IsTrue(usuario.Eliminado);
+        Assert.AreEqual("ana@farmeort.com", usuario.Email);
+        Assert.AreEqual("anaperez", usuario.Nickname);
+    }
+
     private static Usuario CrearUsuario(
         string nombre = "Ana",
         string apellido = "Pérez",

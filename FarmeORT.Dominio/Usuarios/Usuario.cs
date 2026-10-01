@@ -76,6 +76,11 @@ public sealed partial class Usuario
         ContrasenaHash = contrasenaHash;
     }
 
+    public void Eliminar()
+    {
+        throw new NotImplementedException();
+    }
+
     private static void ValidarNombre(string nombre)
     {
         if(string.IsNullOrWhiteSpace(nombre))
