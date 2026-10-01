@@ -22,9 +22,8 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public bool ExisteAceptada(int torneoId, int jugadorId)
     {
-        _ = torneoId;
-        _ = jugadorId;
-        throw new NotImplementedException();
+        return contexto.Inscripciones.Any(i =>
+            i.TorneoId == torneoId && i.JugadorId == jugadorId && i.Estado == EstadoInscripcion.Aceptada);
     }
 
     public int ContarAceptadas(int torneoId)
