@@ -56,9 +56,11 @@ public sealed class Inscripcion
         Estado = EstadoInscripcion.Cancelada;
     }
 
+    // Letra 1.4: un torneo Finalizado o Cancelado ya no exige sus obligatorias.
     public bool ExigeSkill(int skillId)
     {
-        return Torneo.SkillsObligatorias.Any(s => s.Id == skillId);
+        var torneoVigente = Torneo.Estado != EstadoTorneo.Finalizado && Torneo.Estado != EstadoTorneo.Cancelado;
+        return torneoVigente && Torneo.SkillsObligatorias.Any(s => s.Id == skillId);
     }
 
     // La usa el fallo de una batalla: el perdedor queda fuera del torneo.
