@@ -23,7 +23,12 @@ internal sealed class ServicioSkillsObligatorias(
     public SkillResponse Asociar(int torneoId, SkillObligatoriaRequest request, int organizadorId)
     {
         var torneo = ObtenerTorneoDelOrganizador(torneoId, organizadorId);
-        var skill = repositorioSkills.ObtenerPorId(request.SkillId.GetValueOrDefault())!;
+        var skill = repositorioSkills.ObtenerPorId(request.SkillId.GetValueOrDefault());
+        if(skill == null)
+        {
+            throw new SkillNoEncontradaException();
+        }
+
         torneo.AsociarSkillObligatoria(skill);
         repositorioTorneos.Actualizar(torneo);
         return CrearResponse(skill);
