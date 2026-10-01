@@ -1187,6 +1187,80 @@ encapsulamiento de colecciones, REST (`/actual` en lugar de un id), status 404 y
 
 ---
 
+### D-40 — Skills obligatorias del torneo y el organizador asignado (403)
+
+**Problema:** el Organizador asocia y quita las skills que todo jugador debe lanzar en sus batallas (letra
+2.4): de 0 a 2, solo skills activas y solo con el torneo Abierto. El filtro de autorización sabe el rol,
+pero no si quien llama es el organizador asignado a ese torneo. La especificación lista 403 y 409, y la
+bitácora no definía cuál corresponde. La decisión la reusan las rondas, el fallo de batallas y la
+finalización (Personas B y C).
+
+**Alternativas consideradas:**
+- Organizador no asignado: 403 o 409.
+- Modelo: entidad intermedia explícita con datos propios, o una relación muchos a muchos sin datos.
+- Errores de cada regla: un código por regla o un 409 genérico.
+- Anónimo que pide las obligatorias de un torneo Cancelado: 404 (como D-36) o 200.
+
+**Decisión adoptada:**
+- **Organizador no asignado → 403 `NOT_TOURNAMENT_ORGANIZER`.**
+  - Lo decide el servicio con `NoEsOrganizadorDelTorneoException`, mapeada a 403 en el filtro global.
+  - El filtro `[Autorizacion(Roles.Organizador)]` sigue controlando solo el rol (D-13).
+  - Las Personas B y C reusan la misma excepción para las rondas, los fallos y la finalización.
+- Controller propio, `SkillsObligatoriasController`, con ruta `/api/v1/torneos/{torneoId}/skills-obligatorias`:
+  - `GET` → 200 `SkillResponse[]`, ordenadas por id. Usa `[AutenticacionOpcional]`.
+  - `POST` con `{ skillId }` → 201 con `Location: .../skills-obligatorias/{skillId}`.
+  - `DELETE /{skillId}` → 204.
+  - No se toca `TorneosController`, que también va a usar la Persona C.
+- `Torneo` tiene `SkillsObligatorias` (colección de solo lectura) y los métodos `AsociarSkillObligatoria` y
+  `QuitarSkillObligatoria`. En la base es una relación muchos a muchos sin datos propios: tabla
+  `SkillsObligatorias` con clave (`TorneoId`, `SkillId`), FK al torneo en cascada y a la skill con
+  `Restrict`. Una skill puede ser obligatoria en varios torneos.
+- Reglas en el dominio:
+  - torneo que no está Abierto → 409 `TOURNAMENT_NOT_MODIFIABLE` (se reusa);
+  - skill inactiva → 409 `SKILL_INACTIVE` (se reusa; no es retroactivo);
+  - ya asociada → 409 `MANDATORY_SKILL_ALREADY_ADDED`;
+  - tercera obligatoria → 409 `MANDATORY_SKILLS_LIMIT_REACHED`;
+  - quitar una que no está asociada → 404 `MANDATORY_SKILL_NOT_FOUND`.
+- En el servicio:
+  - torneo o skill inexistentes → 404 (`TOURNAMENT_NOT_FOUND` y `SKILL_NOT_FOUND`);
+  - sin `skillId` → 400.
+- El anónimo no ve las obligatorias de un torneo Cancelado (404, como D-36). Esa regla pasó a
+  `Torneo.EsVisibleParaAnonimos`, que también usa `ServicioTorneos`.
+- `GET /torneos?skillObligatoriaId=` ya filtra: devuelve los torneos que exigen esa skill.
+- La regla de la letra que rechaza asociar una skill si hay inscripciones Aceptadas de jugadores que no la
+  tienen declarada queda para `feature/inscripciones`: necesita la entidad `Inscripcion`.
+
+**Justificación:**
+- 403 es falta de permiso sobre ese recurso: el usuario está autenticado y tiene el rol correcto, pero el
+  torneo no es suyo. 409 se reserva para conflictos con el estado (D-26 es distinto: ahí el recurso es él
+  mismo).
+- Que la regla de visibilidad viva en el torneo evita repetirla en cada servicio (Information Expert).
+- Un código por regla le permite al cliente distinguir el caso sin leer el mensaje (como D-37).
+
+**Conceptos del curso:** autorización vs. reglas de negocio (D-13), status 403/404/409, Information Expert,
+relaciones muchos a muchos en EF Core.
+
+**Evidencia:**
+- `SkillsObligatoriasController`, `ServicioSkillsObligatorias`, `Torneo.AsociarSkillObligatoria`,
+  `QuitarSkillObligatoria` y `EsVisibleParaAnonimos`.
+- `FarmeORTContext.ConfigurarSkillsObligatorias`, `RepositorioTorneos` y la migración
+  `AgregaSkillsObligatoriasDeTorneos`.
+- Los tests de cada capa y la carpeta "Skills obligatorias" de Postman.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) planteó las alternativas con una recomendación; el integrante
+  eligió 403, un código por regla y 404 para el anónimo.
+- Problemas que aparecieron:
+  - Al agregar la colección a `Torneo`, EF la interpretó por convención como uno a muchos (la skill
+    hubiera quedado atada a un solo torneo). El primer RED del repositorio, con dos torneos que comparten
+    la skill, lo dejó en evidencia y se configuró el muchos a muchos explícito.
+  - StyleCop no permite poner un método público después de los privados. Los métodos nuevos de `Torneo`
+    van al final de los públicos y no al final de la clase, sin reordenar código existente.
+  - `CrearResponse` de skills queda repetido entre `ServicioSkills` y `ServicioSkillsObligatorias`. No se
+    extrajo para no modificar el catálogo de skills fuera del alcance de esta rama.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -1222,13 +1296,15 @@ encapsulamiento de colecciones, REST (`/actual` en lugar de un id), status 404 y
 - Torneos (D-36, D-37), lo que espera a otras funcionalidades:
   - Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
     misma operación (atómica). Hoy solo cambia el estado.
-  - Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar` y calcular
-    `InscripcionesAceptadas` (hoy vale 0).
+  - ~~Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar`.~~ Resuelto en D-40.
+  - Calcular `InscripcionesAceptadas` (hoy vale 0).
   - Sumar al detalle las skills obligatorias, los jugadores aceptados y el cuadro (rondas y batallas).
+  - Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
+    que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).
   - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya
     está en `Torneo.Cancelar`, pero esa rama todavía no se puede cubrir.
-  - Postman: carpeta Torneos con los casos de alta, modificación, cancelación y consulta (anónimo y
-    autenticado). Diagrama de clases con `Torneo`, `EstadoTorneo`, `IRepositorioTorneos`,
+  - ~~Postman: carpeta Torneos con los casos de alta, modificación, cancelación y consulta (anónimo y
+    autenticado).~~ Resuelto en el PR de torneos. Diagrama de clases con `Torneo`, `EstadoTorneo`, `IRepositorioTorneos`,
     `FiltroTorneos` y las excepciones nuevas.
 - Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
   eliminar si tiene batallas sin resolver o si organiza un torneo que no está Finalizado ni Cancelado.
