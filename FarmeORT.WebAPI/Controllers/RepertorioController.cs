@@ -23,4 +23,11 @@ public sealed class RepertorioController(IServicioRepertorio servicioRepertorio)
         var response = servicioRepertorio.Declarar(sesion.UsuarioId, request);
         return Created($"/api/v1/jugadores/actual/repertorio/{response.SkillId}", response);
     }
+
+    [HttpDelete("{skillId:int}")]
+    public IActionResult Quitar(int skillId)
+    {
+        _ = skillId;
+        throw new NotImplementedException();
+    }
 }

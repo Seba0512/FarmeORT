@@ -59,6 +59,18 @@ public sealed class RepertorioControllerTests
         Assert.AreSame(repertorio, resultado.Value);
     }
 
+    [TestMethod]
+    public void Quitar_SkillDeclarada_Devuelve204YLaQuitaDelJugadorAutenticado()
+    {
+        _servicioRepertorio.Setup(s => s.Quitar(JugadorId, 3));
+
+        var resultado = _controller.Quitar(3) as NoContentResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status204NoContent, resultado.StatusCode);
+        _servicioRepertorio.Verify(s => s.Quitar(JugadorId, 3), Times.Once);
+    }
+
     private static SkillDeclaradaResponse CrearResponse()
     {
         return new SkillDeclaradaResponse
