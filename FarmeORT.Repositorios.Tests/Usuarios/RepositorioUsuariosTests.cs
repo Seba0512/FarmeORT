@@ -310,6 +310,19 @@ public sealed class RepositorioUsuariosTests
         AssertPuedeGuardarOtraAlta();
     }
 
+    [TestMethod]
+    public void Actualizar_NicknameOcupadoConservandoSuEmail_LanzaNicknameYaExiste()
+    {
+        var usuario = GuardarUsuario(Email, "jugador");
+        GuardarUsuario("otro@farmeort.com", "otro");
+        usuario.Modificar("Ana", "Pérez", Email, "otro", new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
+
+        Assert.ThrowsExactly<NicknameYaExisteException>(() => _repositorio.Actualizar(usuario));
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual("jugador", _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id).Nickname);
+        AssertPuedeGuardarOtraAlta();
+    }
+
     // Deja el usuario guardado y cargado por el repositorio, como lo recibe el servicio antes de modificarlo.
     private Usuario GuardarUsuario(string email, string nickname)
     {
