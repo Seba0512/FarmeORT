@@ -4,7 +4,7 @@ using FarmeORT.Excepciones;
 namespace FarmeORT.Dominio.Tests.Skills;
 
 [TestClass]
-public class SkillTests
+public sealed class SkillTests
 {
     private const string Descripcion = "Gesto alternando las manos hacia arriba y abajo.";
 

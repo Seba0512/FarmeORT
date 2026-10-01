@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Skills;
 
-public class RepositorioSkills(FarmeORTContext contexto) : IRepositorioSkills
+internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorioSkills
 {
     public Skill? ObtenerPorId(int id)
     {

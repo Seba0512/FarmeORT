@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FarmeORT.DTOs.Skills;
 
-public class SkillRequest
+public sealed class SkillRequest
 {
     [Required(ErrorMessage = "El código es obligatorio.")]
     [RegularExpression("^[a-zA-Z0-9]{5,20}$", ErrorMessage = "El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.")]

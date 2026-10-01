@@ -8,7 +8,7 @@ namespace FarmeORT.WebAPI.Controllers;
 
 [ApiController]
 [Route("api/v1/skills")]
-public class SkillsController(IServicioSkills servicioSkills) : ControllerBase
+public sealed class SkillsController(IServicioSkills servicioSkills) : ControllerBase
 {
     [HttpPost]
     [Autorizacion(Roles.Administrador)]

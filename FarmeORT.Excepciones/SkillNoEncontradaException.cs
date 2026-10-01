@@ -1,5 +1,5 @@
 namespace FarmeORT.Excepciones;
 
-public class SkillNoEncontradaException : Exception
+public sealed class SkillNoEncontradaException : Exception
 {
 }

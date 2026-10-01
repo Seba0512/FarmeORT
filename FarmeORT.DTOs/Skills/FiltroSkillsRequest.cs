@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FarmeORT.DTOs.Skills;
 
-public class FiltroSkillsRequest
+public sealed class FiltroSkillsRequest
 {
     // null está permitido porque el filtro es opcional: sin categoría se listan todas.
     [AllowedValues(

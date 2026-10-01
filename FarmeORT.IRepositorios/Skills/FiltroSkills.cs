@@ -2,7 +2,7 @@ using FarmeORT.Dominio.Skills;
 
 namespace FarmeORT.IRepositorios.Skills;
 
-public record FiltroSkills(
+public sealed record FiltroSkills(
     CategoriaSkill? Categoria,
     int? Dificultad,
     bool? Activa,

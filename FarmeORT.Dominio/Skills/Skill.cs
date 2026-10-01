@@ -3,7 +3,7 @@ using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Skills;
 
-public class Skill
+public sealed class Skill
 {
     private const string PatronCodigo = "^[a-zA-Z0-9]{5,20}$";
     private const int LargoMinimoNombre = 3;
