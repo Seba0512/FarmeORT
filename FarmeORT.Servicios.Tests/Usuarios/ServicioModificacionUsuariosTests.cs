@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
@@ -32,6 +33,15 @@ public sealed class ServicioModificacionUsuariosTests
     {
         Assert.ThrowsExactly<OperacionSobreSiMismoException>(
             () => _servicio.Modificar(AdministradorActualId, CrearRequest(), AdministradorActualId));
+    }
+
+    [TestMethod]
+    public void Modificar_UsuarioInexistente_LanzaUsuarioNoEncontrado()
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(99)).Returns((Usuario?)null);
+
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(
+            () => _servicio.Modificar(99, CrearRequest(), AdministradorActualId));
     }
 
     private static UsuarioAdminRequest CrearRequest()
