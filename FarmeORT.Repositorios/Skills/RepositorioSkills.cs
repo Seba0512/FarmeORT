@@ -25,9 +25,8 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
 
     public void Agregar(Skill skill)
     {
-        _ = contexto;
-        _ = skill;
-        throw new NotImplementedException();
+        contexto.Skills.Add(skill);
+        contexto.SaveChanges();
     }
 
     public void Actualizar(Skill skill)
