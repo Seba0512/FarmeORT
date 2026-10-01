@@ -87,6 +87,16 @@ public sealed class ServicioTorneosTests
         _repositorioTorneos.Verify(r => r.Agregar(It.IsAny<Torneo>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Crear_OrganizadorInexistente_LanzaUsuarioNoEncontradoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(99)).Returns((Usuario?)null);
+
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(() => _servicio.Crear(CrearRequest(organizadorId: 99)));
+        _repositorioTorneos.Verify(r => r.Agregar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
