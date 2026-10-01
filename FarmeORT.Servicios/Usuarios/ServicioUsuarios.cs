@@ -47,6 +47,7 @@ internal sealed class ServicioUsuarios(
             throw new OperacionSobreSiMismoException();
         }
 
+        _ = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
         _ = request;
         throw new NotImplementedException();
     }
