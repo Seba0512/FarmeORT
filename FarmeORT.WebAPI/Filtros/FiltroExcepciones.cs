@@ -20,12 +20,20 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status404NotFound, "USER_NOT_FOUND", "No existe un usuario con ese id."),
         [typeof(SkillNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "SKILL_NOT_FOUND", "No existe una skill con ese id."),
+        [typeof(TorneoNoEncontradoException)] =
+            new(StatusCodes.Status404NotFound, "TOURNAMENT_NOT_FOUND", "No existe un torneo con ese id."),
         [typeof(EmailYaExisteException)] =
             new(StatusCodes.Status409Conflict, "EMAIL_ALREADY_EXISTS", "Ya existe un usuario con ese email."),
         [typeof(NicknameYaExisteException)] =
             new(StatusCodes.Status409Conflict, "NICKNAME_ALREADY_EXISTS", "Ya existe un usuario con ese nickname."),
         [typeof(CodigoSkillYaExisteException)] =
             new(StatusCodes.Status409Conflict, "SKILL_CODE_ALREADY_EXISTS", "Ya existe una skill con ese código."),
+        [typeof(CodigoTorneoYaExisteException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_CODE_ALREADY_EXISTS", "Ya existe un torneo con ese código."),
+        [typeof(TorneoNoModificableException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_MODIFIABLE", "Solo se puede modificar un torneo Abierto."),
+        [typeof(TorneoNoCancelableException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_CANCELLABLE", "Solo se puede cancelar un torneo Abierto o En curso."),
         [typeof(OperacionSobreSiMismoException)] =
             new(StatusCodes.Status409Conflict, "SELF_OPERATION_NOT_ALLOWED", "Un usuario no puede modificarse ni eliminarse a sí mismo."),
     };
