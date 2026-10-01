@@ -178,6 +178,17 @@ public sealed class ServicioSkillsTests
         _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
     }
 
+    [TestMethod]
+    public void Modificar_CodigoDeOtraSkill_LanzaCodigoSkillYaExisteSinGuardar()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.ExistePorCodigo("TRALALERO")).Returns(true);
+
+        Assert.ThrowsExactly<CodigoSkillYaExisteException>(() => _servicio.Modificar(3, CrearRequest(codigo: "TRALALERO")));
+        _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
