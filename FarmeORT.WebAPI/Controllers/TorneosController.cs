@@ -39,7 +39,6 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     [HttpPost("{id:int}/cancelaciones")]
     public IActionResult Cancelar(int id)
     {
-        _ = id;
-        throw new NotImplementedException();
+        return Ok(servicioTorneos.Cancelar(id));
     }
 }
