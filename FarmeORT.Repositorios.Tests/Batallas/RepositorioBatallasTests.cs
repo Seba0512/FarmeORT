@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.Repositorios.Batallas;
 using Microsoft.EntityFrameworkCore;
 
@@ -153,6 +154,18 @@ public sealed class RepositorioBatallasTests
         Assert.IsNull(guardada.JugadorTurnoId);
         Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
         Assert.IsFalse(_baseDeDatos.Contexto.Skills.Any(s => s.Id == 4));
+    }
+
+    [TestMethod]
+    public void Guardar_TurnoYaGuardado_TraduceConflictoATurnoIncorrecto()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = new Skill("AURASTARE", "Aura Stare", "Mirada fija para farmear aura en la batalla.", CategoriaSkill.Gestual, 2) { Id = 4 };
+        _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 2, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
+
+        Assert.ThrowsExactly<TurnoIncorrectoException>(() => _repositorio.Guardar());
+
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
     }
 
     private FarmeORTContext CrearOtroContexto()
