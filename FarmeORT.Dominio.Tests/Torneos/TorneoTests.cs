@@ -100,6 +100,16 @@ public sealed class TorneoTests
         Assert.AreEqual("La fecha de fin debe ser posterior a la de inicio.", excepcion.Message);
     }
 
+    [TestMethod]
+    public void Constructor_FechaInicioAnteriorALaActual_LanzaDatosInvalidos()
+    {
+        var fechaInicio = FechaActual.AddDays(-1);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(fechaInicio: fechaInicio));
+
+        Assert.AreEqual("La fecha de inicio no puede ser anterior a la fecha actual.", excepcion.Message);
+    }
+
     private static Torneo CrearTorneo(
         string codigo = "COPAAURA",
         string nombre = "Copa Aura",
