@@ -260,6 +260,14 @@ public sealed class ServicioSkillsTests
         _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
     }
 
+    [TestMethod]
+    public void CambiarEstado_EstadoOmitido_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.CambiarEstado(3, new SkillEstadoRequest()));
+
+        Assert.AreEqual("El estado activa es obligatorio.", excepcion.Message);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
