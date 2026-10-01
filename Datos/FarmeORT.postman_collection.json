@@ -210,6 +210,10 @@
     {
       "key": "skillTerceraId",
       "value": ""
+    },
+    {
+      "key": "rankingCantidadPorDefecto",
+      "value": ""
     }
   ],
   "item": [
@@ -10132,6 +10136,292 @@
                     "exec": [
                       "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
                       "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));",
+                      "pm.execution.setNextRequest(\"Ranking - anónimo con la cantidad por defecto → 200\");"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Ranking",
+      "item": [
+        {
+          "name": "Ranking - Éxito",
+          "item": [
+            {
+              "name": "Ranking - anónimo con la cantidad por defecto → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const ranking = pm.response.json();",
+                      "pm.test(\"Devuelve entre 1 y 10 jugadores\", () => { pm.expect(ranking).to.be.an(\"array\"); pm.expect(ranking.length).to.be.within(1, 10); });",
+                      "pm.test(\"Posiciones consecutivas desde 1\", () => ranking.forEach((jugador, i) => pm.expect(jugador.posicion).to.eql(i + 1)));",
+                      "pm.test(\"ELO de mayor a menor\", () => ranking.forEach((jugador, i) => { if (i > 0) { pm.expect(ranking[i - 1].elo).to.be.at.least(jugador.elo); } }));",
+                      "pm.test(\"Cada jugador trae nickname, ELO, ganadas y perdidas\", () => ranking.forEach(jugador => { pm.expect(jugador.nickname).to.be.a(\"string\"); pm.expect(jugador.elo).to.be.a(\"number\"); pm.expect(jugador.batallasGanadas).to.be.a(\"number\"); pm.expect(jugador.batallasPerdidas).to.be.a(\"number\"); }));",
+                      "pm.test(\"Ganadas y perdidas en 0 hasta que existan las batallas (D-61)\", () => ranking.forEach(jugador => { pm.expect(jugador.batallasGanadas).to.eql(0); pm.expect(jugador.batallasPerdidas).to.eql(0); }));",
+                      "pm.collectionVariables.set(\"rankingCantidadPorDefecto\", ranking.length);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - cantidad=1 devuelve solo el primero → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "cantidad",
+                      "value": "1"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const ranking = pm.response.json();",
+                      "pm.test(\"Un solo jugador en la posición 1\", () => { pm.expect(ranking.length).to.eql(1); pm.expect(ranking[0].posicion).to.eql(1); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - cantidad mayor al tope usa el tope → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=500",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "cantidad",
+                      "value": "500"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const ranking = pm.response.json();",
+                      "pm.test(\"Devuelve como mucho 100\", () => pm.expect(ranking.length).to.be.at.most(100));",
+                      "pm.test(\"Posiciones consecutivas desde 1\", () => ranking.forEach((jugador, i) => pm.expect(jugador.posicion).to.eql(i + 1)));",
+                      "pm.test(\"ELO de mayor a menor\", () => ranking.forEach((jugador, i) => { if (i > 0) { pm.expect(ranking[i - 1].elo).to.be.at.least(jugador.elo); } }));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - cantidad menor a uno usa el valor por defecto → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "cantidad",
+                      "value": "0"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Devuelve lo mismo que sin cantidad\", () => pm.expect(pm.response.json().length).to.eql(Number(pm.collectionVariables.get(\"rankingCantidadPorDefecto\"))));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - no incluye organizadores, administradores ni usuarios dados de baja → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=100",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "cantidad",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const nicknames = pm.response.json().map(jugador => jugador.nickname);",
+                      "const excluidos = [\"admin\", pm.collectionVariables.get(\"torneoOrganizadorNickname\"), pm.collectionVariables.get(\"otroOrganizadorNickname\"), pm.collectionVariables.get(\"modUsuarioNickname\")].filter(nickname => nickname);",
+                      "pm.test(\"Ninguno de los excluidos aparece\", () => excluidos.forEach(nickname => pm.expect(nicknames).to.not.include(nickname)));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Ranking - Errores",
+          "item": [
+            {
+              "name": "Ranking - cantidad no numérica → 400",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=abc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "cantidad",
+                      "value": "abc"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"errorCode VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
                       "pm.execution.setNextRequest(\"Sesiones - logout administrador → 204\");"
                     ]
                   }
