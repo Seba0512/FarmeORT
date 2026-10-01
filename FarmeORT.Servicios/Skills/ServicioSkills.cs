@@ -11,8 +11,9 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
     public SkillResponse Crear(SkillRequest request)
     {
         var categoria = ConvertirCategoria(request.Categoria);
+        var dificultad = ObtenerDificultad(request);
         ValidarCodigoDisponible(request.Codigo);
-        var skill = new Skill(request.Codigo, request.Nombre, request.Descripcion, categoria, request.Dificultad.GetValueOrDefault());
+        var skill = new Skill(request.Codigo, request.Nombre, request.Descripcion, categoria, dificultad);
         repositorioSkills.Agregar(skill);
         return CrearResponse(skill);
     }
@@ -60,6 +61,11 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         }
 
         return Enum.Parse<CategoriaSkill>(categoria);
+    }
+
+    private static int ObtenerDificultad(SkillRequest request)
+    {
+        return request.Dificultad ?? throw new DatosInvalidosException("La dificultad es obligatoria.");
     }
 
     private static SkillResponse CrearResponse(Skill skill)
