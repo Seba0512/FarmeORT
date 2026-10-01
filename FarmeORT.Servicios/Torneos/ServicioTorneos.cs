@@ -15,15 +15,19 @@ internal sealed class ServicioTorneos(
 {
     public TorneoResponse Crear(TorneoRequest request)
     {
+        var fechaInicio = ObtenerObligatorio(request.FechaInicio, "La fecha de inicio es obligatoria.");
+        var fechaFin = ObtenerObligatorio(request.FechaFin, "La fecha de fin es obligatoria.");
+        var cupo = ObtenerObligatorio(request.Cupo, "El cupo es obligatorio.");
+        var organizadorId = ObtenerObligatorio(request.OrganizadorId, "El organizador es obligatorio.");
         ValidarCodigoDisponible(request.Codigo);
-        var organizador = ObtenerUsuarioExistente(request.OrganizadorId.GetValueOrDefault());
+        var organizador = ObtenerUsuarioExistente(organizadorId);
         var torneo = new Torneo(
             request.Codigo,
             request.Nombre,
             request.Descripcion,
-            request.FechaInicio.GetValueOrDefault(),
-            request.FechaFin.GetValueOrDefault(),
-            request.Cupo.GetValueOrDefault(),
+            fechaInicio,
+            fechaFin,
+            cupo,
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Agregar(torneo);
@@ -74,6 +78,18 @@ internal sealed class ServicioTorneos(
         {
             throw new CodigoTorneoYaExisteException();
         }
+    }
+
+    // El DTO ya exige estos datos; el servicio los vuelve a controlar porque no depende de quién lo invoque.
+    private static T ObtenerObligatorio<T>(T? valor, string mensaje)
+        where T : struct
+    {
+        if(valor == null)
+        {
+            throw new DatosInvalidosException(mensaje);
+        }
+
+        return valor.Value;
     }
 
     private DateOnly ObtenerFechaActual()
