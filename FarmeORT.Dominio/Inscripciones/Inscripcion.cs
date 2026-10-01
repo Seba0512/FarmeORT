@@ -58,4 +58,9 @@ public sealed class Inscripcion
 
         Estado = EstadoInscripcion.Cancelada;
     }
+
+    public void Eliminar()
+    {
+        throw new NotImplementedException();
+    }
 }
