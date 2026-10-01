@@ -18,7 +18,6 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {
-        _ = id;
-        throw new NotImplementedException();
+        return Ok(servicioSkills.ObtenerPorId(id));
     }
 }
