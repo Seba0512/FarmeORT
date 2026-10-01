@@ -50,6 +50,16 @@ public sealed class SkillsObligatoriasTests
         Assert.HasCount(1, _torneo.SkillsObligatorias);
     }
 
+    [TestMethod]
+    public void AsociarSkillObligatoria_YaTieneDos_LanzaLimiteSkillsObligatoriasSinAsociarLaTercera()
+    {
+        _torneo.AsociarSkillObligatoria(CrearSkill(3));
+        _torneo.AsociarSkillObligatoria(CrearSkill(5));
+
+        Assert.ThrowsExactly<LimiteSkillsObligatoriasException>(() => _torneo.AsociarSkillObligatoria(CrearSkill(7)));
+        CollectionAssert.AreEqual(new[] { 3, 5 }, _torneo.SkillsObligatorias.Select(s => s.Id).ToArray());
+    }
+
     private static Skill CrearSkill(int id)
     {
         return new Skill("SKILL" + id, "Skill " + id, "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2)
