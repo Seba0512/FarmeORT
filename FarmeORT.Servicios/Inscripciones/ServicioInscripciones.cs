@@ -26,6 +26,11 @@ internal sealed class ServicioInscripciones(
             throw new InscripcionYaExisteException();
         }
 
+        if(repositorioInscripciones.ContarAceptadas(torneoId) >= torneo.Cupo)
+        {
+            throw new TorneoCompletoException();
+        }
+
         var inscripcion = new Inscripcion(torneo, jugador, reloj.GetLocalNow().DateTime);
         repositorioInscripciones.Agregar(inscripcion);
         return CrearResponse(inscripcion);
