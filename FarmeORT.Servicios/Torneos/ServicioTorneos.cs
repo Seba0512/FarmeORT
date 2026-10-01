@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Torneos;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Torneos;
@@ -13,6 +14,7 @@ internal sealed class ServicioTorneos(
 {
     public TorneoResponse Crear(TorneoRequest request)
     {
+        ValidarCodigoDisponible(request.Codigo);
         var organizador = repositorioUsuarios.ObtenerPorId(request.OrganizadorId.GetValueOrDefault())!;
         var torneo = new Torneo(
             request.Codigo,
@@ -52,6 +54,14 @@ internal sealed class ServicioTorneos(
     {
         _ = id;
         throw new NotImplementedException();
+    }
+
+    private void ValidarCodigoDisponible(string codigo)
+    {
+        if(repositorioTorneos.ExistePorCodigo(codigo))
+        {
+            throw new CodigoTorneoYaExisteException();
+        }
     }
 
     private DateOnly ObtenerFechaActual()
