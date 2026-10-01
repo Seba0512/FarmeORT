@@ -79,6 +79,58 @@ namespace FarmeORT.Repositorios.Migrations
                     b.ToTable("Skills");
                 });
 
+            modelBuilder.Entity("FarmeORT.Dominio.Torneos.Torneo", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Codigo")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Cupo")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateOnly>("FechaFin")
+                        .HasColumnType("date");
+
+                    b.Property<DateOnly>("FechaInicio")
+                        .HasColumnType("date");
+
+                    b.Property<string>("Nombre")
+                        .IsRequired()
+                        .HasMaxLength(60)
+                        .HasColumnType("nvarchar(60)");
+
+                    b.Property<int>("OrganizadorId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Codigo")
+                        .IsUnique();
+
+                    b.HasIndex("Estado");
+
+                    b.HasIndex("OrganizadorId");
+
+                    b.ToTable("Torneos");
+                });
+
             modelBuilder.Entity("FarmeORT.Dominio.Usuarios.Usuario", b =>
                 {
                     b.Property<int>("Id")
@@ -161,6 +213,17 @@ namespace FarmeORT.Repositorios.Migrations
                         .IsRequired();
 
                     b.Navigation("Usuario");
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Torneos.Torneo", b =>
+                {
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Organizador")
+                        .WithMany()
+                        .HasForeignKey("OrganizadorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Organizador");
                 });
 #pragma warning restore 612, 618
         }
