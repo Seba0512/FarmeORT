@@ -15,8 +15,12 @@ internal sealed class ServicioSkillsObligatorias(
 {
     public IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo)
     {
-        _ = esAnonimo;
         var torneo = ObtenerTorneoExistente(torneoId);
+        if(esAnonimo && torneo.Estado == EstadoTorneo.Cancelado)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
         return torneo.SkillsObligatorias
             .OrderBy(s => s.Id)
             .Select(CrearResponse)
