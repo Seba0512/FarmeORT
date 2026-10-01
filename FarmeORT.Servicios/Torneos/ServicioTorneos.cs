@@ -70,8 +70,8 @@ internal sealed class ServicioTorneos(
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
     {
-        var torneo = repositorioTorneos.ObtenerPorId(id)!;
-        var organizador = repositorioUsuarios.ObtenerPorId(request.OrganizadorId.GetValueOrDefault())!;
+        var torneo = ObtenerTorneoExistente(id);
+        var organizador = ObtenerUsuarioExistente(request.OrganizadorId.GetValueOrDefault());
         torneo.Modificar(
             request.Codigo,
             request.Nombre,
