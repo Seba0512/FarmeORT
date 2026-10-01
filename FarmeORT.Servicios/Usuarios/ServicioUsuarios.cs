@@ -49,7 +49,13 @@ internal sealed class ServicioUsuarios(
             limite = LimitePorDefecto;
         }
 
-        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, limite, filtro.Offset);
+        var desplazamiento = filtro.Offset;
+        if(desplazamiento < 0)
+        {
+            desplazamiento = 0;
+        }
+
+        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, limite, desplazamiento);
         var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
         return [.. usuarios.Select(CrearResponse)];
     }
