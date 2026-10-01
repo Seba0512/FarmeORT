@@ -109,6 +109,18 @@ public sealed class UsuariosControllerTests
     }
 
     [TestMethod]
+    public void Eliminar_UsuarioExistente_Devuelve204YLoEliminaComoAdministradorActual()
+    {
+        AutenticarAdministrador(1);
+        _servicioUsuarios.Setup(s => s.Eliminar(5, 1));
+
+        var resultado = _controller.Eliminar(5);
+
+        Assert.IsInstanceOfType<NoContentResult>(resultado);
+        _servicioUsuarios.Verify(s => s.Eliminar(5, 1), Times.Once);
+    }
+
+    [TestMethod]
     public void UsuariosController_TodosLosEndpoints_RequierenRolAdministrador()
     {
         var atributo = typeof(UsuariosController)

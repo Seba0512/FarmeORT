@@ -36,4 +36,11 @@ public sealed class UsuariosController(IServicioUsuarios servicioUsuarios) : Con
         var sesion = (SesionAutenticada)HttpContext.Items[ClavesContexto.SesionAutenticada]!;
         return Ok(servicioUsuarios.Modificar(id, request, sesion.UsuarioId));
     }
+
+    [HttpDelete("{id:int}")]
+    public IActionResult Eliminar(int id)
+    {
+        _ = id;
+        throw new NotImplementedException();
+    }
 }

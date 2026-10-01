@@ -48,6 +48,13 @@ internal sealed class ServicioUsuarios(
         throw new NotImplementedException();
     }
 
+    public void Eliminar(int id, int usuarioActualId)
+    {
+        _ = id;
+        _ = usuarioActualId;
+        throw new NotImplementedException();
+    }
+
     private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
     {
         return request.FechaNacimiento
