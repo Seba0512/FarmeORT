@@ -70,6 +70,15 @@ public sealed class RepertorioTests
         Assert.IsEmpty(_jugador.Repertorio);
     }
 
+    [TestMethod]
+    public void QuitarSkill_SkillNoDeclarada_LanzaSkillNoDeclaradaSinCambiarElRepertorio()
+    {
+        _jugador.DeclararSkill(CrearSkill(3), 4, FechaActual);
+
+        Assert.ThrowsExactly<SkillNoDeclaradaException>(() => _jugador.QuitarSkill(99));
+        Assert.HasCount(1, _jugador.Repertorio);
+    }
+
     private static Skill CrearSkill(int id)
     {
         return new Skill("SIXSEVEN", "Six-Seven", Descripcion, CategoriaSkill.Gestual, 2)
