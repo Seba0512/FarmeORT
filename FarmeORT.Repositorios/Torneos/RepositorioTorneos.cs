@@ -1,15 +1,17 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.IRepositorios.Torneos;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Torneos;
 
 internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositorioTorneos
 {
+    // Se incluye el organizador porque la respuesta muestra su nombre.
     public Torneo? ObtenerPorId(int id)
     {
-        _ = contexto;
-        _ = id;
-        throw new NotImplementedException();
+        return contexto.Torneos
+            .Include(t => t.Organizador)
+            .SingleOrDefault(t => t.Id == id);
     }
 
     public IReadOnlyList<Torneo> Listar(FiltroTorneos filtro)
