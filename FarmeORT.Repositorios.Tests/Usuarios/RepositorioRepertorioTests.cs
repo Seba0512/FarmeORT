@@ -59,6 +59,45 @@ public sealed class RepositorioRepertorioTests
         Assert.IsNull(_repositorio.ObtenerConRepertorio(99));
     }
 
+    [TestMethod]
+    public void GuardarRepertorio_SkillDeclaradaNueva_QuedaGuardada()
+    {
+        var skill = GuardarSkill("SIXSEVEN");
+        var jugador = CargarConRepertorio(GuardarJugador("ana@farmeort.com", "anaperez").Id);
+        jugador.DeclararSkill(_baseDeDatos.Contexto.Skills.Single(s => s.Id == skill.Id), 5, FechaActual);
+
+        _repositorio.GuardarRepertorio(jugador);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var guardada = _baseDeDatos.Contexto.Set<SkillDeclarada>().Single(d => d.JugadorId == jugador.Id);
+        Assert.AreEqual(skill.Id, guardada.SkillId);
+        Assert.AreEqual(5, guardada.Nivel);
+        Assert.AreEqual(FechaActual, guardada.FechaDeclaracion);
+    }
+
+    [TestMethod]
+    public void GuardarRepertorio_SkillQuitada_SeBorraDelRepertorio()
+    {
+        var skill = GuardarSkill("SIXSEVEN");
+        var otra = GuardarSkill("TRALALERO");
+        var jugadorId = GuardarJugador("ana@farmeort.com", "anaperez").Id;
+        DeclararYGuardar(jugadorId, skill.Id, 4);
+        DeclararYGuardar(jugadorId, otra.Id, 2);
+        var jugador = CargarConRepertorio(jugadorId);
+        jugador.QuitarSkill(skill.Id);
+
+        _repositorio.GuardarRepertorio(jugador);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var restantes = _baseDeDatos.Contexto.Set<SkillDeclarada>().Where(d => d.JugadorId == jugadorId).Select(d => d.SkillId).ToList();
+        CollectionAssert.AreEqual(new[] { otra.Id }, restantes);
+    }
+
+    private Usuario CargarConRepertorio(int jugadorId)
+    {
+        return _baseDeDatos.Contexto.Usuarios.Include(u => u.Repertorio).Single(u => u.Id == jugadorId);
+    }
+
     // Arma el repertorio directamente con el contexto, sin usar métodos del repositorio (FIRST).
     private void DeclararYGuardar(int jugadorId, int skillId, int nivel)
     {
