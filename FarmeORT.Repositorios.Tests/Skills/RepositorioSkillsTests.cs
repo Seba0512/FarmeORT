@@ -161,6 +161,20 @@ public sealed class RepositorioSkillsTests
         CollectionAssert.AreEqual(new[] { "SKILLDOS", "SKILLTRES" }, skills.Select(s => s.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Listar_VariosFiltros_DevuelveLasQueCumplenTodos()
+    {
+        GuardarSkills(
+            CrearSkill("SIXSEVEN", nombre: "Six-Seven", categoria: CategoriaSkill.Gestual, dificultad: 2),
+            CrearSkill("SIXSEVENPRO", nombre: "Six-Seven Pro", categoria: CategoriaSkill.Gestual, dificultad: 4),
+            CrearSkill("SIXSEVENVOZ", nombre: "Six-Seven cantado", categoria: CategoriaSkill.Vocal, dificultad: 2));
+
+        var filtro = SinFiltros() with { Categoria = CategoriaSkill.Gestual, Dificultad = 2, Activa = true, Nombre = "six" };
+        var skills = _repositorio.Listar(filtro);
+
+        CollectionAssert.AreEqual(new[] { "SIXSEVEN" }, skills.Select(s => s.Codigo).ToArray());
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
