@@ -183,6 +183,14 @@ public sealed class ServicioInscripcionesTests
         Assert.AreEqual("anaperez", response.Nickname);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_JugadorConsultaUnaAjena_LanzaNoEsDuenoDeLaInscripcion()
+    {
+        _repositorioInscripciones.Setup(r => r.ObtenerPorId(12)).Returns(CrearInscripcion());
+
+        Assert.ThrowsExactly<NoEsDuenoDeLaInscripcionException>(() => _servicio.ObtenerPorId(12, 99, Roles.Jugador));
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
