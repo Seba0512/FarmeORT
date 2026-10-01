@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Tests.Torneos;
 
@@ -28,6 +29,37 @@ public sealed class TorneoTests
         Assert.AreSame(organizador, torneo.Organizador);
         Assert.AreEqual(organizador.Id, torneo.OrganizadorId);
         Assert.AreEqual(EstadoTorneo.Abierto, torneo.Estado);
+    }
+
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("COPA")]
+    [DataRow("ABCDEFGHIJKLMNOPQRSTU")]
+    [DataRow("COPA-AURA")]
+    [DataRow("COPA AURA")]
+    public void Constructor_CodigoInvalido_LanzaDatosInvalidos(string codigo)
+    {
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(codigo: codigo));
+    }
+
+    private static Torneo CrearTorneo(
+        string codigo = "COPAAURA",
+        string nombre = "Copa Aura",
+        string descripcion = Descripcion,
+        DateOnly? fechaInicio = null,
+        DateOnly? fechaFin = null,
+        int cupo = 8,
+        Rol rolOrganizador = Rol.Organizador)
+    {
+        return new Torneo(
+            codigo,
+            nombre,
+            descripcion,
+            fechaInicio ?? FechaInicio,
+            fechaFin ?? FechaFin,
+            cupo,
+            CrearOrganizador(rolOrganizador),
+            FechaActual);
     }
 
     private static Usuario CrearOrganizador(Rol rol)
