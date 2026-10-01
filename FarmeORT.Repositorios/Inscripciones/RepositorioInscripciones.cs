@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.IRepositorios.Inscripciones;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Inscripciones;
 
@@ -7,9 +8,10 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 {
     public Inscripcion? ObtenerPorId(int id)
     {
-        _ = contexto;
-        _ = id;
-        throw new NotImplementedException();
+        return contexto.Inscripciones
+            .Include(i => i.Torneo)
+            .Include(i => i.Jugador)
+            .SingleOrDefault(i => i.Id == id);
     }
 
     public IReadOnlyList<Inscripcion> Listar(FiltroInscripciones filtro)
