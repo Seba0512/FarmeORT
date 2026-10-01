@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Inscripciones;
 using FarmeORT.IServicios.Inscripciones;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -11,8 +12,8 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
     [HttpPost]
     public IActionResult Inscribir([FromBody] InscripcionRequest request)
     {
-        _ = servicioInscripciones;
-        _ = request;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        var response = servicioInscripciones.Inscribir(sesion.UsuarioId, request);
+        return Created($"/api/v1/inscripciones/{response.Id}", response);
     }
 }
