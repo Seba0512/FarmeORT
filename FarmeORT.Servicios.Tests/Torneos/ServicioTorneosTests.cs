@@ -388,6 +388,21 @@ public sealed class ServicioTorneosTests
         Assert.AreEqual(2, torneos.Single().InscripcionesAceptadas);
     }
 
+    [TestMethod]
+    public void Modificar_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    {
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(OrganizadorId)).Returns(_organizador);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(5);
+        ConfigurarFechaActual();
+
+        var response = _servicio.Modificar(TorneoId, CrearRequest());
+
+        Assert.AreEqual(5, response.InscripcionesAceptadas);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
