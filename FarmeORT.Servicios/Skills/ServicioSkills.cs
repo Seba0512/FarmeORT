@@ -10,7 +10,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 {
     public SkillResponse Crear(SkillRequest request)
     {
-        var categoria = Enum.Parse<CategoriaSkill>(request.Categoria);
+        var categoria = ConvertirCategoria(request.Categoria);
         ValidarCodigoDisponible(request.Codigo);
         var skill = new Skill(request.Codigo, request.Nombre, request.Descripcion, categoria, request.Dificultad.GetValueOrDefault());
         repositorioSkills.Agregar(skill);
@@ -49,6 +49,17 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         {
             throw new CodigoSkillYaExisteException();
         }
+    }
+
+    // Se compara contra los nombres para que un número como "1" no se acepte como categoría.
+    private static CategoriaSkill ConvertirCategoria(string categoria)
+    {
+        if(!Enum.GetNames<CategoriaSkill>().Contains(categoria))
+        {
+            throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
+        }
+
+        return Enum.Parse<CategoriaSkill>(categoria);
     }
 
     private static SkillResponse CrearResponse(Skill skill)
