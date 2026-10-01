@@ -77,6 +77,11 @@ public sealed class Batalla
             throw new SkillFueraDelRepertorioException();
         }
 
+        if(_lanzamientos.Any(l => l.JugadorId == jugador.Id && l.SkillId == skill.Id))
+        {
+            throw new SkillYaLanzadaException();
+        }
+
         var lanzamiento = new Lanzamiento(this, _lanzamientos.Count + 1, jugador, skill, fecha);
         _lanzamientos.Add(lanzamiento);
         JugadorTurnoId = jugador.Id == Jugador1Id ? Jugador2Id : Jugador1Id;
