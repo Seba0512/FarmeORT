@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FarmeORT.DTOs.Usuarios;
 
-public sealed class RegistroJugadorRequest
+public class RegistroJugadorRequest
 {
     [Required(ErrorMessage = "El nombre es obligatorio.")]
     [StringLength(50, ErrorMessage = "El nombre no puede tener más de 50 caracteres.")]
