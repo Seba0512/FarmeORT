@@ -11,18 +11,7 @@ internal sealed class ServicioRanking(IRepositorioUsuarios repositorioUsuarios) 
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
-        var cantidad = filtro.Cantidad;
-        if(cantidad > CantidadMaxima)
-        {
-            cantidad = CantidadMaxima;
-        }
-
-        if(cantidad < 1)
-        {
-            cantidad = CantidadPorDefecto;
-        }
-
-        var jugadores = repositorioUsuarios.ListarRanking(cantidad);
+        var jugadores = repositorioUsuarios.ListarRanking(AjustarCantidad(filtro.Cantidad));
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
@@ -36,5 +25,21 @@ internal sealed class ServicioRanking(IRepositorioUsuarios repositorioUsuarios) 
         }
 
         return ranking;
+    }
+
+    // Fuera de rango se ajusta en lugar de rechazarse, igual que la paginación (D-35).
+    private static int AjustarCantidad(int cantidad)
+    {
+        if(cantidad > CantidadMaxima)
+        {
+            return CantidadMaxima;
+        }
+
+        if(cantidad < 1)
+        {
+            return CantidadPorDefecto;
+        }
+
+        return cantidad;
     }
 }
