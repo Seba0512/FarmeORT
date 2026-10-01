@@ -1,7 +1,9 @@
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Sesiones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
+using FarmeORT.Repositorios.Batallas;
 using FarmeORT.Repositorios.Sesiones;
 using FarmeORT.Repositorios.Skills;
 using FarmeORT.Repositorios.Torneos;
@@ -20,6 +22,9 @@ public static class RegistroRepositorios
         servicios.AddScoped<IRepositorioSesiones, RepositorioSesiones>();
         servicios.AddScoped<IRepositorioSkills, RepositorioSkills>();
         servicios.AddScoped<IRepositorioTorneos, RepositorioTorneos>();
+
+        // Persona B: batallas y lanzamientos.
+        servicios.AddScoped<IRepositorioBatallas, RepositorioBatallas>();
         return servicios;
     }
 }
