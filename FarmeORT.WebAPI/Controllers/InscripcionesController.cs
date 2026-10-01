@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Inscripciones;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Inscripciones;
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.WebAPI.Filtros;
@@ -14,6 +15,7 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
     private SesionAutenticada Sesion => HttpContext.ObtenerSesionAutenticada();
 
     [HttpPost]
+    [Autorizacion(Roles.Jugador)]
     public IActionResult Inscribir([FromBody] InscripcionRequest request)
     {
         var response = servicioInscripciones.Inscribir(Sesion.UsuarioId, request);
@@ -33,6 +35,7 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
     }
 
     [HttpPost("{id:int}/cancelaciones")]
+    [Autorizacion(Roles.Jugador)]
     public IActionResult Cancelar(int id)
     {
         return Ok(servicioInscripciones.Cancelar(id, Sesion.UsuarioId));
