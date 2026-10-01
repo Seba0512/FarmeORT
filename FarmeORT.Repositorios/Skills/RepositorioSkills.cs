@@ -36,6 +36,8 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
 
         return consulta
             .OrderBy(s => s.Id)
+            .Skip(filtro.Desplazamiento)
+            .Take(filtro.Limite)
             .ToList();
     }
 
