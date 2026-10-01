@@ -70,8 +70,12 @@ internal sealed class ServicioTorneos(
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
     {
+        var fechaInicio = ObtenerObligatorio(request.FechaInicio, "La fecha de inicio es obligatoria.");
+        var fechaFin = ObtenerObligatorio(request.FechaFin, "La fecha de fin es obligatoria.");
+        var cupo = ObtenerObligatorio(request.Cupo, "El cupo es obligatorio.");
+        var organizadorId = ObtenerObligatorio(request.OrganizadorId, "El organizador es obligatorio.");
         var torneo = ObtenerTorneoExistente(id);
-        var organizador = ObtenerUsuarioExistente(request.OrganizadorId.GetValueOrDefault());
+        var organizador = ObtenerUsuarioExistente(organizadorId);
 
         // El índice único de SQL Server no distingue mayúsculas: cambiar solo mayúsculas no ocupa un código ajeno (D-31).
         if(!string.Equals(torneo.Codigo, request.Codigo, StringComparison.OrdinalIgnoreCase))
@@ -83,9 +87,9 @@ internal sealed class ServicioTorneos(
             request.Codigo,
             request.Nombre,
             request.Descripcion,
-            request.FechaInicio.GetValueOrDefault(),
-            request.FechaFin.GetValueOrDefault(),
-            request.Cupo.GetValueOrDefault(),
+            fechaInicio,
+            fechaFin,
+            cupo,
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Actualizar(torneo);
