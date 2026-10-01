@@ -18,6 +18,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new BatallaNoEncontradaException(), 404, "BATTLE_NOT_FOUND", "No existe una batalla con ese id.");
     }
 
+    [TestMethod]
+    public void OnException_BatallaNoCancelable_Devuelve409ConBATTLE_NOT_CANCELLABLE()
+    {
+        VerificarMapa(new BatallaNoCancelableException(), 409, "BATTLE_NOT_CANCELLABLE", "Solo se puede cancelar una batalla Pendiente o En arbitraje.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
