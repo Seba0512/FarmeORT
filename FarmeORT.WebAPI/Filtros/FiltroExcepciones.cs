@@ -22,6 +22,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "EMAIL_ALREADY_EXISTS", "Ya existe un usuario con ese email."),
         [typeof(NicknameYaExisteException)] =
             new(StatusCodes.Status409Conflict, "NICKNAME_ALREADY_EXISTS", "Ya existe un usuario con ese nickname."),
+        [typeof(OperacionSobreSiMismoException)] =
+            new(StatusCodes.Status409Conflict, "SELF_OPERATION_NOT_ALLOWED", "Un usuario no puede modificarse ni eliminarse a sí mismo."),
     };
 
     public void OnException(ExceptionContext context)
