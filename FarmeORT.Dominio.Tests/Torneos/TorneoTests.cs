@@ -154,6 +154,37 @@ public sealed class TorneoTests
     }
 
     [TestMethod]
+    [DataRow("COPA", "Copa Fuego", Descripcion, 16, Rol.Organizador)]
+    [DataRow("COPAFUEGO", "Copa", Descripcion, 16, Rol.Organizador)]
+    [DataRow("COPAFUEGO", "Copa Fuego", "Muy corta", 16, Rol.Organizador)]
+    [DataRow("COPAFUEGO", "Copa Fuego", Descripcion, 12, Rol.Organizador)]
+    [DataRow("COPAFUEGO", "Copa Fuego", Descripcion, 16, Rol.Jugador)]
+    public void Modificar_DatosInvalidos_LanzaDatosInvalidosSinCambiarElTorneo(
+        string codigo,
+        string nombre,
+        string descripcion,
+        int cupo,
+        Rol rolOrganizador)
+    {
+        var torneo = CrearTorneo();
+
+        Assert.ThrowsExactly<DatosInvalidosException>(
+            () => torneo.Modificar(codigo, nombre, descripcion, FechaInicio, FechaFin, cupo, CrearOrganizador(rolOrganizador), FechaActual));
+        Assert.AreEqual("COPAAURA", torneo.Codigo);
+        Assert.AreEqual("Copa Aura", torneo.Nombre);
+        Assert.AreEqual(8, torneo.Cupo);
+    }
+
+    [TestMethod]
+    public void Modificar_FechaFinNoPosteriorAlInicio_LanzaDatosInvalidos()
+    {
+        var torneo = CrearTorneo();
+
+        Assert.ThrowsExactly<DatosInvalidosException>(
+            () => torneo.Modificar("COPAAURA", "Copa Aura", Descripcion, FechaInicio, FechaInicio, 8, CrearOrganizador(Rol.Organizador), FechaActual));
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_QuedaCancelado()
     {
         var torneo = CrearTorneo();
