@@ -36,6 +36,14 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
                 throw new TurnoIncorrectoException();
             }
 
+            if(nuevos.Any(l => contexto.Lanzamientos.AsNoTracking()
+                .Any(guardado => guardado.BatallaId == l.BatallaId
+                    && guardado.JugadorId == l.JugadorId && guardado.SkillId == l.SkillId)))
+            {
+                contexto.ChangeTracker.Clear();
+                throw new SkillYaLanzadaException();
+            }
+
             throw;
         }
     }
