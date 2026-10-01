@@ -17,7 +17,8 @@ internal sealed class ServicioInscripciones(
 {
     public InscripcionResponse Inscribir(int jugadorId, InscripcionRequest request)
     {
-        var torneo = ObtenerTorneoExistente(request.TorneoId.GetValueOrDefault());
+        var torneoId = DatosObligatorios.Obtener(request.TorneoId, "El torneo es obligatorio.");
+        var torneo = ObtenerTorneoExistente(torneoId);
         var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId)!;
         var inscripcion = new Inscripcion(torneo, jugador, reloj.GetLocalNow().DateTime);
         repositorioInscripciones.Agregar(inscripcion);
