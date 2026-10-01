@@ -30,6 +30,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new BatallaNoPendienteException(), 409, "BATTLE_NOT_PENDING", "Solo se puede lanzar una skill en una batalla Pendiente.");
     }
 
+    [TestMethod]
+    public void OnException_JugadorNoParticipa_Devuelve409ConPLAYER_NOT_IN_BATTLE()
+    {
+        VerificarMapa(new JugadorNoParticipaEnBatallaException(), 409, "PLAYER_NOT_IN_BATTLE", "El jugador no participa de esta batalla.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
