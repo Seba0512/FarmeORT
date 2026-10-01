@@ -100,6 +100,17 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Modificar_NicknameDeOtroUsuario_LanzaNicknameYaExisteSinGuardar()
+    {
+        ConfigurarModificacionValida();
+        _repositorioUsuarios.Setup(r => r.ExistePorNickname("anamaria")).Returns(true);
+
+        Assert.ThrowsExactly<NicknameYaExisteException>(() => _servicio.Modificar(UsuarioId, CrearRequest(), AdministradorActualId));
+
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
     private Usuario ConfigurarModificacionValida()
     {
         var usuario = CrearUsuarioExistente();
