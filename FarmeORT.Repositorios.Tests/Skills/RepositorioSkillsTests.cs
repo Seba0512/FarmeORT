@@ -138,6 +138,19 @@ public sealed class RepositorioSkillsTests
         CollectionAssert.AreEqual(new[] { codigoEsperado }, skills.Select(s => s.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Listar_FiltroPorNombre_DevuelveLasQueLoContienenSinDistinguirMayusculas()
+    {
+        GuardarSkills(
+            CrearSkill("SIXSEVEN", nombre: "Six-Seven"),
+            CrearSkill("TRALALERO", nombre: "Tralalero"),
+            CrearSkill("SIXSEVENPRO", nombre: "Six-Seven Pro"));
+
+        var skills = _repositorio.Listar(SinFiltros() with { Nombre = "SEVEN" });
+
+        CollectionAssert.AreEqual(new[] { "SIXSEVEN", "SIXSEVENPRO" }, skills.Select(s => s.Codigo).ToArray());
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
