@@ -118,6 +118,7 @@ public sealed class ServicioRepertorioTests
     {
         _jugador.DeclararSkill(_skill, 4, FechaActual);
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(JugadorId)).Returns([]);
         _repositorioUsuarios.Setup(r => r.GuardarRepertorio(_jugador));
 
         _servicio.Quitar(JugadorId, SkillId);

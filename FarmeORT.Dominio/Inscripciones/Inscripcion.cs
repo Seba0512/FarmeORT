@@ -56,6 +56,11 @@ public sealed class Inscripcion
         Estado = EstadoInscripcion.Cancelada;
     }
 
+    public bool ExigeSkill(int skillId)
+    {
+        return Torneo.SkillsObligatorias.Any(s => s.Id == skillId);
+    }
+
     // La usa el fallo de una batalla: el perdedor queda fuera del torneo.
     public void Eliminar()
     {

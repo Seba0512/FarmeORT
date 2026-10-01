@@ -38,8 +38,12 @@ internal sealed class ServicioRepertorio(
 
     public void Quitar(int jugadorId, int skillId)
     {
-        _ = repositorioInscripciones;
         var jugador = ObtenerJugadorExistente(jugadorId);
+        if(repositorioInscripciones.ListarAceptadasDelJugador(jugadorId).Any(i => i.ExigeSkill(skillId)))
+        {
+            throw new SkillObligatoriaEnUsoException();
+        }
+
         jugador.QuitarSkill(skillId);
         repositorioUsuarios.GuardarRepertorio(jugador);
     }
