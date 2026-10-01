@@ -72,6 +72,11 @@ internal sealed class ServicioTorneos(
     {
         var torneo = ObtenerTorneoExistente(id);
         var organizador = ObtenerUsuarioExistente(request.OrganizadorId.GetValueOrDefault());
+        if(torneo.Codigo != request.Codigo)
+        {
+            ValidarCodigoDisponible(request.Codigo);
+        }
+
         torneo.Modificar(
             request.Codigo,
             request.Nombre,
