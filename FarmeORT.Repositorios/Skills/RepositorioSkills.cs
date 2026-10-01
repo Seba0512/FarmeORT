@@ -1,5 +1,7 @@
 using FarmeORT.Dominio.Skills;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Skills;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Skills;
 
@@ -51,12 +53,32 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
     public void Agregar(Skill skill)
     {
         contexto.Skills.Add(skill);
-        contexto.SaveChanges();
+        Guardar(skill);
     }
 
     public void Actualizar(Skill skill)
     {
         contexto.Skills.Update(skill);
         contexto.SaveChanges();
+    }
+
+    // Otra skill puede ocupar el código entre la validación del servicio y el guardado (D-23).
+    private void Guardar(Skill skill)
+    {
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateException)
+        {
+            contexto.Entry(skill).State = EntityState.Detached;
+            var codigo = skill.Codigo.ToLower();
+            if(contexto.Skills.Any(s => s.Codigo.ToLower() == codigo && s.Id != skill.Id))
+            {
+                throw new CodigoSkillYaExisteException();
+            }
+
+            throw;
+        }
     }
 }
