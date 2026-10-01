@@ -148,6 +148,18 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void ObtenerPorId_TorneoCanceladoConsultadoPorUsuarioAutenticado_DevuelveSuDetalle()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: false);
+
+        Assert.AreEqual(nameof(EstadoTorneo.Cancelado), response.Estado);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();
