@@ -27,7 +27,8 @@ public sealed class UsuarioAdminRequest
         ErrorMessage = "La contraseña debe tener al menos una mayúscula, una minúscula, un número y un símbolo.")]
     public string Contrasena { get; init; } = string.Empty;
 
-    public DateOnly FechaNacimiento { get; init; }
+    [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
+    public DateOnly? FechaNacimiento { get; init; }
 
     [Required(ErrorMessage = "El rol es obligatorio.")]
     [AllowedValues(Roles.Jugador, Roles.Organizador, Roles.Administrador, ErrorMessage = "El rol debe ser Jugador, Organizador o Administrador.")]

@@ -32,6 +32,8 @@ internal sealed class ServicioUsuarios(
     {
         ReglaContrasena.Validar(request.Contrasena);
         var rol = ConvertirRol(request.Rol);
+        var fechaNacimiento = request.FechaNacimiento
+            ?? throw new DatosInvalidosException("La fecha de nacimiento es obligatoria.");
 
         if(repositorioUsuarios.ObtenerPorEmail(request.Email) is not null)
         {
@@ -50,7 +52,7 @@ internal sealed class ServicioUsuarios(
             request.Apellido,
             request.Email,
             request.Nickname,
-            request.FechaNacimiento,
+            fechaNacimiento,
             rol,
             contrasenaHash,
             fechaActual);
