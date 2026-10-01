@@ -2,7 +2,7 @@
   "info": {
     "name": "FarmeORT",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección del proyecto con registro público, sesiones, mantenimiento de usuarios (alta, modificación y baja lógica), catálogo de skills y gestión de torneos. Configurar baseUrl y adminContrasena en un environment local; adminEmail corresponde al administrador precargado. Ejecutar completa con Collection Runner o Newman. El login administrativo salta a Usuarios; el último caso de Usuarios salta a Skills, el último de Skills a Torneos y el último de Torneos vuelve al logout administrativo, que termina la ejecución. Los ids, emails, nicknames y tokens se generan durante el run. No exportar credenciales ni tokens reales."
+    "description": "Colección del proyecto con registro público, sesiones, mantenimiento de usuarios (alta, modificación y baja lógica), catálogo de skills, gestión de torneos y repertorio del jugador. Configurar baseUrl y adminContrasena en un environment local; adminEmail corresponde al administrador precargado. Ejecutar completa con Collection Runner o Newman. El login administrativo salta a Usuarios; el último caso de Usuarios salta a Skills, el último de Skills a Torneos, el último de Torneos a Repertorio y el último de Repertorio vuelve al logout administrativo, que termina la ejecución. Los ids, emails, nicknames y tokens se generan durante el run. No exportar credenciales ni tokens reales."
   },
   "variable": [
     {
@@ -7928,6 +7928,958 @@
                     "exec": [
                       "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
                       "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));",
+                      "pm.execution.setNextRequest(\"Repertorio - jugador declara una skill → 201\");"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Repertorio",
+      "item": [
+        {
+          "name": "Repertorio - Éxito",
+          "item": [
+            {
+              "name": "Repertorio - jugador declara una skill → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillId}},\n  \"nivel\": 1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const declarada = pm.response.json();",
+                      "pm.test(\"Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/jugadores/actual/repertorio/\" + declarada.skillId));",
+                      "pm.test(\"Skill y nivel\", () => { pm.expect(declarada.skillId).to.eql(pm.collectionVariables.get(\"skillId\")); pm.expect(declarada.nivel).to.eql(1); pm.expect(declarada.activa).to.eql(true); });",
+                      "pm.test(\"Fecha de declaración\", () => pm.expect(declarada.fechaDeclaracion).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - declara otra skill con nivel 5 → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillSegundaId}},\n  \"nivel\": 5\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Nivel máximo\", () => pm.expect(pm.response.json().nivel).to.eql(5));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - jugador consulta su repertorio → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const ids = pm.response.json().map(d => d.skillId);",
+                      "pm.test(\"Las dos skills, ordenadas\", () => pm.expect(ids).to.eql([pm.collectionVariables.get(\"skillId\"), pm.collectionVariables.get(\"skillSegundaId\")].sort((a, b) => a - b)));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - quita una skill → 204",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio/{{skillSegundaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio",
+                    "{{skillSegundaId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 204\", () => pm.response.to.have.status(204));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - la skill quitada ya no figura → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Solo queda la primera\", () => pm.expect(pm.response.json().map(d => d.skillId)).to.eql([pm.collectionVariables.get(\"skillId\")]));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Repertorio - Errores",
+          "item": [
+            {
+              "name": "Repertorio - declarar la misma skill → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillId}},\n  \"nivel\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error SKILL_ALREADY_DECLARED\", () => pm.expect(pm.response.json().errorCode).to.eql(\"SKILL_ALREADY_DECLARED\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - nivel 0 → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillSegundaId}},\n  \"nivel\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - nivel 6 → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillSegundaId}},\n  \"nivel\": 6\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - body vacío {} → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - nivel de tipo incorrecto → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillSegundaId}},\n  \"nivel\": \"alto\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - skill inexistente → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": 999999,\n  \"nivel\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error SKILL_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"SKILL_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - administrador desactiva la segunda skill → 200",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills/{{skillSegundaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills",
+                    "{{skillSegundaId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"activa\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - declarar una skill inactiva → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillSegundaId}},\n  \"nivel\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error SKILL_INACTIVE\", () => pm.expect(pm.response.json().errorCode).to.eql(\"SKILL_INACTIVE\"));",
+                      "pm.test(\"Mensaje de la letra\", () => pm.expect(pm.response.json().userMessage).to.eql(\"No es posible utilizar la skill porque está inactiva.\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - administrador reactiva la segunda skill → 200",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills/{{skillSegundaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills",
+                    "{{skillSegundaId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"activa\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - quitar una skill no declarada → 404",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio/{{skillSegundaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio",
+                    "{{skillSegundaId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error DECLARED_SKILL_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"DECLARED_SKILL_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - consulta sin token → 401",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Repertorio - administrador no tiene repertorio → 403",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));",
                       "pm.execution.setNextRequest(\"Sesiones - logout administrador → 204\");"
                     ]
                   }

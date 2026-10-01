@@ -1,8 +1,10 @@
+using FarmeORT.IServicios.Repertorio;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Skills;
 using FarmeORT.IServicios.Torneos;
 using FarmeORT.IServicios.Usuarios;
+using FarmeORT.Servicios.Repertorio;
 using FarmeORT.Servicios.Seguridad;
 using FarmeORT.Servicios.Sesiones;
 using FarmeORT.Servicios.Skills;
@@ -22,6 +24,7 @@ public static class RegistroServicios
         servicios.AddScoped<IServicioUsuarios, ServicioUsuarios>();
         servicios.AddScoped<IServicioSkills, ServicioSkills>();
         servicios.AddScoped<IServicioTorneos, ServicioTorneos>();
+        servicios.AddScoped<IServicioRepertorio, ServicioRepertorio>();
         return servicios;
     }
 }

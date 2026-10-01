@@ -1,5 +1,6 @@
 using System.Net.Mail;
 using System.Text.RegularExpressions;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Usuarios;
@@ -11,6 +12,8 @@ public sealed partial class Usuario
     private const int LargoMinimoApellido = 3;
     private const int LargoMaximoApellido = 25;
     private const int EdadMinima = 13;
+
+    private readonly List<SkillDeclarada> _repertorio = [];
 
     public Usuario(
         string nombre,
@@ -51,6 +54,8 @@ public sealed partial class Usuario
 
     public bool Eliminado { get; private set; }
 
+    public IReadOnlyCollection<SkillDeclarada> Repertorio => _repertorio;
+
     public void Modificar(
         string nombre,
         string apellido,
@@ -74,6 +79,35 @@ public sealed partial class Usuario
         FechaNacimiento = fechaNacimiento;
         Rol = rol;
         ContrasenaHash = contrasenaHash;
+    }
+
+    public SkillDeclarada DeclararSkill(Skill skill, int nivel, DateOnly fechaActual)
+    {
+        // Una skill inactiva no entra en repertorios nuevos; las ya declaradas se conservan (no es retroactivo).
+        if(!skill.Activa)
+        {
+            throw new SkillInactivaException();
+        }
+
+        if(_repertorio.Any(d => d.SkillId == skill.Id))
+        {
+            throw new SkillYaDeclaradaException();
+        }
+
+        var declarada = new SkillDeclarada(this, skill, nivel, fechaActual);
+        _repertorio.Add(declarada);
+        return declarada;
+    }
+
+    public void QuitarSkill(int skillId)
+    {
+        var declarada = _repertorio.SingleOrDefault(d => d.SkillId == skillId);
+        if(declarada == null)
+        {
+            throw new SkillNoDeclaradaException();
+        }
+
+        _repertorio.Remove(declarada);
     }
 
     // Baja lógica: se conservan los datos para el historial de batallas y torneos.

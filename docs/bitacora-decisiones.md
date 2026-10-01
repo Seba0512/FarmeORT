@@ -1099,7 +1099,7 @@ rechaza modificar o cancelar en un estado que no lo permite.
   `Modificar_FechaInicioNuevaAnteriorALaActual_LanzaDatosInvalidos`,
   `Modificar_FechaInicioSinCambiosYaPasada_ReemplazaLosDemasDatos`,
   `Modificar_DatosInvalidos_LanzaDatosInvalidosSinCambiarElTorneo`,
-  `OnException_ErrorDeTorneo_DevuelveSuStatusYCodigo` y
+  `OnException_ErrorMapeado_DevuelveSuStatusYCodigo` y
   `Agregar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoTorneoYaExisteSinDuplicar`.
 
 **Participación de IA:**
@@ -1112,6 +1112,78 @@ rechaza modificar o cancelar en un estado que no lo permite.
     (`ValidateOnBuild`), así que el GREEN del registro del servicio se cerró después del repositorio.
   - En los tests del repositorio, un organizador desasociado del contexto hacía que EF intentara
     insertarlo de nuevo. Los tests ahora lo toman del contexto, como en la API.
+
+---
+
+### D-38 — El repertorio vive en `Usuario` y se guarda a través de `RepositorioUsuarios`
+
+**Problema:** el jugador declara las skills que sabe hacer, con nivel de 1 a 5 y fecha (letra 1.4). Las
+reglas (no repetir, no declarar una inactiva) las van a necesitar también la inscripción ("tiene todas
+las obligatorias") y lanzar skill ("la skill está en su repertorio"). Hay que decidir dónde viven esos
+datos y esas reglas, y qué responder en cada error.
+
+**Alternativas consideradas:**
+- Dominio: una colección de `SkillDeclarada` dentro de `Usuario`, con las reglas en sus métodos; o
+  `SkillDeclarada` como agregado aparte, con su propio repositorio y las reglas en el servicio.
+- Skill inactiva: 400 (dato inválido) o 409 con código propio.
+- Quitar una skill que no está declarada: 404 con código propio o reutilizar `SKILL_NOT_FOUND`.
+
+**Decisión adoptada:**
+- `Usuario` tiene `Repertorio` (colección de solo lectura sobre un campo privado) y los métodos
+  `DeclararSkill(skill, nivel, fechaActual)` y `QuitarSkill(skillId)`. `SkillDeclarada` es la entidad
+  intermedia explícita (D-17 sigue: un solo `Usuario` con rol).
+- Reglas en el dominio:
+  - skill inactiva → 409 `SKILL_INACTIVE` ("No es posible utilizar la skill porque está inactiva.", el
+    texto de la letra);
+  - skill ya declarada → 409 `SKILL_ALREADY_DECLARED`;
+  - nivel fuera de 1 a 5 → 400 `INVALID_DATA` (el DTO también lo valida → 400 `VALIDATION_ERROR`);
+  - quitar una skill no declarada → 404 `DECLARED_SKILL_NOT_FOUND`.
+- La inactivación no es retroactiva: solo se controla al declarar. Una skill ya declarada que después
+  se desactiva sigue en el repertorio.
+- Persistencia:
+  - Tabla `SkillsDeclaradas` con clave compuesta (`JugadorId`, `SkillId`), que impide los duplicados
+    también en la base.
+  - FK al jugador en cascada y a la skill con `Restrict`.
+  - `IRepositorioUsuarios` suma `ObtenerConRepertorio` (incluye cada skill) y `GuardarRepertorio`, que
+    solo llama a `SaveChanges`. No se usa `Update`: marcaría como modificada una skill nueva con la
+    clave ya asignada y el UPDATE fallaría.
+  - Si otro pedido declara la misma skill entre la carga y el guardado, la clave compuesta lo frena y
+    se responde 409 en lugar de 500 (como D-23).
+- Contrato:
+  - Las rutas son `/jugadores/actual/repertorio`. El jugador sale siempre del token: el controller
+    lleva `[Autorizacion(Roles.Jugador)]` y nunca recibe un id de jugador.
+  - `POST` responde 201 con `Location: /api/v1/jugadores/actual/repertorio/{skillId}`, la URI del
+    recurso que después se borra con `DELETE`.
+  - El listado se ordena por `SkillId` para que no dependa del orden en que la base devuelve las filas.
+- Se extrajo `DatosObligatorios` en Servicios. Se usa en torneos y repertorio para controlar los datos
+  que el DTO declara opcionales.
+
+**Justificación:**
+- Información y reglas juntas (Information Expert): la inscripción y lanzar skill van a preguntarle
+  al jugador por su repertorio en vez de repetir consultas en cada servicio.
+- El repertorio no tiene sentido sin el jugador, así que no necesita un repositorio propio.
+- La skill inactiva es 409 porque el pedido está bien formado, pero choca con el estado actual de la
+  skill. Además, la letra pide un mensaje específico.
+
+**Conceptos del curso:** Information Expert, agregados y entidad intermedia en EF Core, clave compuesta,
+encapsulamiento de colecciones, REST (`/actual` en lugar de un id), status 404 y 409.
+
+**Evidencia:**
+- `Usuario.DeclararSkill` y `QuitarSkill`, `SkillDeclarada`, `ServicioRepertorio`, `RepertorioController`.
+- `RepositorioUsuarios.ObtenerConRepertorio` y `GuardarRepertorio`, `FarmeORTContext`, la migración
+  `AgregaRepertorioDeJugadores` y sus tests.
+- La carpeta Repertorio de Postman.
+
+**Participación de IA:**
+- Claude Code planteó las dos ubicaciones del repertorio y los códigos de error, con una recomendación;
+  el integrante eligió las recomendadas.
+- Problemas que aparecieron:
+  - Agregar la navegación a `Usuario` rompió los tests de todos los repositorios, porque EF descubrió
+    `SkillDeclarada` sin clave. La configuración del contexto entró en el mismo GREEN.
+  - Claude Code advirtió antes de implementar el problema de `Update` con una clave ya asignada y lo
+    evitó con `GuardarRepertorio`.
+  - La cobertura combinada marcó una rama de `QuitarSkill` como no cubierta, aunque la cubrían los tests
+    del servicio. Se agregó el caso en los tests del dominio.
 
 ---
 
@@ -1143,6 +1215,10 @@ rechaza modificar o cancelar en un estado que no lo permite.
 - Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
   enrutamiento antes de los filtros. Igual con los errores de conversión de la query
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
+- Repertorio (D-38): quitar una skill tiene que rechazarse (409) si es obligatoria de un torneo donde el
+  jugador tiene una inscripción Aceptada y el torneo no está Finalizado ni Cancelado. Se agrega con las
+  skills obligatorias y las inscripciones. Diagrama de clases con `SkillDeclarada` y la colección
+  `Repertorio` de `Usuario`.
 - Torneos (D-36, D-37), lo que espera a otras funcionalidades:
   - Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
     misma operación (atómica). Hoy solo cambia el estado.

@@ -8,6 +8,9 @@ public interface IRepositorioUsuarios
 
     Usuario? ObtenerPorId(int id);
 
+    // Trae el usuario con su repertorio cargado, listo para declarar o quitar skills.
+    Usuario? ObtenerConRepertorio(int id);
+
     IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro);
 
     bool ExistePorNickname(string nickname);
@@ -17,4 +20,6 @@ public interface IRepositorioUsuarios
     void Actualizar(Usuario usuario);
 
     void Eliminar(Usuario usuario);
+
+    void GuardarRepertorio(Usuario jugador);
 }
