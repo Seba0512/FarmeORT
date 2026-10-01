@@ -21,6 +21,15 @@ internal sealed class ServicioLanzamientos(
             throw new BatallaNoEncontradaException();
         }
 
-        throw new NotImplementedException($"{repositorioUsuarios.GetType().Name} {repositorioSkills.GetType().Name} {reloj.GetType().Name}");
+        var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId)!;
+        var skill = repositorioSkills.ObtenerPorId(request.SkillId!.Value)!;
+        var lanzamiento = batalla.Lanzar(jugador, skill, reloj.GetUtcNow());
+        repositorioBatallas.Guardar();
+        return new LanzamientoResultadoResponse
+        {
+            Turno = lanzamiento.Turno,
+            Estado = batalla.Estado.ToString(),
+            JugadorTurnoId = batalla.JugadorTurnoId,
+        };
     }
 }
