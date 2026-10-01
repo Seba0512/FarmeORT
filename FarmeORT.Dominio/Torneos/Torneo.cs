@@ -63,6 +63,27 @@ public sealed class Torneo
 
     public Usuario Organizador { get; private set; }
 
+    public void Modificar(
+        string codigo,
+        string nombre,
+        string descripcion,
+        DateOnly fechaInicio,
+        DateOnly fechaFin,
+        int cupo,
+        Usuario organizador,
+        DateOnly fechaActual)
+    {
+        _ = codigo;
+        _ = nombre;
+        _ = descripcion;
+        _ = fechaInicio;
+        _ = fechaFin;
+        _ = cupo;
+        _ = organizador;
+        _ = fechaActual;
+        throw new NotImplementedException();
+    }
+
     // Solo se cancela un torneo que todavía se puede disputar: Abierto o En curso.
     public void Cancelar()
     {

@@ -223,6 +223,44 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void Modificar_DatosValidos_GuardaElTorneoModificadoYLoDevuelve()
+    {
+        var torneo = CrearTorneo();
+        var otroOrganizador = CrearUsuario(3, Rol.Organizador);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(3)).Returns(otroOrganizador);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+        ConfigurarFechaActual();
+        var request = new TorneoRequest
+        {
+            Codigo = Codigo,
+            Nombre = "Copa Aura Invierno",
+            Descripcion = "Edición de invierno del torneo de aura.",
+            FechaInicio = new DateOnly(2026, 12, 1),
+            FechaFin = new DateOnly(2026, 12, 20),
+            Cupo = 16,
+            OrganizadorId = 3,
+        };
+
+        var response = _servicio.Modificar(TorneoId, request);
+
+        _repositorioTorneos.Verify(
+            r => r.Actualizar(It.Is<Torneo>(t =>
+                t == torneo
+                && t.Nombre == "Copa Aura Invierno"
+                && t.Descripcion == "Edición de invierno del torneo de aura."
+                && t.FechaInicio == new DateOnly(2026, 12, 1)
+                && t.FechaFin == new DateOnly(2026, 12, 20)
+                && t.Cupo == 16
+                && t.Organizador == otroOrganizador
+                && t.OrganizadorId == 3)),
+            Times.Once);
+        Assert.AreEqual("Copa Aura Invierno", response.Nombre);
+        Assert.AreEqual(16, response.Cupo);
+        Assert.AreEqual(3, response.OrganizadorId);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();
