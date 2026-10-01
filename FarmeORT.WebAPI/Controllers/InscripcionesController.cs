@@ -20,7 +20,7 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
     [HttpGet]
     public IActionResult Listar([FromQuery] FiltroInscripcionesRequest filtro)
     {
-        _ = filtro;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        return Ok(servicioInscripciones.Listar(filtro, sesion.UsuarioId, sesion.Rol));
     }
 }
