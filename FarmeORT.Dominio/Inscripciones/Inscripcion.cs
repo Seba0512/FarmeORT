@@ -7,10 +7,19 @@ public sealed class Inscripcion
 {
     public Inscripcion(Torneo torneo, Usuario jugador, DateTime fecha)
     {
-        _ = torneo;
-        _ = jugador;
-        _ = fecha;
-        throw new NotImplementedException();
+        Torneo = torneo;
+        TorneoId = torneo.Id;
+        Jugador = jugador;
+        JugadorId = jugador.Id;
+        Fecha = fecha;
+        Estado = EstadoInscripcion.Aceptada;
+    }
+
+    // EF Core materializa la inscripción con este constructor y completa las navegaciones después (D-08).
+    private Inscripcion()
+    {
+        Torneo = null!;
+        Jugador = null!;
     }
 
     public int Id { get; init; }

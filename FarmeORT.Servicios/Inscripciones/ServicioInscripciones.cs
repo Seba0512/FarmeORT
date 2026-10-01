@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.DTOs.Inscripciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -14,13 +15,11 @@ internal sealed class ServicioInscripciones(
 {
     public InscripcionResponse Inscribir(int jugadorId, InscripcionRequest request)
     {
-        _ = repositorioInscripciones;
-        _ = repositorioTorneos;
-        _ = repositorioUsuarios;
-        _ = reloj;
-        _ = jugadorId;
-        _ = request;
-        throw new NotImplementedException();
+        var torneo = repositorioTorneos.ObtenerPorId(request.TorneoId.GetValueOrDefault())!;
+        var jugador = repositorioUsuarios.ObtenerConRepertorio(jugadorId)!;
+        var inscripcion = new Inscripcion(torneo, jugador, reloj.GetLocalNow().DateTime);
+        repositorioInscripciones.Agregar(inscripcion);
+        return CrearResponse(inscripcion);
     }
 
     public IReadOnlyList<InscripcionResponse> Listar(FiltroInscripcionesRequest filtro, int usuarioId, string rol)
@@ -44,5 +43,20 @@ internal sealed class ServicioInscripciones(
         _ = id;
         _ = jugadorId;
         throw new NotImplementedException();
+    }
+
+    private static InscripcionResponse CrearResponse(Inscripcion inscripcion)
+    {
+        return new InscripcionResponse
+        {
+            Id = inscripcion.Id,
+            JugadorId = inscripcion.JugadorId,
+            Nickname = inscripcion.Jugador.Nickname,
+            Elo = inscripcion.Jugador.Elo,
+            TorneoId = inscripcion.TorneoId,
+            Torneo = inscripcion.Torneo.Nombre,
+            Estado = inscripcion.Estado.ToString(),
+            Fecha = inscripcion.Fecha,
+        };
     }
 }
