@@ -129,6 +129,33 @@ public sealed class SkillTests
         Assert.AreEqual("La categoría debe ser Gestual, Vocal, Baile o Meme.", excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow("ABC12", 3, 20, 1)]
+    [DataRow("ABCDEFGHIJ0123456789", 40, 300, 5)]
+    public void Constructor_DatosEnLosLimites_CreaLaSkill(string codigo, int largoNombre, int largoDescripcion, int dificultad)
+    {
+        var skill = CrearSkill(codigo, new string('a', largoNombre), new string('a', largoDescripcion), CategoriaSkill.Baile, dificultad);
+
+        Assert.AreEqual(codigo, skill.Codigo);
+        Assert.AreEqual(largoNombre, skill.Nombre.Length);
+        Assert.AreEqual(largoDescripcion, skill.Descripcion.Length);
+        Assert.AreEqual(dificultad, skill.Dificultad);
+    }
+
+    [TestMethod]
+    public void Modificar_DatosInvalidos_LanzaDatosInvalidosSinCambiarLaSkill()
+    {
+        var skill = CrearSkill();
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => skill.Modificar("TRALALERO", "Tralalero", "Corta", CategoriaSkill.Meme, 5));
+
+        Assert.AreEqual("SIXSEVEN", skill.Codigo);
+        Assert.AreEqual("Six-Seven", skill.Nombre);
+        Assert.AreEqual(Descripcion, skill.Descripcion);
+        Assert.AreEqual(CategoriaSkill.Gestual, skill.Categoria);
+        Assert.AreEqual(2, skill.Dificultad);
+    }
+
     private static Skill CrearSkill(
         string codigo = "SIXSEVEN",
         string nombre = "Six-Seven",
