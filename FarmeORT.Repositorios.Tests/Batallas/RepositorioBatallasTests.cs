@@ -168,6 +168,18 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
     }
 
+    [TestMethod]
+    public void Guardar_SkillYaGuardadaPorJugador_TraduceConflictoASkillYaLanzada()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = _baseDeDatos.Contexto.Skills.Single(s => s.Id == 3);
+        _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 3, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2)));
+
+        Assert.ThrowsExactly<SkillYaLanzadaException>(() => _repositorio.Guardar());
+
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Lanzamientos.Count(l => l.BatallaId == batalla.Id));
+    }
+
     private FarmeORTContext CrearOtroContexto()
     {
         var opciones = new DbContextOptionsBuilder<FarmeORTContext>()
