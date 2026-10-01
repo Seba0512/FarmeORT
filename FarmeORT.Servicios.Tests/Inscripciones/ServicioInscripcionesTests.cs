@@ -199,6 +199,18 @@ public sealed class ServicioInscripcionesTests
         Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() => _servicio.ObtenerPorId(12, 99, Roles.Organizador));
     }
 
+    [TestMethod]
+    [DataRow(JugadorId, Roles.Jugador)]
+    [DataRow(2, Roles.Organizador)]
+    public void ObtenerPorId_JugadorDuenoUOrganizadorDelTorneo_DevuelveLaInscripcion(int usuarioId, string rol)
+    {
+        _repositorioInscripciones.Setup(r => r.ObtenerPorId(12)).Returns(CrearInscripcion());
+
+        var response = _servicio.ObtenerPorId(12, usuarioId, rol);
+
+        Assert.AreEqual(12, response.Id);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
