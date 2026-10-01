@@ -143,6 +143,60 @@ public sealed class ServicioSkillsTests
     }
 
     [TestMethod]
+    public void Listar_LimitMayorAlMaximo_UsaElMaximo()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 100, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Limit = 600 });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-5)]
+    public void Listar_LimitMenorAUno_UsaElValorPorDefecto(int limit)
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Limit = limit });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
+    public void Listar_OffsetNegativo_EmpiezaDesdeElPrincipio()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Offset = -5 });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
+    public void Listar_CategoriaInexistente_NoFiltraPorCategoria()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Categoria = "Cocina" });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(9)]
+    public void Listar_DificultadFueraDeRango_NoFiltraPorDificultad(int dificultad)
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Dificultad = dificultad });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
     public void Modificar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
     {
         _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);

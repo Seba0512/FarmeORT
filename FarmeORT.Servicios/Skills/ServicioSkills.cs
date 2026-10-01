@@ -8,6 +8,9 @@ namespace FarmeORT.Servicios.Skills;
 
 internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSkills
 {
+    private const int DificultadMinima = 1;
+    private const int DificultadMaxima = 5;
+
     public SkillResponse Crear(SkillRequest request)
     {
         var categoria = ConvertirCategoria(request.Categoria);
@@ -29,10 +32,19 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         CategoriaSkill? categoria = null;
         if(filtro.Categoria != null)
         {
-            categoria = ConvertirCategoria(filtro.Categoria);
+            categoria = BuscarCategoria(filtro.Categoria);
         }
 
-        var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, filtro.Limit, filtro.Offset);
+        var limite = Paginacion.AjustarLimite(filtro.Limit);
+        var desplazamiento = Paginacion.AjustarDesplazamiento(filtro.Offset);
+
+        var dificultad = filtro.Dificultad;
+        if(dificultad < DificultadMinima || dificultad > DificultadMaxima)
+        {
+            dificultad = null;
+        }
+
+        var filtroRepositorio = new FiltroSkills(categoria, dificultad, filtro.Activa, filtro.Nombre, limite, desplazamiento);
         var skills = repositorioSkills.Listar(filtroRepositorio);
         return skills.Select(CrearResponse).ToList();
     }
@@ -94,8 +106,19 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         }
     }
 
-    // Se compara por nombre para que un número como "1" no se acepte como categoría.
     private static CategoriaSkill ConvertirCategoria(string categoria)
+    {
+        var encontrada = BuscarCategoria(categoria);
+        if(encontrada == null)
+        {
+            throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
+        }
+
+        return encontrada.Value;
+    }
+
+    // Se compara por nombre para que un número como "1" no se acepte como categoría.
+    private static CategoriaSkill? BuscarCategoria(string categoria)
     {
         foreach(var valor in Enum.GetValues<CategoriaSkill>())
         {
@@ -105,7 +128,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
             }
         }
 
-        throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
+        return null;
     }
 
     private static int ObtenerDificultad(SkillRequest request)

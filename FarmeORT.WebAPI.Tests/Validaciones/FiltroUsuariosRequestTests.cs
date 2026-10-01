@@ -29,32 +29,20 @@ public sealed class FiltroUsuariosRequestTests
         Assert.AreEqual(0, filtro.Offset);
     }
 
+    // La paginación fuera de rango no se rechaza en el borde: el servicio usa el tope, el valor por defecto
+    // o empieza desde el principio, "para no trancar al usuario" (AGENTS.md §7).
     [TestMethod]
-    [DataRow(0)]
-    [DataRow(101)]
-    [DataRow(-1)]
-    public void Validar_LimitFueraDeRango_EsInvalido(int limit)
+    [DataRow(101, 0)]
+    [DataRow(0, 0)]
+    [DataRow(-1, 0)]
+    [DataRow(20, -1)]
+    public void Validar_PaginacionFueraDeRango_NoSeRechazaEnElBorde(int limit, int offset)
     {
-        var filtro = new FiltroUsuariosRequest { Limit = limit };
-
-        AssertCampoInvalido(filtro, nameof(FiltroUsuariosRequest.Limit));
-    }
-
-    [TestMethod]
-    public void Validar_OffsetNegativo_EsInvalido()
-    {
-        var filtro = new FiltroUsuariosRequest { Offset = -1 };
-
-        AssertCampoInvalido(filtro, nameof(FiltroUsuariosRequest.Offset));
-    }
-
-    private static void AssertCampoInvalido(FiltroUsuariosRequest filtro, string campo)
-    {
+        var filtro = new FiltroUsuariosRequest { Limit = limit, Offset = offset };
         var errores = new List<ValidationResult>();
 
         var esValido = Validator.TryValidateObject(filtro, new ValidationContext(filtro), errores, validateAllProperties: true);
 
-        Assert.IsFalse(esValido);
-        Assert.IsTrue(errores.Any(e => e.MemberNames.Contains(campo)), $"No hay un error para el campo {campo}.");
+        Assert.IsTrue(esValido, string.Join(" ", errores.Select(e => e.ErrorMessage)));
     }
 }

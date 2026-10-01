@@ -35,7 +35,10 @@ internal sealed class ServicioUsuarios(
 
     public IReadOnlyList<UsuarioResponse> Listar(FiltroUsuariosRequest filtro)
     {
-        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, filtro.Limit, filtro.Offset);
+        var limite = Paginacion.AjustarLimite(filtro.Limit);
+        var desplazamiento = Paginacion.AjustarDesplazamiento(filtro.Offset);
+
+        var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, limite, desplazamiento);
         var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
         return [.. usuarios.Select(CrearResponse)];
     }

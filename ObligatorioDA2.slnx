@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/Tests/">
     <Project Path="FarmeORT.Dominio.Tests/FarmeORT.Dominio.Tests.csproj" />
+    <Project Path="FarmeORT.Fabrica.Tests/FarmeORT.Fabrica.Tests.csproj" />
     <Project Path="FarmeORT.Repositorios.Tests/FarmeORT.Repositorios.Tests.csproj" />
     <Project Path="FarmeORT.Servicios.Tests/FarmeORT.Servicios.Tests.csproj" />
     <Project Path="FarmeORT.WebAPI.Tests/FarmeORT.WebAPI.Tests.csproj" />
@@ -8,6 +9,7 @@
   <Project Path="FarmeORT.Dominio/FarmeORT.Dominio.csproj" />
   <Project Path="FarmeORT.DTOs/FarmeORT.DTOs.csproj" />
   <Project Path="FarmeORT.Excepciones/FarmeORT.Excepciones.csproj" />
+  <Project Path="FarmeORT.Fabrica/FarmeORT.Fabrica.csproj" />
   <Project Path="FarmeORT.IRepositorios/FarmeORT.IRepositorios.csproj" />
   <Project Path="FarmeORT.IServicios/FarmeORT.IServicios.csproj" />
   <Project Path="FarmeORT.Repositorios/FarmeORT.Repositorios.csproj" />

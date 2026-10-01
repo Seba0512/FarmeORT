@@ -2590,6 +2590,57 @@
           ]
         },
         {
+          "name": "Usuarios - limit mayor al tope usa el tope → 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios?limit=500",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "500"
+                }
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Devuelve como mucho 100\", () => pm.expect(pm.response.json().length).to.be.at.most(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Usuarios - Location mantiene autenticación → 401",
           "request": {
             "method": "GET",
@@ -3160,6 +3211,222 @@
                     "exec": [
                       "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                       "pm.test(\"Respeta el límite\", () => pm.expect(pm.response.json()).to.have.lengthOf(1));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Skills - limit mayor al tope usa el tope → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills?limit=500",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "500"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Devuelve como mucho 100\", () => pm.expect(pm.response.json().length).to.be.at.most(100));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Skills - offset negativo empieza desde el principio → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills?nombre={{skillSufijo}}&offset=-3",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "{{skillSufijo}}"
+                    },
+                    {
+                      "key": "offset",
+                      "value": "-3"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Devuelve la skill creada\", () => pm.expect(pm.response.json().map(s => s.id)).to.eql([pm.collectionVariables.get(\"skillId\")]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Skills - categoría inexistente no filtra → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills?nombre={{skillSufijo}}&categoria=Cocina",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "{{skillSufijo}}"
+                    },
+                    {
+                      "key": "categoria",
+                      "value": "Cocina"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Ignora la categoría\", () => pm.expect(pm.response.json().map(s => s.id)).to.eql([pm.collectionVariables.get(\"skillId\")]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Skills - dificultad fuera de rango no filtra → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills?nombre={{skillSufijo}}&dificultad=9",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ],
+                  "query": [
+                    {
+                      "key": "nombre",
+                      "value": "{{skillSufijo}}"
+                    },
+                    {
+                      "key": "dificultad",
+                      "value": "9"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Ignora la dificultad\", () => pm.expect(pm.response.json().map(s => s.id)).to.eql([pm.collectionVariables.get(\"skillId\")]));"
                     ]
                   }
                 }
@@ -4781,110 +5048,6 @@
                     "exec": [
                       "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
                       "pm.test(\"Código de error SKILL_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"SKILL_NOT_FOUND\"));"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Skills - filtro con categoría inexistente → 400",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/v1/skills?categoria=Cocina",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "skills"
-                  ],
-                  "query": [
-                    {
-                      "key": "categoria",
-                      "value": "Cocina"
-                    }
-                  ]
-                },
-                "auth": {
-                  "type": "bearer",
-                  "bearer": [
-                    {
-                      "key": "token",
-                      "value": "{{skillsJugadorToken}}",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
-                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Categoria\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Categoria\"));"
-                    ]
-                  }
-                }
-              ]
-            },
-            {
-              "name": "Skills - limit fuera de rango → 400",
-              "request": {
-                "method": "GET",
-                "header": [
-                  {
-                    "key": "Accept",
-                    "value": "application/json"
-                  }
-                ],
-                "url": {
-                  "raw": "{{baseUrl}}/api/v1/skills?limit=101",
-                  "host": [
-                    "{{baseUrl}}"
-                  ],
-                  "path": [
-                    "api",
-                    "v1",
-                    "skills"
-                  ],
-                  "query": [
-                    {
-                      "key": "limit",
-                      "value": "101"
-                    }
-                  ]
-                },
-                "auth": {
-                  "type": "bearer",
-                  "bearer": [
-                    {
-                      "key": "token",
-                      "value": "{{skillsJugadorToken}}",
-                      "type": "string"
-                    }
-                  ]
-                }
-              },
-              "event": [
-                {
-                  "listen": "test",
-                  "script": {
-                    "type": "text/javascript",
-                    "exec": [
-                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
-                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Limit\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Limit\"));"
                     ]
                   }
                 }
