@@ -26,4 +26,12 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
     {
         return Ok(servicioSkills.ObtenerPorId(id));
     }
+
+    [HttpPut("{id:int}")]
+    public IActionResult Modificar(int id, [FromBody] SkillRequest request)
+    {
+        _ = id;
+        _ = request;
+        throw new NotImplementedException();
+    }
 }
