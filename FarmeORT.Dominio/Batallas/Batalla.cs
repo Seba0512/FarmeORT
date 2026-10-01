@@ -23,6 +23,11 @@ public sealed class Batalla
             throw new DatosInvalidosException("Los participantes de la batalla deben tener rol Jugador.");
         }
 
+        if(numeroRonda < 1)
+        {
+            throw new DatosInvalidosException("El número de ronda debe ser positivo.");
+        }
+
         Torneo = torneo;
         TorneoId = torneo.Id;
         NumeroRonda = numeroRonda;
