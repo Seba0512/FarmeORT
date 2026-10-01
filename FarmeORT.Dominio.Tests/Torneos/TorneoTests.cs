@@ -42,6 +42,22 @@ public sealed class TorneoTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(codigo: codigo));
     }
 
+    [TestMethod]
+    [DataRow("")]
+    [DataRow("        ")]
+    public void Constructor_NombreVacio_LanzaDatosInvalidos(string nombre)
+    {
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(nombre: nombre));
+    }
+
+    [TestMethod]
+    [DataRow(4)]
+    [DataRow(61)]
+    public void Constructor_NombreFueraDeRango_LanzaDatosInvalidos(int largo)
+    {
+        Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(nombre: new string('a', largo)));
+    }
+
     private static Torneo CrearTorneo(
         string codigo = "COPAAURA",
         string nombre = "Copa Aura",
