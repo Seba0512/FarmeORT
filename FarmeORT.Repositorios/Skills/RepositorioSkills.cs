@@ -16,10 +16,11 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
         throw new NotImplementedException();
     }
 
+    // SQL Server no distingue mayúsculas y SQLite sí: se compara en minúscula para responder igual en los dos.
     public bool ExistePorCodigo(string codigo)
     {
-        _ = codigo;
-        throw new NotImplementedException();
+        var codigoBuscado = codigo.ToLower();
+        return contexto.Skills.Any(s => s.Codigo.ToLower() == codigoBuscado);
     }
 
     public void Agregar(Skill skill)
