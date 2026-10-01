@@ -99,8 +99,7 @@ public sealed class Torneo
 
     public void AsociarSkillObligatoria(Skill skill)
     {
-        _ = skill;
-        throw new NotImplementedException();
+        _skillsObligatorias.Add(skill);
     }
 
     // Valida todo antes de asignar: un dato inválido no deja el torneo a medio cambiar.

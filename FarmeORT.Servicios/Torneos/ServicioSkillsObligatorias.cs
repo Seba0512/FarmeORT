@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Skills;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.IRepositorios.Skills;
@@ -19,12 +20,12 @@ internal sealed class ServicioSkillsObligatorias(
 
     public SkillResponse Asociar(int torneoId, SkillObligatoriaRequest request, int organizadorId)
     {
-        _ = repositorioTorneos;
-        _ = repositorioSkills;
-        _ = torneoId;
-        _ = request;
         _ = organizadorId;
-        throw new NotImplementedException();
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
+        var skill = repositorioSkills.ObtenerPorId(request.SkillId.GetValueOrDefault())!;
+        torneo.AsociarSkillObligatoria(skill);
+        repositorioTorneos.Actualizar(torneo);
+        return CrearResponse(skill);
     }
 
     public void Quitar(int torneoId, int skillId, int organizadorId)
@@ -33,5 +34,19 @@ internal sealed class ServicioSkillsObligatorias(
         _ = skillId;
         _ = organizadorId;
         throw new NotImplementedException();
+    }
+
+    private static SkillResponse CrearResponse(Skill skill)
+    {
+        return new SkillResponse
+        {
+            Id = skill.Id,
+            Codigo = skill.Codigo,
+            Nombre = skill.Nombre,
+            Descripcion = skill.Descripcion,
+            Categoria = skill.Categoria.ToString(),
+            Dificultad = skill.Dificultad,
+            Activa = skill.Activa,
+        };
     }
 }
