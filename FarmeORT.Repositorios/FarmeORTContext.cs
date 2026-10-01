@@ -69,6 +69,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         modelBuilder.Entity<SkillDeclarada>(declarada =>
         {
             // La clave compuesta impide declarar dos veces la misma skill también en la base.
+            declarada.ToTable("SkillsDeclaradas");
             declarada.HasKey(d => new { d.JugadorId, d.SkillId });
             declarada.HasOne<Usuario>()
                 .WithMany(u => u.Repertorio)

@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.Repositorios.Usuarios;
 using Microsoft.EntityFrameworkCore;
 
@@ -91,6 +92,36 @@ public sealed class RepositorioRepertorioTests
 
         var restantes = _baseDeDatos.Contexto.Set<SkillDeclarada>().Where(d => d.JugadorId == jugadorId).Select(d => d.SkillId).ToList();
         CollectionAssert.AreEqual(new[] { otra.Id }, restantes);
+    }
+
+    [TestMethod]
+    public void GuardarRepertorio_SkillDeclaradaPorOtroPedidoDespuesDeCargar_LanzaSkillYaDeclaradaYDejaElContextoUsable()
+    {
+        var skill = GuardarSkill("SIXSEVEN");
+        var otra = GuardarSkill("TRALALERO");
+        var jugador = CargarConRepertorio(GuardarJugador("ana@farmeort.com", "anaperez").Id);
+        jugador.DeclararSkill(_baseDeDatos.Contexto.Skills.Single(s => s.Id == skill.Id), 4, FechaActual);
+        InsertarDeclaracionDeOtroPedido(jugador.Id, skill.Id);
+
+        Assert.ThrowsExactly<SkillYaDeclaradaException>(() => _repositorio.GuardarRepertorio(jugador));
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Set<SkillDeclarada>().AsNoTracking().Count(d => d.JugadorId == jugador.Id));
+        var recargado = CargarConRepertorioSinSeguimientoPrevio(jugador.Id);
+        recargado.DeclararSkill(_baseDeDatos.Contexto.Skills.Single(s => s.Id == otra.Id), 2, FechaActual);
+        _repositorio.GuardarRepertorio(recargado);
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Set<SkillDeclarada>().AsNoTracking().Count(d => d.JugadorId == jugador.Id));
+    }
+
+    // Simula otro pedido que declaró la misma skill entre la carga y el guardado.
+    private void InsertarDeclaracionDeOtroPedido(int jugadorId, int skillId)
+    {
+        _baseDeDatos.Contexto.Database.ExecuteSql(
+            $"INSERT INTO SkillsDeclaradas (JugadorId, SkillId, Nivel, FechaDeclaracion) VALUES ({jugadorId}, {skillId}, 3, '2026-10-01')");
+    }
+
+    private Usuario CargarConRepertorioSinSeguimientoPrevio(int jugadorId)
+    {
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        return CargarConRepertorio(jugadorId);
     }
 
     private Usuario CargarConRepertorio(int jugadorId)
