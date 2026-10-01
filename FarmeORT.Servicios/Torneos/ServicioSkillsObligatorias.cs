@@ -16,7 +16,7 @@ internal sealed class ServicioSkillsObligatorias(
     public IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo)
     {
         _ = esAnonimo;
-        var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
+        var torneo = ObtenerTorneoExistente(torneoId);
         return torneo.SkillsObligatorias
             .OrderBy(s => s.Id)
             .Select(CrearResponse)
@@ -45,8 +45,7 @@ internal sealed class ServicioSkillsObligatorias(
         repositorioTorneos.Actualizar(torneo);
     }
 
-    // El filtro solo sabe que es un Organizador; si es el asignado a este torneo lo decide el servicio (403, D-40).
-    private Torneo ObtenerTorneoDelOrganizador(int torneoId, int organizadorId)
+    private Torneo ObtenerTorneoExistente(int torneoId)
     {
         var torneo = repositorioTorneos.ObtenerPorId(torneoId);
         if(torneo == null)
@@ -54,6 +53,13 @@ internal sealed class ServicioSkillsObligatorias(
             throw new TorneoNoEncontradoException();
         }
 
+        return torneo;
+    }
+
+    // El filtro solo sabe que es un Organizador; si es el asignado a este torneo lo decide el servicio (403, D-40).
+    private Torneo ObtenerTorneoDelOrganizador(int torneoId, int organizadorId)
+    {
+        var torneo = ObtenerTorneoExistente(torneoId);
         if(torneo.OrganizadorId != organizadorId)
         {
             throw new NoEsOrganizadorDelTorneoException();
