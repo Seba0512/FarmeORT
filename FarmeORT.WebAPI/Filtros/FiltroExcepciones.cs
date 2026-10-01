@@ -20,6 +20,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status404NotFound, "USER_NOT_FOUND", "No existe un usuario con ese id."),
         [typeof(SkillNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "SKILL_NOT_FOUND", "No existe una skill con ese id."),
+        [typeof(SkillNoDeclaradaException)] =
+            new(StatusCodes.Status404NotFound, "DECLARED_SKILL_NOT_FOUND", "La skill no está en tu repertorio."),
         [typeof(TorneoNoEncontradoException)] =
             new(StatusCodes.Status404NotFound, "TOURNAMENT_NOT_FOUND", "No existe un torneo con ese id."),
         [typeof(EmailYaExisteException)] =
@@ -28,6 +30,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "NICKNAME_ALREADY_EXISTS", "Ya existe un usuario con ese nickname."),
         [typeof(CodigoSkillYaExisteException)] =
             new(StatusCodes.Status409Conflict, "SKILL_CODE_ALREADY_EXISTS", "Ya existe una skill con ese código."),
+        [typeof(SkillInactivaException)] =
+            new(StatusCodes.Status409Conflict, "SKILL_INACTIVE", "No es posible utilizar la skill porque está inactiva."),
+        [typeof(SkillYaDeclaradaException)] =
+            new(StatusCodes.Status409Conflict, "SKILL_ALREADY_DECLARED", "La skill ya está en tu repertorio."),
         [typeof(CodigoTorneoYaExisteException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_CODE_ALREADY_EXISTS", "Ya existe un torneo con ese código."),
         [typeof(TorneoNoModificableException)] =
