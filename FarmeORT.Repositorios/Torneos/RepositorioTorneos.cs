@@ -26,8 +26,8 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
 
     public void Agregar(Torneo torneo)
     {
-        _ = torneo;
-        throw new NotImplementedException();
+        contexto.Torneos.Add(torneo);
+        contexto.SaveChanges();
     }
 
     public void Actualizar(Torneo torneo)
