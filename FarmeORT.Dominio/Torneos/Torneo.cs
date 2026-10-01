@@ -11,6 +11,8 @@ public sealed class Torneo
     private const int LargoMaximoNombre = 60;
     private const int LargoMinimoDescripcion = 20;
     private const int LargoMaximoDescripcion = 500;
+    private const int CupoMinimo = 4;
+    private const int CupoMaximo = 64;
 
     public Torneo(
         string codigo,
@@ -26,6 +28,7 @@ public sealed class Torneo
         ValidarCodigo(codigo);
         ValidarNombre(nombre);
         ValidarDescripcion(descripcion);
+        ValidarCupo(cupo);
 
         Codigo = codigo;
         Nombre = nombre;
@@ -89,6 +92,15 @@ public sealed class Torneo
         if(descripcion.Length < LargoMinimoDescripcion || descripcion.Length > LargoMaximoDescripcion)
         {
             throw new DatosInvalidosException("La descripción debe tener entre 20 y 500 caracteres.");
+        }
+    }
+
+    // El torneo es eliminatorio: con una potencia de 2 cada ronda empareja a todos los jugadores que siguen.
+    private static void ValidarCupo(int cupo)
+    {
+        if(cupo < CupoMinimo || cupo > CupoMaximo || !int.IsPow2(cupo))
+        {
+            throw new DatosInvalidosException("El cupo debe ser una potencia de 2 entre 4 y 64.");
         }
     }
 }
