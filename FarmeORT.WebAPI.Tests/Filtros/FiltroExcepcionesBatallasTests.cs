@@ -36,6 +36,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new JugadorNoParticipaEnBatallaException(), 409, "PLAYER_NOT_IN_BATTLE", "El jugador no participa de esta batalla.");
     }
 
+    [TestMethod]
+    public void OnException_TurnoIncorrecto_Devuelve409ConNOT_PLAYER_TURN()
+    {
+        VerificarMapa(new TurnoIncorrectoException(), 409, "NOT_PLAYER_TURN", "No es tu turno para lanzar una skill.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
