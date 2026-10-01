@@ -165,6 +165,16 @@ public sealed class ServicioSkillsTests
     }
 
     [TestMethod]
+    public void Listar_OffsetNegativo_EmpiezaDesdeElPrincipio()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Offset = -5 });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
     public void Modificar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
     {
         _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
