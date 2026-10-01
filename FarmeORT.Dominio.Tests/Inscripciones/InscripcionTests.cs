@@ -141,6 +141,21 @@ public sealed class InscripcionTests
         Assert.IsFalse(exige);
     }
 
+    [TestMethod]
+    [DataRow(3, true)]
+    [DataRow(5, false)]
+    public void ExigeSkill_InscripcionAceptadaEnTorneoAbierto_SoloExigeSusObligatorias(int skillId, bool esperado)
+    {
+        var skill = CrearSkill(3, "SIXSEVEN");
+        _torneo.AsociarSkillObligatoria(skill);
+        _jugador.DeclararSkill(skill, 4, FechaActual);
+        var inscripcion = new Inscripcion(_torneo, _jugador, Ahora);
+
+        var exige = inscripcion.ExigeSkill(skillId);
+
+        Assert.AreEqual(esperado, exige);
+    }
+
     private static Skill CrearSkill(int id, string codigo)
     {
         return new Skill(codigo, "Skill " + id, "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2)
