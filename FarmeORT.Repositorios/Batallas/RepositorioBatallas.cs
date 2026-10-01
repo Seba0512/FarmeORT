@@ -11,6 +11,7 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
     {
         return contexto.Batallas
             .Include(b => b.Torneo).ThenInclude(t => t.Organizador)
+            .Include(b => b.Torneo).ThenInclude(t => t.SkillsObligatorias)
             .Include(b => b.Jugador1)
             .Include(b => b.Jugador2)
             .Include(b => b.Lanzamientos.OrderBy(l => l.Turno)).ThenInclude(l => l.Skill)
