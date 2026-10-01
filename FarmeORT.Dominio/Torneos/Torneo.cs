@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.RegularExpressions;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 
@@ -14,6 +15,8 @@ public sealed class Torneo
     private const int LargoMaximoDescripcion = 500;
     private const int CupoMinimo = 4;
     private const int CupoMaximo = 64;
+
+    private readonly List<Skill> _skillsObligatorias = [];
 
     public Torneo(
         string codigo,
@@ -56,6 +59,8 @@ public sealed class Torneo
 
     public Usuario Organizador { get; private set; }
 
+    public IReadOnlyCollection<Skill> SkillsObligatorias => _skillsObligatorias;
+
     public void Modificar(
         string codigo,
         string nombre,
@@ -90,6 +95,12 @@ public sealed class Torneo
         }
 
         Estado = EstadoTorneo.Cancelado;
+    }
+
+    public void AsociarSkillObligatoria(Skill skill)
+    {
+        _ = skill;
+        throw new NotImplementedException();
     }
 
     // Valida todo antes de asignar: un dato inválido no deja el torneo a medio cambiar.
