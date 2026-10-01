@@ -39,6 +39,19 @@ public sealed class ServicioRankingTests
         Assert.AreEqual("sixseven", ranking[1].Nickname);
     }
 
+    [TestMethod]
+    [DataRow(101)]
+    [DataRow(500)]
+    public void Obtener_CantidadMayorAlTope_PideElTope(int cantidad)
+    {
+        _repositorioUsuarios.Setup(r => r.ListarRanking(100)).Returns([]);
+
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
+
+        Assert.IsEmpty(ranking);
+        _repositorioUsuarios.Verify(r => r.ListarRanking(100), Times.Once);
+    }
+
     private static Usuario CrearJugador(int id, string nickname)
     {
         return new Usuario("Ana", "Pérez", $"{nickname}@farmeort.com", nickname, new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
