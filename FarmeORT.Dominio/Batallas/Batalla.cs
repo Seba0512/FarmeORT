@@ -62,6 +62,11 @@ public sealed class Batalla
             throw new BatallaNoPendienteException();
         }
 
+        if(jugador.Id != Jugador1Id && jugador.Id != Jugador2Id)
+        {
+            throw new JugadorNoParticipaEnBatallaException();
+        }
+
         var lanzamiento = new Lanzamiento(this, _lanzamientos.Count + 1, jugador, skill, fecha);
         _lanzamientos.Add(lanzamiento);
         JugadorTurnoId = jugador.Id == Jugador1Id ? Jugador2Id : Jugador1Id;
