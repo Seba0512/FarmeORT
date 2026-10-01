@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Tests.Batallas;
 
@@ -71,6 +72,22 @@ public sealed class BatallaTests
         batalla.Cancelar();
 
         Assert.AreEqual(EstadoBatalla.Cancelada, batalla.Estado);
+        Assert.IsNull(batalla.JugadorTurnoId);
+    }
+
+    [TestMethod]
+    [DataRow(EstadoBatalla.Finalizada)]
+    [DataRow(EstadoBatalla.Cancelada)]
+    public void Cancelar_BatallaResuelta_LanzaBatallaNoCancelableSinCambiarEstado(EstadoBatalla estado)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var batalla = new Batalla(CrearTorneo(), 1, jugador1, CrearUsuario(8, Rol.Jugador), new SorteoPreparado(jugador1));
+        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
+        typeof(Batalla).GetProperty(nameof(Batalla.JugadorTurnoId))!.SetValue(batalla, null);
+
+        Assert.ThrowsExactly<BatallaNoCancelableException>(() => batalla.Cancelar());
+
+        Assert.AreEqual(estado, batalla.Estado);
         Assert.IsNull(batalla.JugadorTurnoId);
     }
 
