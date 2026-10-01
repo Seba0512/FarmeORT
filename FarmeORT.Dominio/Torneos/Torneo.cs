@@ -60,12 +60,16 @@ public sealed class Torneo
         Usuario organizador,
         DateOnly fechaActual)
     {
-        _ = fechaActual;
-
         // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
         if(Estado != EstadoTorneo.Abierto)
         {
             throw new TorneoNoModificableException();
+        }
+
+        // Una fecha de inicio que ya pasó y no cambia no impide editar el resto (D-36).
+        if(fechaInicio != FechaInicio)
+        {
+            ValidarInicioNoPasado(fechaInicio, fechaActual);
         }
 
         AsignarDatos(codigo, nombre, descripcion, fechaInicio, fechaFin, cupo, organizador);
