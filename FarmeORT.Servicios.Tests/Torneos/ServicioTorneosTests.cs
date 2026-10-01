@@ -186,6 +186,19 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    [DataRow("Pausado")]
+    [DataRow("abierto")]
+    [DataRow("1")]
+    public void Listar_EstadoInexistente_NoFiltraPorEstado(string estado)
+    {
+        _repositorioTorneos.Setup(r => r.Listar(new FiltroTorneos(null, null, null, null, null, false, 20, 0))).Returns([]);
+
+        var torneos = _servicio.Listar(new FiltroTorneosRequest { Estado = estado }, esAnonimo: false);
+
+        Assert.IsEmpty(torneos);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();
