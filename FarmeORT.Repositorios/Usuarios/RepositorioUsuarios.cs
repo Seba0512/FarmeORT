@@ -17,6 +17,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         return contexto.Usuarios.SingleOrDefault(u => u.Id == id && !u.Eliminado);
     }
 
+    public Usuario? ObtenerConRepertorio(int id)
+    {
+        _ = id;
+        throw new NotImplementedException();
+    }
+
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
     {
         var consulta = contexto.Usuarios.Where(u => !u.Eliminado);
@@ -68,6 +74,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         contexto.Sesiones.RemoveRange(contexto.Sesiones.Where(s => s.UsuarioId == usuario.Id));
         contexto.Usuarios.Update(usuario);
         contexto.SaveChanges();
+    }
+
+    public void GuardarRepertorio(Usuario jugador)
+    {
+        _ = jugador;
+        throw new NotImplementedException();
     }
 
     // Otro usuario puede ocupar el email o nickname entre la validación del servicio y el guardado (D-23).
