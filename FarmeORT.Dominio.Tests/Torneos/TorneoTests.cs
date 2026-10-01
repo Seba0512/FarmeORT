@@ -141,6 +141,25 @@ public sealed class TorneoTests
         Assert.AreEqual(FechaActual.AddDays(1), torneo.FechaFin);
     }
 
+    [TestMethod]
+    public void Cancelar_TorneoAbierto_QuedaCancelado()
+    {
+        var torneo = CrearTorneo();
+
+        torneo.Cancelar();
+
+        Assert.AreEqual(EstadoTorneo.Cancelado, torneo.Estado);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoCancelado_LanzaTorneoNoCancelable()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+
+        Assert.ThrowsExactly<TorneoNoCancelableException>(torneo.Cancelar);
+    }
+
     private static Torneo CrearTorneo(
         string codigo = "COPAAURA",
         string nombre = "Copa Aura",
