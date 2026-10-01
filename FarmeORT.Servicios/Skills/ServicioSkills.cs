@@ -26,10 +26,15 @@ public class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSki
 
     public IReadOnlyList<SkillResponse> Listar(FiltroSkillsRequest filtro)
     {
-        var categoria = filtro.Categoria is null ? (CategoriaSkill?)null : ConvertirCategoria(filtro.Categoria);
+        CategoriaSkill? categoria = null;
+        if(filtro.Categoria != null)
+        {
+            categoria = ConvertirCategoria(filtro.Categoria);
+        }
+
         var filtroRepositorio = new FiltroSkills(categoria, filtro.Dificultad, filtro.Activa, filtro.Nombre, filtro.Limit, filtro.Offset);
         var skills = repositorioSkills.Listar(filtroRepositorio);
-        return [.. skills.Select(CrearResponse)];
+        return skills.Select(CrearResponse).ToList();
     }
 
     public SkillResponse Modificar(int id, SkillRequest request)
@@ -51,9 +56,13 @@ public class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSki
 
     public SkillResponse CambiarEstado(int id, SkillEstadoRequest request)
     {
-        var activa = request.Activa ?? throw new DatosInvalidosException("El estado activa es obligatorio.");
+        if(request.Activa == null)
+        {
+            throw new DatosInvalidosException("El estado activa es obligatorio.");
+        }
+
         var skill = ObtenerSkillExistente(id);
-        if(activa)
+        if(request.Activa.Value)
         {
             skill.Activar();
         }
@@ -68,7 +77,13 @@ public class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSki
 
     private Skill ObtenerSkillExistente(int id)
     {
-        return repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
+        var skill = repositorioSkills.ObtenerPorId(id);
+        if(skill == null)
+        {
+            throw new SkillNoEncontradaException();
+        }
+
+        return skill;
     }
 
     private void ValidarCodigoDisponible(string codigo)
@@ -79,20 +94,28 @@ public class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSki
         }
     }
 
-    // Se compara contra los nombres para que un número como "1" no se acepte como categoría.
+    // Se compara por nombre para que un número como "1" no se acepte como categoría.
     private static CategoriaSkill ConvertirCategoria(string categoria)
     {
-        if(!Enum.GetNames<CategoriaSkill>().Contains(categoria))
+        foreach(var valor in Enum.GetValues<CategoriaSkill>())
         {
-            throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
+            if(valor.ToString() == categoria)
+            {
+                return valor;
+            }
         }
 
-        return Enum.Parse<CategoriaSkill>(categoria);
+        throw new DatosInvalidosException("La categoría debe ser Gestual, Vocal, Baile o Meme.");
     }
 
     private static int ObtenerDificultad(SkillRequest request)
     {
-        return request.Dificultad ?? throw new DatosInvalidosException("La dificultad es obligatoria.");
+        if(request.Dificultad == null)
+        {
+            throw new DatosInvalidosException("La dificultad es obligatoria.");
+        }
+
+        return request.Dificultad.Value;
     }
 
     private static SkillResponse CrearResponse(Skill skill)
