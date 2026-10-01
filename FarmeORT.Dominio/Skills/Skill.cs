@@ -5,6 +5,9 @@ namespace FarmeORT.Dominio.Skills;
 
 public sealed partial class Skill
 {
+    private const int LargoMinimoNombre = 3;
+    private const int LargoMaximoNombre = 40;
+
     public Skill(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
     {
         Modificar(codigo, nombre, descripcion, categoria, dificultad);
@@ -28,6 +31,7 @@ public sealed partial class Skill
     public void Modificar(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
     {
         ValidarCodigo(codigo);
+        ValidarNombre(nombre);
 
         Codigo = codigo;
         Nombre = nombre;
@@ -51,6 +55,19 @@ public sealed partial class Skill
         if(!PatronCodigo().IsMatch(codigo))
         {
             throw new DatosInvalidosException("El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.");
+        }
+    }
+
+    private static void ValidarNombre(string nombre)
+    {
+        if(string.IsNullOrWhiteSpace(nombre))
+        {
+            throw new DatosInvalidosException("El nombre es obligatorio.");
+        }
+
+        if(nombre.Length is < LargoMinimoNombre or > LargoMaximoNombre)
+        {
+            throw new DatosInvalidosException("El nombre debe tener entre 3 y 40 caracteres.");
         }
     }
 
