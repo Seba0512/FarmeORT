@@ -30,8 +30,6 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
     [HttpPut("{id:int}")]
     public IActionResult Modificar(int id, [FromBody] SkillRequest request)
     {
-        _ = id;
-        _ = request;
-        throw new NotImplementedException();
+        return Ok(servicioSkills.Modificar(id, request));
     }
 }
