@@ -62,8 +62,8 @@ internal sealed class ServicioTorneos(
             filtro.Nombre,
             filtro.SkillObligatoriaId,
             esAnonimo,
-            filtro.Limit,
-            filtro.Offset);
+            Paginacion.AjustarLimite(filtro.Limit),
+            Paginacion.AjustarDesplazamiento(filtro.Offset));
         var torneos = repositorioTorneos.Listar(filtroRepositorio);
         return torneos.Select(CrearResponse<TorneoResponse>).ToList();
     }
