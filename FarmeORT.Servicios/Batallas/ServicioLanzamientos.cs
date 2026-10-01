@@ -15,6 +15,12 @@ internal sealed class ServicioLanzamientos(
 {
     public LanzamientoResultadoResponse Lanzar(int batallaId, int jugadorId, LanzamientoRequest request)
     {
+        var skillId = DatosObligatorios.Obtener(request.SkillId, "La skill es obligatoria.");
+        if(skillId < 1)
+        {
+            throw new DatosInvalidosException("El id de la skill debe ser positivo.");
+        }
+
         var batalla = repositorioBatallas.ObtenerPorId(batallaId);
         if(batalla == null)
         {
@@ -27,7 +33,7 @@ internal sealed class ServicioLanzamientos(
             throw new UsuarioNoEncontradoException();
         }
 
-        var skill = repositorioSkills.ObtenerPorId(request.SkillId!.Value);
+        var skill = repositorioSkills.ObtenerPorId(skillId);
         if(skill == null)
         {
             throw new SkillNoEncontradaException();
