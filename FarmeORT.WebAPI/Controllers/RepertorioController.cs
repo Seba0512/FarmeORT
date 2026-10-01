@@ -12,7 +12,8 @@ public sealed class RepertorioController(IServicioRepertorio servicioRepertorio)
     [HttpGet]
     public IActionResult Listar()
     {
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        return Ok(servicioRepertorio.Listar(sesion.UsuarioId));
     }
 
     [HttpPost]
