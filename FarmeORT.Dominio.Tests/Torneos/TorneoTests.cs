@@ -88,6 +88,18 @@ public sealed class TorneoTests
         Assert.AreEqual("El cupo debe ser una potencia de 2 entre 4 y 64.", excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-1)]
+    public void Constructor_FechaFinNoPosteriorAlInicio_LanzaDatosInvalidos(int diasDespuesDelInicio)
+    {
+        var fechaFin = FechaInicio.AddDays(diasDespuesDelInicio);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(fechaFin: fechaFin));
+
+        Assert.AreEqual("La fecha de fin debe ser posterior a la de inicio.", excepcion.Message);
+    }
+
     private static Torneo CrearTorneo(
         string codigo = "COPAAURA",
         string nombre = "Copa Aura",
