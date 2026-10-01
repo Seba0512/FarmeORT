@@ -7,7 +7,7 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 {
     public Batalla? ObtenerPorId(int id)
     {
-        throw new NotImplementedException(contexto.GetType().Name);
+        return contexto.Batallas.SingleOrDefault(b => b.Id == id);
     }
 
     public void Guardar()

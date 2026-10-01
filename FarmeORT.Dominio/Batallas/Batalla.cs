@@ -46,6 +46,14 @@ public sealed class Batalla
         JugadorTurnoId = JugadorInicialId;
     }
 
+    // EF Core materializa las navegaciones después, como en Torneo (D-08).
+    private Batalla()
+    {
+        Torneo = null!;
+        Jugador1 = null!;
+        Jugador2 = null!;
+    }
+
     public int Id { get; init; }
 
     public int TorneoId { get; private set; }

@@ -17,6 +17,13 @@ public sealed class Lanzamiento
         Fecha = fecha;
     }
 
+    private Lanzamiento()
+    {
+        Batalla = null!;
+        Jugador = null!;
+        Skill = null!;
+    }
+
     public int Id { get; init; }
 
     public int BatallaId { get; private set; }
