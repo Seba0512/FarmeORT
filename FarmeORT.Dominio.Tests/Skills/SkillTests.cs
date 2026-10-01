@@ -121,6 +121,14 @@ public sealed class SkillTests
         Assert.AreEqual("La dificultad debe ser un entero entre 1 y 5.", excepcion.Message);
     }
 
+    [TestMethod]
+    public void Constructor_CategoriaInexistente_LanzaDatosInvalidos()
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearSkill(categoria: (CategoriaSkill)99));
+
+        Assert.AreEqual("La categoría debe ser Gestual, Vocal, Baile o Meme.", excepcion.Message);
+    }
+
     private static Skill CrearSkill(
         string codigo = "SIXSEVEN",
         string nombre = "Six-Seven",
