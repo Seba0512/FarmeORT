@@ -20,7 +20,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public SkillResponse ObtenerPorId(int id)
     {
-        var skill = repositorioSkills.ObtenerPorId(id)!;
+        var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
         return CrearResponse(skill);
     }
 
