@@ -7,6 +7,6 @@ internal sealed class SorteoAleatorio : ISorteo
 {
     public Usuario ElegirEntre(Usuario jugador1, Usuario jugador2)
     {
-        throw new NotImplementedException();
+        return Random.Shared.Next(2) == 0 ? jugador1 : jugador2;
     }
 }
