@@ -18,6 +18,6 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public void Guardar()
     {
-        throw new NotImplementedException();
+        contexto.SaveChanges();
     }
 }
