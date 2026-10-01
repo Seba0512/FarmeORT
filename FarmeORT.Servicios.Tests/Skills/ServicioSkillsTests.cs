@@ -76,6 +76,14 @@ public sealed class ServicioSkillsTests
         Assert.AreEqual("La categoría debe ser Gestual, Vocal, Baile o Meme.", excepcion.Message);
     }
 
+    [TestMethod]
+    public void Crear_DificultadOmitida_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(CrearRequest(dificultad: null)));
+
+        Assert.AreEqual("La dificultad es obligatoria.", excepcion.Message);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
