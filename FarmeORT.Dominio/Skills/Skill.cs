@@ -1,6 +1,9 @@
+using System.Text.RegularExpressions;
+using FarmeORT.Excepciones;
+
 namespace FarmeORT.Dominio.Skills;
 
-public sealed class Skill
+public sealed partial class Skill
 {
     public Skill(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
     {
@@ -24,6 +27,8 @@ public sealed class Skill
 
     public void Modificar(string codigo, string nombre, string descripcion, CategoriaSkill categoria, int dificultad)
     {
+        ValidarCodigo(codigo);
+
         Codigo = codigo;
         Nombre = nombre;
         Descripcion = descripcion;
@@ -40,4 +45,15 @@ public sealed class Skill
     {
         Activa = false;
     }
+
+    private static void ValidarCodigo(string codigo)
+    {
+        if(!PatronCodigo().IsMatch(codigo))
+        {
+            throw new DatosInvalidosException("El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.");
+        }
+    }
+
+    [GeneratedRegex("^[a-zA-Z0-9]{5,20}$")]
+    private static partial Regex PatronCodigo();
 }
