@@ -36,8 +36,6 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
     [HttpPatch("{id:int}")]
     public IActionResult CambiarEstado(int id, [FromBody] SkillEstadoRequest request)
     {
-        _ = id;
-        _ = request;
-        throw new NotImplementedException();
+        return Ok(servicioSkills.CambiarEstado(id, request));
     }
 }
