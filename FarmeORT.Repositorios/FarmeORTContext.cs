@@ -168,6 +168,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
         modelBuilder.Entity<Lanzamiento>(lanzamiento =>
         {
+            lanzamiento.ToTable("Lanzamientos", tabla =>
+                tabla.HasCheckConstraint("CK_Lanzamientos_Turno", "[Turno] BETWEEN 1 AND 8"));
             lanzamiento.HasKey(l => l.Id);
             lanzamiento.HasIndex(l => new { l.BatallaId, l.Turno }).IsUnique();
             lanzamiento.HasIndex(l => new { l.BatallaId, l.JugadorId, l.SkillId }).IsUnique();
