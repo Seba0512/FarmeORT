@@ -52,6 +52,19 @@ public sealed class ServicioRankingTests
         _repositorioUsuarios.Verify(r => r.ListarRanking(100), Times.Once);
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-3)]
+    public void Obtener_CantidadMenorAUno_PideElValorPorDefecto(int cantidad)
+    {
+        _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
+
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
+
+        Assert.IsEmpty(ranking);
+        _repositorioUsuarios.Verify(r => r.ListarRanking(10), Times.Once);
+    }
+
     private static Usuario CrearJugador(int id, string nickname)
     {
         return new Usuario("Ana", "Pérez", $"{nickname}@farmeort.com", nickname, new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
