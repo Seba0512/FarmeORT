@@ -18,6 +18,11 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
             consulta = consulta.Where(s => s.Categoria == categoria);
         }
 
+        if(filtro.Dificultad is { } dificultad)
+        {
+            consulta = consulta.Where(s => s.Dificultad == dificultad);
+        }
+
         return consulta
             .OrderBy(s => s.Id)
             .ToList();
