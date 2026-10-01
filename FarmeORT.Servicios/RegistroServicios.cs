@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Elo;
 using FarmeORT.IServicios.Repertorio;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Sesiones;
@@ -25,6 +26,8 @@ public static class RegistroServicios
         servicios.AddScoped<IServicioSkills, ServicioSkills>();
         servicios.AddScoped<IServicioTorneos, ServicioTorneos>();
         servicios.AddScoped<IServicioRepertorio, ServicioRepertorio>();
+
+        servicios.AddScoped<ICalculadorElo, CalculadorEloBase>();
         return servicios;
     }
 }
