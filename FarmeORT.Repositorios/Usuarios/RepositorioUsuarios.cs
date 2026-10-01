@@ -19,7 +19,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
     {
-        IQueryable<Usuario> consulta = contexto.Usuarios;
+        var consulta = contexto.Usuarios.Where(u => !u.Eliminado);
         if(!string.IsNullOrWhiteSpace(filtro.Nombre))
         {
             var nombre = filtro.Nombre.ToLower();
