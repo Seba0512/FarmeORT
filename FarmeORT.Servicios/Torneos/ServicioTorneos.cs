@@ -64,7 +64,13 @@ internal sealed class ServicioTorneos(
             Paginacion.AjustarLimite(filtro.Limit),
             Paginacion.AjustarDesplazamiento(filtro.Offset));
         var torneos = repositorioTorneos.Listar(filtroRepositorio);
-        return torneos.Select(t => CrearResponse<TorneoResponse>(t, 0)).ToList();
+        if(torneos.Count == 0)
+        {
+            return [];
+        }
+
+        var aceptadas = repositorioInscripciones.ContarAceptadasPorTorneo(torneos.Select(t => t.Id).ToList());
+        return torneos.Select(t => CrearResponse<TorneoResponse>(t, aceptadas.GetValueOrDefault(t.Id))).ToList();
     }
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
