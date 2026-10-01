@@ -20,8 +20,8 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public SkillResponse ObtenerPorId(int id)
     {
-        _ = id;
-        throw new NotImplementedException();
+        var skill = repositorioSkills.ObtenerPorId(id)!;
+        return CrearResponse(skill);
     }
 
     public IReadOnlyList<SkillResponse> Listar(FiltroSkillsRequest filtro)
