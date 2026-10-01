@@ -37,7 +37,9 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         var categoria = ConvertirCategoria(request.Categoria);
         var dificultad = ObtenerDificultad(request);
         var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
-        if(skill.Codigo != request.Codigo)
+
+        // El índice único de SQL Server no distingue mayúsculas: cambiar solo mayúsculas no ocupa un código ajeno.
+        if(!string.Equals(skill.Codigo, request.Codigo, StringComparison.OrdinalIgnoreCase))
         {
             ValidarCodigoDisponible(request.Codigo);
         }
