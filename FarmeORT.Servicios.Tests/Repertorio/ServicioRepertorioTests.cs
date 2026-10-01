@@ -1,8 +1,11 @@
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Repertorio;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Servicios.Repertorio;
@@ -20,6 +23,7 @@ public sealed class ServicioRepertorioTests
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
     private Mock<IRepositorioSkills> _repositorioSkills = null!;
+    private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
     private Mock<TimeProvider> _reloj = null!;
     private Usuario _jugador = null!;
     private Skill _skill = null!;
@@ -30,6 +34,7 @@ public sealed class ServicioRepertorioTests
     {
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
         _repositorioSkills = new Mock<IRepositorioSkills>(MockBehavior.Strict);
+        _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
         _jugador = new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
         {
@@ -39,7 +44,7 @@ public sealed class ServicioRepertorioTests
         {
             Id = SkillId,
         };
-        _servicio = new ServicioRepertorio(_repositorioUsuarios.Object, _repositorioSkills.Object, _reloj.Object);
+        _servicio = new ServicioRepertorio(_repositorioUsuarios.Object, _repositorioSkills.Object, _repositorioInscripciones.Object, _reloj.Object);
     }
 
     [TestMethod]
@@ -148,6 +153,20 @@ public sealed class ServicioRepertorioTests
         _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.IsAny<Usuario>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Quitar_SkillObligatoriaDeUnTorneoAbiertoDondeEstaAceptado_LanzaSkillObligatoriaEnUsoSinGuardar()
+    {
+        _jugador.DeclararSkill(_skill, 4, FechaActual);
+        var torneo = CrearTorneoQueExige(_skill);
+        _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(JugadorId))
+            .Returns([new Inscripcion(torneo, _jugador, new DateTime(2026, 10, 1))]);
+
+        Assert.ThrowsExactly<SkillObligatoriaEnUsoException>(() => _servicio.Quitar(JugadorId, SkillId));
+        _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.IsAny<Usuario>()), Times.Never);
+        Assert.HasCount(1, _jugador.Repertorio);
+    }
+
     private void ConfigurarDeclaracionValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
@@ -155,5 +174,19 @@ public sealed class ServicioRepertorioTests
         _repositorioUsuarios.Setup(r => r.GuardarRepertorio(_jugador));
         _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(2026, 10, 1, 12, 0, 0, TimeSpan.Zero));
         _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
+    }
+
+    private static Torneo CrearTorneoQueExige(Skill skill)
+    {
+        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
+        {
+            Id = 2,
+        };
+        var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.", new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 30), 8, organizador, FechaActual)
+        {
+            Id = 4,
+        };
+        torneo.AsociarSkillObligatoria(skill);
+        return torneo;
     }
 }

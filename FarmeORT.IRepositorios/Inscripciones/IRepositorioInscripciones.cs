@@ -15,6 +15,9 @@ public interface IRepositorioInscripciones
     // Trae a cada jugador con su repertorio, para controlar las skills obligatorias.
     IReadOnlyList<Inscripcion> ListarAceptadasDelTorneo(int torneoId);
 
+    // Trae cada torneo con sus skills obligatorias, para controlar si se puede quitar una skill del repertorio.
+    IReadOnlyList<Inscripcion> ListarAceptadasDelJugador(int jugadorId);
+
     void Agregar(Inscripcion inscripcion);
 
     void Actualizar(Inscripcion inscripcion);
