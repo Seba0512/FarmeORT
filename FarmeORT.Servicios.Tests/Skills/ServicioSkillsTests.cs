@@ -175,6 +175,16 @@ public sealed class ServicioSkillsTests
     }
 
     [TestMethod]
+    public void Listar_CategoriaInexistente_NoFiltraPorCategoria()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Categoria = "Cocina" });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
     public void Modificar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
     {
         _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
