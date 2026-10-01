@@ -42,6 +42,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new TurnoIncorrectoException(), 409, "NOT_PLAYER_TURN", "No es tu turno para lanzar una skill.");
     }
 
+    [TestMethod]
+    public void OnException_SkillFueraDelRepertorio_Devuelve409ConSKILL_NOT_IN_REPERTOIRE()
+    {
+        VerificarMapa(new SkillFueraDelRepertorioException(), 409, "SKILL_NOT_IN_REPERTOIRE", "La skill no está en tu repertorio.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
