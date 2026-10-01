@@ -245,6 +245,21 @@ public sealed class ServicioSkillsTests
         _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
     }
 
+    [TestMethod]
+    public void CambiarEstado_Activar_GuardaLaSkillActivaYLaDevuelve()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        skill.Desactivar();
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+
+        var response = _servicio.CambiarEstado(3, new SkillEstadoRequest { Activa = true });
+
+        Assert.IsTrue(response.Activa);
+        Assert.IsTrue(skill.Activa);
+        _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
