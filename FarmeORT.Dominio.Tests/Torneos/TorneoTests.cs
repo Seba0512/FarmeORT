@@ -185,6 +185,18 @@ public sealed class TorneoTests
     }
 
     [TestMethod]
+    public void Modificar_FechaInicioNuevaAnteriorALaActual_LanzaDatosInvalidos()
+    {
+        var torneo = CrearTorneo();
+        var fechaPosterior = new DateOnly(2026, 11, 10);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(
+            () => torneo.Modificar("COPAAURA", "Copa Aura", Descripcion, new DateOnly(2026, 11, 5), FechaFin, 8, CrearOrganizador(Rol.Organizador), fechaPosterior));
+
+        Assert.AreEqual("La fecha de inicio no puede ser anterior a la fecha actual.", excepcion.Message);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_QuedaCancelado()
     {
         var torneo = CrearTorneo();
