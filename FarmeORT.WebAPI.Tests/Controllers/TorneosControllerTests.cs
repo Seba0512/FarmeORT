@@ -101,6 +101,22 @@ public sealed class TorneosControllerTests
         _servicioTorneos.Verify(s => s.Cancelar(4), Times.Once);
     }
 
+    [TestMethod]
+    [DataRow(nameof(TorneosController.Crear))]
+    [DataRow(nameof(TorneosController.Modificar))]
+    [DataRow(nameof(TorneosController.Cancelar))]
+    public void Mantenimiento_Torneos_RequiereRolAdministrador(string accion)
+    {
+        var metodo = typeof(TorneosController).GetMethod(accion);
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>()
+            .SingleOrDefault();
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Administrador }, atributo.RolesPermitidos.ToArray());
+    }
+
     private void PrepararContexto(bool autenticado)
     {
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
