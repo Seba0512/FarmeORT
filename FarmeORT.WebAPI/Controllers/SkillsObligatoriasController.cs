@@ -27,8 +27,8 @@ public sealed class SkillsObligatoriasController(IServicioSkillsObligatorias ser
     [HttpDelete("{skillId:int}")]
     public IActionResult Quitar(int torneoId, int skillId)
     {
-        _ = torneoId;
-        _ = skillId;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        servicioSkillsObligatorias.Quitar(torneoId, skillId, sesion.UsuarioId);
+        return NoContent();
     }
 }
