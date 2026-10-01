@@ -1,9 +1,13 @@
+using System.Text.RegularExpressions;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Torneos;
 
 public sealed class Torneo
 {
+    private const string PatronCodigo = "^[a-zA-Z0-9]{5,20}$";
+
     public Torneo(
         string codigo,
         string nombre,
@@ -15,6 +19,8 @@ public sealed class Torneo
         DateOnly fechaActual)
     {
         _ = fechaActual;
+        ValidarCodigo(codigo);
+
         Codigo = codigo;
         Nombre = nombre;
         Descripcion = descripcion;
@@ -45,4 +51,12 @@ public sealed class Torneo
     public int OrganizadorId { get; private set; }
 
     public Usuario Organizador { get; private set; }
+
+    private static void ValidarCodigo(string codigo)
+    {
+        if(!Regex.IsMatch(codigo, PatronCodigo))
+        {
+            throw new DatosInvalidosException("El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.");
+        }
+    }
 }
