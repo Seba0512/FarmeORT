@@ -51,8 +51,9 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public SkillResponse CambiarEstado(int id, SkillEstadoRequest request)
     {
+        var activa = request.Activa ?? throw new DatosInvalidosException("El estado activa es obligatorio.");
         var skill = repositorioSkills.ObtenerPorId(id) ?? throw new SkillNoEncontradaException();
-        if(request.Activa == true)
+        if(activa)
         {
             skill.Activar();
         }
