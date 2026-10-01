@@ -74,6 +74,20 @@ public sealed class TorneoTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(descripcion: new string('a', largo)));
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(2)]
+    [DataRow(6)]
+    [DataRow(12)]
+    [DataRow(63)]
+    [DataRow(128)]
+    public void Constructor_CupoQueNoEsPotenciaDeDosEntre4Y64_LanzaDatosInvalidos(int cupo)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearTorneo(cupo: cupo));
+
+        Assert.AreEqual("El cupo debe ser una potencia de 2 entre 4 y 64.", excepcion.Message);
+    }
+
     private static Torneo CrearTorneo(
         string codigo = "COPAAURA",
         string nombre = "Copa Aura",
