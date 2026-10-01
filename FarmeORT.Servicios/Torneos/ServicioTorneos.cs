@@ -31,14 +31,14 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Agregar(torneo);
-        return CrearResponse(torneo);
+        return CrearResponse<TorneoResponse>(torneo);
     }
 
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
     {
-        _ = id;
         _ = esAnonimo;
-        throw new NotImplementedException();
+        var torneo = repositorioTorneos.ObtenerPorId(id)!;
+        return CrearResponse<TorneoDetalleResponse>(torneo);
     }
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
@@ -97,9 +97,11 @@ internal sealed class ServicioTorneos(
         return DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
     }
 
-    private static TorneoResponse CrearResponse(Torneo torneo)
+    // El detalle repite los datos del resumen: el mismo mapeo sirve para los dos tipos de respuesta.
+    private static T CrearResponse<T>(Torneo torneo)
+        where T : TorneoResponse, new()
     {
-        return new TorneoResponse
+        return new T
         {
             Id = torneo.Id,
             Codigo = torneo.Codigo,
