@@ -209,6 +209,18 @@ public sealed class RepositorioSkillsTests
     }
 
     [TestMethod]
+    public void Agregar_ErrorDeBaseSinCodigoDuplicado_PropagaDbUpdateException()
+    {
+        var existente = CrearSkill("SIXSEVEN");
+        GuardarSkills(existente);
+        var nueva = new Skill("TRALALERO", "Tralalero", Descripcion, CategoriaSkill.Meme, 3) { Id = existente.Id };
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Agregar(nueva));
+        Assert.IsFalse(_baseDeDatos.Contexto.Skills.Any(s => s.Codigo == "TRALALERO"));
+        AssertPuedeGuardarOtraSkill();
+    }
+
+    [TestMethod]
     public void Actualizar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoSkillYaExisteSinCambiarLaSkill()
     {
         GuardarSkills(CrearSkill("TRALALERO"));
