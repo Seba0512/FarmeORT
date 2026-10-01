@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Skills;
 using FarmeORT.IServicios.Skills;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -16,12 +17,14 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
     }
 
     [HttpGet]
+    [Autenticacion]
     public IActionResult Listar([FromQuery] FiltroSkillsRequest filtro)
     {
         return Ok(servicioSkills.Listar(filtro));
     }
 
     [HttpGet("{id:int}")]
+    [Autenticacion]
     public IActionResult ObtenerPorId(int id)
     {
         return Ok(servicioSkills.ObtenerPorId(id));
