@@ -31,6 +31,16 @@ public sealed class SkillsObligatoriasTests
         Assert.IsEmpty(_torneo.SkillsObligatorias);
     }
 
+    [TestMethod]
+    public void AsociarSkillObligatoria_SkillInactiva_LanzaSkillInactivaSinAsociarla()
+    {
+        var skill = CrearSkill(3);
+        skill.Desactivar();
+
+        Assert.ThrowsExactly<SkillInactivaException>(() => _torneo.AsociarSkillObligatoria(skill));
+        Assert.IsEmpty(_torneo.SkillsObligatorias);
+    }
+
     private static Skill CrearSkill(int id)
     {
         return new Skill("SKILL" + id, "Skill " + id, "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2)
