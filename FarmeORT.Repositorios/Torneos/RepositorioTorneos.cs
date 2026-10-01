@@ -16,7 +16,6 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
             .SingleOrDefault(t => t.Id == id);
     }
 
-    // El filtro por skill obligatoria se aplica cuando existan las skills obligatorias del torneo (pendiente en la bitácora).
     public IReadOnlyList<Torneo> Listar(FiltroTorneos filtro)
     {
         var consulta = contexto.Torneos.Include(t => t.Organizador).AsQueryable();
@@ -44,6 +43,11 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
         {
             var nombre = filtro.Nombre.ToLower();
             consulta = consulta.Where(t => t.Nombre.ToLower().Contains(nombre));
+        }
+
+        if(filtro.SkillObligatoriaId != null)
+        {
+            consulta = consulta.Where(t => t.SkillsObligatorias.Any(s => s.Id == filtro.SkillObligatoriaId.Value));
         }
 
         return consulta
