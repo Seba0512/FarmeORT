@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.Repositorios.Torneos;
 using Microsoft.EntityFrameworkCore;
 
@@ -83,6 +84,22 @@ public sealed class RepositorioSkillsObligatoriasTests
 
         Assert.AreEqual(otraId, CargarConObligatorias(torneoId).SkillsObligatorias.Single().Id);
         Assert.IsTrue(_baseDeDatos.Contexto.Skills.Any(s => s.Id == skillId));
+    }
+
+    [TestMethod]
+    public void Listar_FiltroPorSkillObligatoria_DevuelveSoloLosTorneosQueLaExigen()
+    {
+        var skillId = GuardarSkill("SIXSEVEN");
+        var otraId = GuardarSkill("TRALALERO");
+        var conLaSkill = GuardarTorneo("COPAAURA");
+        var conOtra = GuardarTorneo("COPAFUEGO");
+        GuardarTorneo("COPAHIELO");
+        AsociarYGuardar(conLaSkill, skillId);
+        AsociarYGuardar(conOtra, otraId);
+
+        var torneos = _repositorio.Listar(new FiltroTorneos(null, null, null, null, skillId, false, 20, 0));
+
+        CollectionAssert.AreEqual(new[] { conLaSkill }, torneos.Select(t => t.Id).ToArray());
     }
 
     private Torneo CargarConObligatorias(int torneoId)
