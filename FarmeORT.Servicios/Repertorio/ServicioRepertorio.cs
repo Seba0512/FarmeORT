@@ -13,10 +13,14 @@ internal sealed class ServicioRepertorio(
     IRepositorioSkills repositorioSkills,
     TimeProvider reloj) : IServicioRepertorio
 {
+    // Se ordena por skill para que el resultado no dependa del orden en que la base devuelve las filas.
     public IReadOnlyList<SkillDeclaradaResponse> Listar(int jugadorId)
     {
-        _ = jugadorId;
-        throw new NotImplementedException();
+        var jugador = ObtenerJugadorExistente(jugadorId);
+        return jugador.Repertorio
+            .OrderBy(d => d.SkillId)
+            .Select(CrearResponse)
+            .ToList();
     }
 
     public SkillDeclaradaResponse Declarar(int jugadorId, SkillDeclaradaRequest request)
