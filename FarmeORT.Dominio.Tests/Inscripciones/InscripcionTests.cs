@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
@@ -37,5 +38,26 @@ public sealed class InscripcionTests
         _torneo.Cancelar();
 
         Assert.ThrowsExactly<TorneoNoAbiertoException>(() => new Inscripcion(_torneo, _jugador, Ahora));
+    }
+
+    [TestMethod]
+    public void Constructor_JugadorSinTodasLasObligatorias_LanzaSkillsObligatoriasFaltantesConLasQueFaltan()
+    {
+        var declarada = CrearSkill(3, "SIXSEVEN");
+        _torneo.AsociarSkillObligatoria(declarada);
+        _torneo.AsociarSkillObligatoria(CrearSkill(5, "TRALALERO"));
+        _jugador.DeclararSkill(declarada, 4, FechaActual);
+
+        var excepcion = Assert.ThrowsExactly<SkillsObligatoriasFaltantesException>(() => new Inscripcion(_torneo, _jugador, Ahora));
+
+        CollectionAssert.AreEqual(new[] { "TRALALERO" }, excepcion.Detalles.ToArray());
+    }
+
+    private static Skill CrearSkill(int id, string codigo)
+    {
+        return new Skill(codigo, "Skill " + id, "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2)
+        {
+            Id = id,
+        };
     }
 }
