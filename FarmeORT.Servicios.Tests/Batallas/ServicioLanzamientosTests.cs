@@ -74,6 +74,19 @@ public sealed class ServicioLanzamientosTests
         Assert.AreEqual(FechaLanzamiento, lanzamiento.Fecha);
     }
 
+    [TestMethod]
+    public void Lanzar_JugadorInexistente_LanzaUsuarioNoEncontradoSinGuardar()
+    {
+        ConfigurarLanzamientoValido();
+        _usuarios.Setup(r => r.ObtenerConRepertorio(7)).Returns((Usuario?)null);
+
+        Assert.ThrowsExactly<UsuarioNoEncontradoException>(
+            () => _servicio.Lanzar(12, 7, new LanzamientoRequest { SkillId = 3 }));
+
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        _skills.Verify(r => r.ObtenerPorId(3), Times.Never);
+    }
+
     private void ConfigurarLanzamientoValido()
     {
         _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
