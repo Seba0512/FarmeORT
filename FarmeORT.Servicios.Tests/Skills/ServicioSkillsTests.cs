@@ -185,6 +185,18 @@ public sealed class ServicioSkillsTests
     }
 
     [TestMethod]
+    [DataRow(0)]
+    [DataRow(9)]
+    public void Listar_DificultadFueraDeRango_NoFiltraPorDificultad(int dificultad)
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        var skills = _servicio.Listar(new FiltroSkillsRequest { Dificultad = dificultad });
+
+        Assert.IsEmpty(skills);
+    }
+
+    [TestMethod]
     public void Modificar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
     {
         _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
