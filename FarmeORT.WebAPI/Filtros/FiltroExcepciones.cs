@@ -58,6 +58,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status404NotFound, "BATTLE_NOT_FOUND", "No existe una batalla con ese id."),
         [typeof(BatallaNoCancelableException)] =
             new(StatusCodes.Status409Conflict, "BATTLE_NOT_CANCELLABLE", "Solo se puede cancelar una batalla Pendiente o En arbitraje."),
+        [typeof(BatallaNoPendienteException)] =
+            new(StatusCodes.Status409Conflict, "BATTLE_NOT_PENDING", "Solo se puede lanzar una skill en una batalla Pendiente."),
     };
 
     public void OnException(ExceptionContext context)
