@@ -59,8 +59,9 @@ public sealed class Inscripcion
         Estado = EstadoInscripcion.Cancelada;
     }
 
+    // La usa el fallo de una batalla: el perdedor queda fuera del torneo.
     public void Eliminar()
     {
-        throw new NotImplementedException();
+        Estado = EstadoInscripcion.Eliminada;
     }
 }
