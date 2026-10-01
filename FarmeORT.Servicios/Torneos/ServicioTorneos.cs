@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
@@ -12,11 +13,18 @@ internal sealed class ServicioTorneos(
 {
     public TorneoResponse Crear(TorneoRequest request)
     {
-        _ = repositorioTorneos;
-        _ = repositorioUsuarios;
-        _ = reloj;
-        _ = request;
-        throw new NotImplementedException();
+        var organizador = repositorioUsuarios.ObtenerPorId(request.OrganizadorId.GetValueOrDefault())!;
+        var torneo = new Torneo(
+            request.Codigo,
+            request.Nombre,
+            request.Descripcion,
+            request.FechaInicio.GetValueOrDefault(),
+            request.FechaFin.GetValueOrDefault(),
+            request.Cupo.GetValueOrDefault(),
+            organizador,
+            ObtenerFechaActual());
+        repositorioTorneos.Agregar(torneo);
+        return CrearResponse(torneo);
     }
 
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
@@ -44,5 +52,27 @@ internal sealed class ServicioTorneos(
     {
         _ = id;
         throw new NotImplementedException();
+    }
+
+    private DateOnly ObtenerFechaActual()
+    {
+        return DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
+    }
+
+    private static TorneoResponse CrearResponse(Torneo torneo)
+    {
+        return new TorneoResponse
+        {
+            Id = torneo.Id,
+            Codigo = torneo.Codigo,
+            Nombre = torneo.Nombre,
+            Descripcion = torneo.Descripcion,
+            Estado = torneo.Estado.ToString(),
+            FechaInicio = torneo.FechaInicio,
+            FechaFin = torneo.FechaFin,
+            Cupo = torneo.Cupo,
+            OrganizadorId = torneo.OrganizadorId,
+            Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
+        };
     }
 }
