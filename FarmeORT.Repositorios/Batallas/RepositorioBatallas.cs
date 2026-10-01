@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using Microsoft.EntityFrameworkCore;
 
@@ -18,6 +19,24 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public void Guardar()
     {
-        contexto.SaveChanges();
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateException)
+        {
+            var nuevos = contexto.ChangeTracker.Entries<Lanzamiento>()
+                .Where(e => e.State == EntityState.Added)
+                .Select(e => e.Entity)
+                .ToList();
+            if(nuevos.Any(l => contexto.Lanzamientos.AsNoTracking()
+                .Any(guardado => guardado.BatallaId == l.BatallaId && guardado.Turno == l.Turno)))
+            {
+                contexto.ChangeTracker.Clear();
+                throw new TurnoIncorrectoException();
+            }
+
+            throw;
+        }
     }
 }
