@@ -18,8 +18,7 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
     [HttpGet]
     public IActionResult Listar([FromQuery] FiltroSkillsRequest filtro)
     {
-        _ = filtro;
-        throw new NotImplementedException();
+        return Ok(servicioSkills.Listar(filtro));
     }
 
     [HttpGet("{id:int}")]
