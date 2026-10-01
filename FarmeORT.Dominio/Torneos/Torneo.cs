@@ -127,8 +127,7 @@ public sealed class Torneo
 
     public void QuitarSkillObligatoria(int skillId)
     {
-        _ = skillId;
-        throw new NotImplementedException();
+        _skillsObligatorias.RemoveAll(s => s.Id == skillId);
     }
 
     // Valida todo antes de asignar: un dato inválido no deja el torneo a medio cambiar.

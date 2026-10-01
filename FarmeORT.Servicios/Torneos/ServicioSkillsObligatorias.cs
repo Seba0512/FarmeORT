@@ -37,10 +37,9 @@ internal sealed class ServicioSkillsObligatorias(
 
     public void Quitar(int torneoId, int skillId, int organizadorId)
     {
-        _ = torneoId;
-        _ = skillId;
-        _ = organizadorId;
-        throw new NotImplementedException();
+        var torneo = ObtenerTorneoDelOrganizador(torneoId, organizadorId);
+        torneo.QuitarSkillObligatoria(skillId);
+        repositorioTorneos.Actualizar(torneo);
     }
 
     // El filtro solo sabe que es un Organizador; si es el asignado a este torneo lo decide el servicio (403, D-40).
