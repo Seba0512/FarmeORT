@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
@@ -89,6 +90,40 @@ public sealed class BatallaTests
 
         Assert.AreEqual(estado, batalla.Estado);
         Assert.IsNull(batalla.JugadorTurnoId);
+    }
+
+    [TestMethod]
+    [DataRow(7, 8)]
+    [DataRow(8, 7)]
+    public void Lanzar_PrimerTurno_RegistraSkillYAlternaJugador(int inicialId, int siguienteId)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        var inicial = inicialId == 7 ? jugador1 : jugador2;
+        var batalla = new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(inicial)) { Id = 12 };
+        var skill = CrearSkill(3);
+        inicial.DeclararSkill(skill, 4, FechaActual);
+        var fecha = new DateTimeOffset(2026, 10, 1, 16, 30, 0, TimeSpan.Zero);
+
+        var lanzamiento = batalla.Lanzar(inicial, skill, fecha);
+
+        Assert.AreEqual(1, batalla.Lanzamientos.Count);
+        Assert.AreSame(lanzamiento, batalla.Lanzamientos.Single());
+        Assert.AreSame(batalla, lanzamiento.Batalla);
+        Assert.AreEqual(12, lanzamiento.BatallaId);
+        Assert.AreEqual(1, lanzamiento.Turno);
+        Assert.AreSame(inicial, lanzamiento.Jugador);
+        Assert.AreEqual(inicialId, lanzamiento.JugadorId);
+        Assert.AreSame(skill, lanzamiento.Skill);
+        Assert.AreEqual(3, lanzamiento.SkillId);
+        Assert.AreEqual(fecha, lanzamiento.Fecha);
+        Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
+        Assert.AreEqual(siguienteId, batalla.JugadorTurnoId);
+    }
+
+    private static Skill CrearSkill(int id)
+    {
+        return new Skill($"SKILL{id}", $"Skill {id}", "Skill para disputar una batalla de aura.", CategoriaSkill.Gestual, 2) { Id = id };
     }
 
     private static Torneo CrearTorneo()

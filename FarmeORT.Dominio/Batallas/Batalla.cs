@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
@@ -6,6 +7,8 @@ namespace FarmeORT.Dominio.Batallas;
 
 public sealed class Batalla
 {
+    private readonly List<Lanzamiento> _lanzamientos = [];
+
     public Batalla(Torneo torneo, int numeroRonda, Usuario jugador1, Usuario jugador2, ISorteo sorteo)
     {
         Torneo = torneo;
@@ -47,6 +50,13 @@ public sealed class Batalla
     public int JugadorInicialId { get; private set; }
 
     public int? JugadorTurnoId { get; private set; }
+
+    public IReadOnlyCollection<Lanzamiento> Lanzamientos => _lanzamientos.AsReadOnly();
+
+    public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
+    {
+        throw new NotImplementedException();
+    }
 
     public void Cancelar()
     {
