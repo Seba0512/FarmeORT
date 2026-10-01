@@ -32,9 +32,9 @@ internal sealed class ServicioRepertorio(
 
     public void Quitar(int jugadorId, int skillId)
     {
-        _ = jugadorId;
-        _ = skillId;
-        throw new NotImplementedException();
+        var jugador = ObtenerJugadorExistente(jugadorId);
+        jugador.QuitarSkill(skillId);
+        repositorioUsuarios.GuardarRepertorio(jugador);
     }
 
     // El token es válido, pero el jugador pudo haberse dado de baja después de iniciar sesión.
