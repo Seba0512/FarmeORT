@@ -15,9 +15,12 @@ internal sealed class ServicioSkillsObligatorias(
 {
     public IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo)
     {
-        _ = torneoId;
         _ = esAnonimo;
-        throw new NotImplementedException();
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
+        return torneo.SkillsObligatorias
+            .OrderBy(s => s.Id)
+            .Select(CrearResponse)
+            .ToList();
     }
 
     public SkillResponse Asociar(int torneoId, SkillObligatoriaRequest request, int organizadorId)
