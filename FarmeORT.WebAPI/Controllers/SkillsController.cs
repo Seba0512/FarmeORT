@@ -11,8 +11,7 @@ public sealed class SkillsController(IServicioSkills servicioSkills) : Controlle
     [HttpPost]
     public IActionResult Crear([FromBody] SkillRequest request)
     {
-        _ = servicioSkills;
-        _ = request;
-        throw new NotImplementedException();
+        var response = servicioSkills.Crear(request);
+        return Created($"/api/v1/skills/{response.Id}", response);
     }
 }
