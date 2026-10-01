@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Inscripciones;
 
@@ -7,6 +8,11 @@ public sealed class Inscripcion
 {
     public Inscripcion(Torneo torneo, Usuario jugador, DateTime fecha)
     {
+        if(torneo.Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoAbiertoException();
+        }
+
         Torneo = torneo;
         TorneoId = torneo.Id;
         Jugador = jugador;
