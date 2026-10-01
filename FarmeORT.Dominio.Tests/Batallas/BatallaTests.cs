@@ -248,6 +248,16 @@ public sealed class BatallaTests
         Assert.AreEqual(7, batalla.JugadorTurnoId);
     }
 
+    [TestMethod]
+    public void Constructor_MismoJugadorEnAmbosLados_RechazaDatosInvalidos()
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador2 = CrearUsuario(7, Rol.Jugador);
+
+        Assert.ThrowsExactly<DatosInvalidosException>(
+            () => new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(jugador1)));
+    }
+
     private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
