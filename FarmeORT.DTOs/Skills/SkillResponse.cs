@@ -1,6 +1,6 @@
 namespace FarmeORT.DTOs.Skills;
 
-public sealed class SkillResponse
+public class SkillResponse
 {
     public int Id { get; init; }
 

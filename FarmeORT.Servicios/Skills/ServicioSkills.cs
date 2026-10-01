@@ -6,7 +6,7 @@ using FarmeORT.IServicios.Skills;
 
 namespace FarmeORT.Servicios.Skills;
 
-internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSkills
+public class ServicioSkills(IRepositorioSkills repositorioSkills) : IServicioSkills
 {
     public SkillResponse Crear(SkillRequest request)
     {

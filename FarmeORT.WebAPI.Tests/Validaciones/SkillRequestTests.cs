@@ -5,7 +5,7 @@ using FarmeORT.DTOs.Skills;
 namespace FarmeORT.WebAPI.Tests.Validaciones;
 
 [TestClass]
-public sealed class SkillRequestTests
+public class SkillRequestTests
 {
     [TestMethod]
     [DataRow("ABC12", 3, 20, 1, CategoriasSkill.Gestual)]

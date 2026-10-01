@@ -8,7 +8,7 @@ using Moq;
 namespace FarmeORT.Servicios.Tests.Skills;
 
 [TestClass]
-public sealed class ServicioSkillsTests
+public class ServicioSkillsTests
 {
     private const string Codigo = "SIXSEVEN";
     private const string Nombre = "Six-Seven";

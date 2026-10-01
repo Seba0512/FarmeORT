@@ -4,7 +4,7 @@ using FarmeORT.DTOs.Skills;
 namespace FarmeORT.WebAPI.Tests.Validaciones;
 
 [TestClass]
-public sealed class FiltroSkillsRequestTests
+public class FiltroSkillsRequestTests
 {
     [TestMethod]
     [DataRow(null, null, 1, 0)]

@@ -3,7 +3,7 @@ using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Skills;
 
-public sealed partial class Skill
+public partial class Skill
 {
     private const int LargoMinimoNombre = 3;
     private const int LargoMaximoNombre = 40;

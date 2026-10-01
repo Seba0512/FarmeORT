@@ -10,7 +10,7 @@ using Moq;
 namespace FarmeORT.WebAPI.Tests.Controllers;
 
 [TestClass]
-public sealed class SkillsControllerTests
+public class SkillsControllerTests
 {
     private Mock<IServicioSkills> _servicioSkills = null!;
     private SkillsController _controller = null!;

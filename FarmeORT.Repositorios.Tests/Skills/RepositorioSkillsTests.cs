@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 namespace FarmeORT.Repositorios.Tests.Skills;
 
 [TestClass]
-public sealed class RepositorioSkillsTests
+public class RepositorioSkillsTests
 {
     private const string Descripcion = "Gesto alternando las manos hacia arriba y abajo.";
 
