@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using FarmeORT.DTOs.Usuarios;
 
 namespace FarmeORT.WebAPI.Tests.Validaciones;
@@ -88,6 +89,19 @@ public sealed class UsuarioAdminRequestTests
         var request = CrearRequest(rol: rol);
 
         AssertCampoInvalido(request, nameof(UsuarioAdminRequest.Rol));
+    }
+
+    [TestMethod]
+    public void Validar_JsonSinFechaNacimiento_RechazaFechaOmitida()
+    {
+        var json = """
+            { "nombre": "Ana", "apellido": "Pérez", "email": "ana@farmeort.com",
+              "nickname": "anaperez", "contrasena": "ClaveSegura123!!", "rol": "Organizador" }
+            """;
+        var request = JsonSerializer.Deserialize<UsuarioAdminRequest>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+
+        Assert.IsNotNull(request);
+        AssertCampoInvalido(request, nameof(UsuarioAdminRequest.FechaNacimiento));
     }
 
     private static UsuarioAdminRequest CrearRequest(

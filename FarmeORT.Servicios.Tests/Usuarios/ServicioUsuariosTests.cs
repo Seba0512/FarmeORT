@@ -96,6 +96,27 @@ public sealed class ServicioUsuariosTests
     }
 
     [TestMethod]
+    public void Crear_FechaNacimientoOmitida_LanzaDatosInvalidosSinGuardarNiHashear()
+    {
+        ConfigurarAltaValida();
+        var request = new UsuarioAdminRequest
+        {
+            Nombre = "Ana",
+            Apellido = "Pérez",
+            Email = Email,
+            Nickname = Nickname,
+            Contrasena = Contrasena,
+            Rol = Roles.Organizador,
+        };
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(request));
+
+        Assert.AreEqual("La fecha de nacimiento es obligatoria.", excepcion.Message);
+        _repositorioUsuarios.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+        _hasheadorContrasenas.Verify(h => h.Hashear(Contrasena), Times.Never);
+    }
+
+    [TestMethod]
     [DataRow("Superusuario")]
     [DataRow("5")]
     public void Crear_RolInexistente_LanzaDatosInvalidosSinConsultarLaBase(string rol)
