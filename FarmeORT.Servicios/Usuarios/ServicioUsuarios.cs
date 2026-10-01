@@ -55,6 +55,11 @@ internal sealed class ServicioUsuarios(
             throw new EmailYaExisteException();
         }
 
+        if(repositorioUsuarios.ExistePorNickname(request.Nickname))
+        {
+            throw new NicknameYaExisteException();
+        }
+
         var fechaActual = DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
         var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
         usuario.Modificar(
