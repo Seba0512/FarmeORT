@@ -306,6 +306,20 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    [DataRow(nameof(TorneoRequest.FechaInicio), "La fecha de inicio es obligatoria.")]
+    [DataRow(nameof(TorneoRequest.FechaFin), "La fecha de fin es obligatoria.")]
+    [DataRow(nameof(TorneoRequest.Cupo), "El cupo es obligatorio.")]
+    [DataRow(nameof(TorneoRequest.OrganizadorId), "El organizador es obligatorio.")]
+    public void Modificar_DatoObligatorioOmitido_LanzaDatosInvalidosSinConsultarLaBase(string campo, string mensaje)
+    {
+        var request = CrearRequestSin(campo);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(TorneoId, request));
+
+        Assert.AreEqual(mensaje, excepcion.Message);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_GuardaElTorneoCanceladoYLoDevuelve()
     {
         var torneo = CrearTorneo();
