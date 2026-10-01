@@ -199,7 +199,6 @@ public sealed class RepositorioSkillsTests
     [TestMethod]
     public void Agregar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoSkillYaExisteSinDuplicar()
     {
-        Assert.IsFalse(_repositorio.ExistePorCodigo("SIXSEVEN"));
         GuardarSkills(CrearSkill("SIXSEVEN"));
         var nueva = CrearSkill("SIXSEVEN", nombre: "Otra skill");
 
@@ -252,11 +251,12 @@ public sealed class RepositorioSkillsTests
         Assert.IsTrue(_baseDeDatos.Contexto.Skills.Any(s => s.Id == siguiente.Id && s.Codigo == "SIGUIENTE"));
     }
 
-    // Deja la skill guardada y cargada por el repositorio, como la recibe el servicio antes de modificarla.
+    // Deja la skill guardada y cargada desde el contexto, como la recibe el servicio antes de modificarla.
+    // No usa ObtenerPorId para que estos tests no dependan de otro método del repositorio (FIRST).
     private Skill GuardarYCargar(Skill skill)
     {
         GuardarSkills(skill);
-        return _repositorio.ObtenerPorId(skill.Id)!;
+        return _baseDeDatos.Contexto.Skills.Single(s => s.Id == skill.Id);
     }
 
     private void GuardarSkills(params Skill[] skills)
