@@ -120,6 +120,7 @@ public sealed class ServicioInscripcionesTests
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
+        _repositorioInscripciones.Setup(r => r.ExisteAceptada(TorneoId, JugadorId)).Returns(false);
         _repositorioInscripciones.Setup(r => r.Agregar(It.Is<Inscripcion>(i => i.TorneoId == TorneoId)));
         _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(Ahora, TimeSpan.Zero));
         _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
