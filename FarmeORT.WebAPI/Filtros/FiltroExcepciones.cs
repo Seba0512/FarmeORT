@@ -66,6 +66,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "NOT_PLAYER_TURN", "No es tu turno para lanzar una skill."),
         [typeof(SkillFueraDelRepertorioException)] =
             new(StatusCodes.Status409Conflict, "SKILL_NOT_IN_REPERTOIRE", "La skill no está en tu repertorio."),
+        [typeof(SkillYaLanzadaException)] =
+            new(StatusCodes.Status409Conflict, "SKILL_ALREADY_THROWN", "Ya lanzaste esta skill en la batalla."),
     };
 
     public void OnException(ExceptionContext context)
