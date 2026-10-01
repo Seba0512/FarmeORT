@@ -3,8 +3,9 @@ using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Skills;
 
-public partial class Skill
+public class Skill
 {
+    private const string PatronCodigo = "^[a-zA-Z0-9]{5,20}$";
     private const int LargoMinimoNombre = 3;
     private const int LargoMaximoNombre = 40;
     private const int LargoMinimoDescripcion = 20;
@@ -59,7 +60,7 @@ public partial class Skill
 
     private static void ValidarCodigo(string codigo)
     {
-        if(!PatronCodigo().IsMatch(codigo))
+        if(!Regex.IsMatch(codigo, PatronCodigo))
         {
             throw new DatosInvalidosException("El código debe ser alfanumérico, sin espacios, de 5 a 20 caracteres.");
         }
@@ -72,7 +73,7 @@ public partial class Skill
             throw new DatosInvalidosException("El nombre es obligatorio.");
         }
 
-        if(nombre.Length is < LargoMinimoNombre or > LargoMaximoNombre)
+        if(nombre.Length < LargoMinimoNombre || nombre.Length > LargoMaximoNombre)
         {
             throw new DatosInvalidosException("El nombre debe tener entre 3 y 40 caracteres.");
         }
@@ -85,7 +86,7 @@ public partial class Skill
             throw new DatosInvalidosException("La descripción es obligatoria.");
         }
 
-        if(descripcion.Length is < LargoMinimoDescripcion or > LargoMaximoDescripcion)
+        if(descripcion.Length < LargoMinimoDescripcion || descripcion.Length > LargoMaximoDescripcion)
         {
             throw new DatosInvalidosException("La descripción debe tener entre 20 y 300 caracteres.");
         }
@@ -101,12 +102,9 @@ public partial class Skill
 
     private static void ValidarDificultad(int dificultad)
     {
-        if(dificultad is < DificultadMinima or > DificultadMaxima)
+        if(dificultad < DificultadMinima || dificultad > DificultadMaxima)
         {
             throw new DatosInvalidosException("La dificultad debe ser un entero entre 1 y 5.");
         }
     }
-
-    [GeneratedRegex("^[a-zA-Z0-9]{5,20}$")]
-    private static partial Regex PatronCodigo();
 }
