@@ -219,6 +219,22 @@ public sealed class RepositorioBatallasTests
         Assert.IsFalse(obligatoria.Activa);
     }
 
+    [TestMethod]
+    public void Guardar_ErrorDeRestriccionSinDuplicados_PropagaErrorDePersistenciaSinGuardar()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = new Skill("AURASTARE", "Aura Stare", "Mirada fija para farmear aura en la batalla.", CategoriaSkill.Gestual, 2) { Id = 4 };
+        _baseDeDatos.Contexto.Lanzamientos.Add(new Lanzamiento(batalla, 9, batalla.Jugador1, skill, FechaLanzamiento));
+        _baseDeDatos.Contexto.Entry(batalla).Property(b => b.JugadorTurnoId).CurrentValue = 8;
+
+        Assert.ThrowsExactly<DbUpdateException>(() => _repositorio.Guardar());
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.HasCount(2, _baseDeDatos.Contexto.Lanzamientos.ToList());
+        Assert.AreEqual(7, _baseDeDatos.Contexto.Batallas.Single(b => b.Id == batalla.Id).JugadorTurnoId);
+        Assert.IsFalse(_baseDeDatos.Contexto.Skills.Any(s => s.Id == 4));
+    }
+
     private FarmeORTContext CrearOtroContexto()
     {
         var opciones = new DbContextOptionsBuilder<FarmeORTContext>()

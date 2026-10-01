@@ -14,6 +14,17 @@ namespace FarmeORT.WebAPI.Tests.Controllers;
 public sealed class LanzamientosControllerTests
 {
     [TestMethod]
+    public void Lanzar_RequiereAutenticacionYRolJugador()
+    {
+        var atributo = typeof(LanzamientosController).GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>().SingleOrDefault();
+
+        Assert.IsNotNull(atributo);
+        Assert.IsInstanceOfType<AutenticacionAttribute>(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
+    }
+
+    [TestMethod]
     public void Lanzar_DatosValidos_Devuelve201ConLocationYUsaJugadorAutenticado()
     {
         var servicio = new Mock<IServicioLanzamientos>(MockBehavior.Strict);

@@ -146,6 +146,31 @@ public sealed class ServicioLanzamientosTests
         Assert.AreEqual(7, _batalla.JugadorTurnoId);
     }
 
+    [TestMethod]
+    public void Lanzar_BatallaCancelada_PropagaReglaDeDominioSinGuardar()
+    {
+        ConfigurarLanzamientoValido();
+        _batalla.Cancelar();
+
+        Assert.ThrowsExactly<BatallaNoPendienteException>(
+            () => _servicio.Lanzar(12, 7, new LanzamientoRequest { SkillId = 3 }));
+
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.HasCount(0, _batalla.Lanzamientos);
+    }
+
+    [TestMethod]
+    public void Lanzar_CancelacionConcurrenteAlGuardar_PropagaConflictoSinDevolverExito()
+    {
+        ConfigurarLanzamientoValido();
+        _batallas.Setup(r => r.Guardar()).Throws(new BatallaModificadaException());
+
+        Assert.ThrowsExactly<BatallaModificadaException>(
+            () => _servicio.Lanzar(12, 7, new LanzamientoRequest { SkillId = 3 }));
+
+        _batallas.Verify(r => r.Guardar(), Times.Once);
+    }
+
     private void ConfigurarLanzamientoValido()
     {
         _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);

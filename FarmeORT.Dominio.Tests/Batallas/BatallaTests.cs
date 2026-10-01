@@ -283,6 +283,90 @@ public sealed class BatallaTests
             () => new Batalla(CrearTorneo(), ronda, jugador1, CrearUsuario(8, Rol.Jugador), new SorteoPreparado(jugador1)));
     }
 
+    [TestMethod]
+    [DataRow(4, 7)]
+    [DataRow(4, 8)]
+    [DataRow(5, 7)]
+    [DataRow(5, 8)]
+    [DataRow(6, 7)]
+    [DataRow(6, 8)]
+    public void Lanzar_ObligatoriasPendientesIgualATurnosPropios_RechazaLibre(int cantidad, int inicialId)
+    {
+        var batalla = CrearBatallaConHistorial(cantidad, inicialId);
+        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var libre = CrearSkill(99);
+        jugador.DeclararSkill(libre, 4, FechaActual);
+        AsociarObligatorias(batalla);
+
+        Assert.ThrowsExactly<SkillObligatoriaPendienteException>(
+            () => batalla.Lanzar(jugador, libre, DateTimeOffset.UtcNow));
+
+        Assert.HasCount(cantidad, batalla.Lanzamientos);
+        Assert.AreEqual(jugador.Id, batalla.JugadorTurnoId);
+    }
+
+    [TestMethod]
+    [DataRow(0, 7)]
+    [DataRow(0, 8)]
+    [DataRow(2, 7)]
+    [DataRow(2, 8)]
+    public void Lanzar_HayMasTurnosPropiosQueObligatoriasPendientes_PermiteLibre(int cantidad, int inicialId)
+    {
+        var batalla = CrearBatallaConHistorial(cantidad, inicialId);
+        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var libre = CrearSkill(99);
+        jugador.DeclararSkill(libre, 4, FechaActual);
+        AsociarObligatorias(batalla);
+
+        var lanzamiento = batalla.Lanzar(jugador, libre, DateTimeOffset.UtcNow);
+
+        Assert.AreEqual(99, lanzamiento.SkillId);
+        Assert.AreEqual(cantidad + 1, lanzamiento.Turno);
+    }
+
+    [TestMethod]
+    [DataRow(4, 7, 3)]
+    [DataRow(4, 8, 4)]
+    [DataRow(6, 7, 4)]
+    [DataRow(6, 8, 4)]
+    public void Lanzar_UltimosTurnosPropios_PermiteObligatoriaPendiente(int cantidad, int inicialId, int skillId)
+    {
+        var batalla = CrearBatallaConHistorial(cantidad, inicialId);
+        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        AsociarObligatorias(batalla);
+        var obligatoria = jugador.Repertorio.Single(d => d.SkillId == skillId).Skill;
+        obligatoria.Desactivar();
+
+        var lanzamiento = batalla.Lanzar(jugador, obligatoria, DateTimeOffset.UtcNow);
+
+        Assert.AreEqual(skillId, lanzamiento.SkillId);
+        Assert.AreEqual(cantidad + 1, lanzamiento.Turno);
+        Assert.IsFalse(lanzamiento.Skill.Activa);
+    }
+
+    [TestMethod]
+    public void Lanzar_ObligatoriasYaCumplidas_PermiteLibreEnUltimoTurnoPropio()
+    {
+        var batalla = CrearBatallaConHistorial(6);
+        var usada = batalla.Jugador1.Repertorio.Single(d => d.SkillId == 1).Skill;
+        batalla.Torneo.AsociarSkillObligatoria(usada);
+        var libre = CrearSkill(99);
+        batalla.Jugador1.DeclararSkill(libre, 4, FechaActual);
+
+        var lanzamiento = batalla.Lanzar(batalla.Jugador1, libre, DateTimeOffset.UtcNow);
+
+        Assert.AreEqual(99, lanzamiento.SkillId);
+        Assert.AreEqual(7, lanzamiento.Turno);
+    }
+
+    private static void AsociarObligatorias(Batalla batalla)
+    {
+        foreach(var id in new[] { 3, 4 })
+        {
+            batalla.Torneo.AsociarSkillObligatoria(batalla.Jugador1.Repertorio.Single(d => d.SkillId == id).Skill);
+        }
+    }
+
     private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);
