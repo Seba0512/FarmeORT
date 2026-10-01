@@ -98,6 +98,19 @@ public sealed class RepositorioSkillsTests
         CollectionAssert.AreEqual(new[] { "TRALALERO", "SIXSEVEN" }, skills.Select(s => s.Codigo).ToArray());
     }
 
+    [TestMethod]
+    public void Listar_FiltroPorCategoria_DevuelveSoloLasDeEsaCategoria()
+    {
+        GuardarSkills(
+            CrearSkill("SIXSEVEN", categoria: CategoriaSkill.Gestual),
+            CrearSkill("TRALALERO", categoria: CategoriaSkill.Meme),
+            CrearSkill("AURASTARE", categoria: CategoriaSkill.Gestual));
+
+        var skills = _repositorio.Listar(SinFiltros() with { Categoria = CategoriaSkill.Gestual });
+
+        CollectionAssert.AreEqual(new[] { "SIXSEVEN", "AURASTARE" }, skills.Select(s => s.Codigo).ToArray());
+    }
+
     private static FiltroSkills SinFiltros()
     {
         return new FiltroSkills(null, null, null, null, 20, 0);
