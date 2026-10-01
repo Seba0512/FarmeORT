@@ -62,10 +62,12 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         Guardar(usuario);
     }
 
+    // La baja y el cierre de sesiones se guardan juntos: un solo SaveChanges es una transacción.
     public void Eliminar(Usuario usuario)
     {
-        _ = usuario;
-        throw new NotImplementedException();
+        contexto.Sesiones.RemoveRange(contexto.Sesiones.Where(s => s.UsuarioId == usuario.Id));
+        contexto.Usuarios.Update(usuario);
+        contexto.SaveChanges();
     }
 
     // Otro usuario puede ocupar el email o nickname entre la validación del servicio y el guardado (D-23).
