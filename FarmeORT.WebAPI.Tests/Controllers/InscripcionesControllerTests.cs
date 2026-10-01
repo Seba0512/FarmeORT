@@ -104,6 +104,19 @@ public sealed class InscripcionesControllerTests
         CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
     }
 
+    [TestMethod]
+    [DataRow(nameof(InscripcionesController.Listar))]
+    [DataRow(nameof(InscripcionesController.ObtenerPorId))]
+    public void Consultas_CualquierRolAutenticado_UsanAutenticacionSinRol(string accion)
+    {
+        var metodo = typeof(InscripcionesController).GetMethod(accion);
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        Assert.IsNotNull(atributo);
+        Assert.AreEqual(typeof(AutenticacionAttribute), atributo.GetType());
+    }
+
     private void Autenticar(int usuarioId, string rol)
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = rol };
