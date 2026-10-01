@@ -283,7 +283,6 @@ public sealed class RepositorioUsuariosTests
     [TestMethod]
     public void Agregar_EmailOcupadoDespuesDeConsultar_LanzaEmailYaExisteSinDuplicar()
     {
-        Assert.IsNull(_repositorio.ObtenerPorEmail(Email));
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-existente"));
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
@@ -297,7 +296,6 @@ public sealed class RepositorioUsuariosTests
     [TestMethod]
     public void Agregar_NicknameOcupadoDespuesDeConsultar_LanzaNicknameYaExisteSinDuplicar()
     {
-        Assert.IsFalse(_repositorio.ExistePorNickname("jugador"));
         _baseDeDatos.Contexto.Usuarios.Add(CrearUsuario(Email, Rol.Jugador, "hash-existente"));
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
@@ -392,7 +390,7 @@ public sealed class RepositorioUsuariosTests
             new Sesion(sesionDelOtro, otro));
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
-        var usuario = _repositorio.ObtenerPorId(guardado.Id)!;
+        var usuario = _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == guardado.Id);
         usuario.Eliminar();
 
         _repositorio.Eliminar(usuario);
@@ -403,14 +401,15 @@ public sealed class RepositorioUsuariosTests
         Assert.IsTrue(_baseDeDatos.Contexto.Sesiones.Any(s => s.Token == sesionDelOtro));
     }
 
-    // Deja el usuario guardado y cargado por el repositorio, como lo recibe el servicio antes de modificarlo.
+    // Deja el usuario guardado y cargado desde el contexto, como lo recibe el servicio antes de modificarlo.
+    // No usa ObtenerPorId para que estos tests no dependan de otro método del repositorio (FIRST).
     private Usuario GuardarUsuario(string email, string nickname)
     {
         var usuario = new Usuario("Ana", "Pérez", email, nickname, new DateOnly(2000, 1, 15), Rol.Jugador, "hash-ana", FechaActual);
         _baseDeDatos.Contexto.Usuarios.Add(usuario);
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
-        return _repositorio.ObtenerPorId(usuario.Id)!;
+        return _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == usuario.Id);
     }
 
     private void AssertPuedeGuardarOtraAlta()
