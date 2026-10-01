@@ -8,6 +8,21 @@ namespace FarmeORT.WebAPI.Tests.Validaciones;
 public sealed class SkillRequestTests
 {
     [TestMethod]
+    [DataRow("ABC12", 3, 20, 1, CategoriasSkill.Gestual)]
+    [DataRow("ABCDEFGHIJ0123456789", 40, 300, 5, CategoriasSkill.Vocal)]
+    [DataRow("SixSeven67", 10, 50, 3, CategoriasSkill.Baile)]
+    [DataRow("Tralalero", 10, 50, 2, CategoriasSkill.Meme)]
+    public void Validar_DatosEnLosLimites_EsValido(string codigo, int largoNombre, int largoDescripcion, int dificultad, string categoria)
+    {
+        var request = CrearRequest(codigo, new string('a', largoNombre), new string('a', largoDescripcion), categoria, dificultad);
+        var errores = new List<ValidationResult>();
+
+        var esValido = Validator.TryValidateObject(request, new ValidationContext(request), errores, validateAllProperties: true);
+
+        Assert.IsTrue(esValido, string.Join(" ", errores.Select(e => e.ErrorMessage)));
+    }
+
+    [TestMethod]
     [DataRow("")]
     [DataRow("SIX7")]
     [DataRow("ABCDEFGHIJKLMNOPQRSTU")]
