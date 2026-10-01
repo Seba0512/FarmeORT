@@ -12,6 +12,9 @@ public interface IRepositorioInscripciones
 
     int ContarAceptadas(int torneoId);
 
+    // Trae a cada jugador con su repertorio, para controlar las skills obligatorias.
+    IReadOnlyList<Inscripcion> ListarAceptadasDelTorneo(int torneoId);
+
     void Agregar(Inscripcion inscripcion);
 
     void Actualizar(Inscripcion inscripcion);

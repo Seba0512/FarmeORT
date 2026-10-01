@@ -3,6 +3,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IServicios.Torneos;
@@ -11,10 +12,12 @@ namespace FarmeORT.Servicios.Torneos;
 
 internal sealed class ServicioSkillsObligatorias(
     IRepositorioTorneos repositorioTorneos,
-    IRepositorioSkills repositorioSkills) : IServicioSkillsObligatorias
+    IRepositorioSkills repositorioSkills,
+    IRepositorioInscripciones repositorioInscripciones) : IServicioSkillsObligatorias
 {
     public IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo)
     {
+        _ = repositorioInscripciones;
         var torneo = ObtenerTorneoExistente(torneoId);
         if(esAnonimo && !torneo.EsVisibleParaAnonimos)
         {
