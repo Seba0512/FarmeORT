@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Skills;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
@@ -21,14 +22,7 @@ internal sealed class ServicioSkillsObligatorias(
 
     public SkillResponse Asociar(int torneoId, SkillObligatoriaRequest request, int organizadorId)
     {
-        var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
-
-        // El filtro solo sabe que es un Organizador; si es el asignado a este torneo lo decide el servicio (403).
-        if(torneo.OrganizadorId != organizadorId)
-        {
-            throw new NoEsOrganizadorDelTorneoException();
-        }
-
+        var torneo = ObtenerTorneoDelOrganizador(torneoId, organizadorId);
         var skill = repositorioSkills.ObtenerPorId(request.SkillId.GetValueOrDefault())!;
         torneo.AsociarSkillObligatoria(skill);
         repositorioTorneos.Actualizar(torneo);
@@ -41,6 +35,23 @@ internal sealed class ServicioSkillsObligatorias(
         _ = skillId;
         _ = organizadorId;
         throw new NotImplementedException();
+    }
+
+    // El filtro solo sabe que es un Organizador; si es el asignado a este torneo lo decide el servicio (403, D-40).
+    private Torneo ObtenerTorneoDelOrganizador(int torneoId, int organizadorId)
+    {
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
+        if(torneo.OrganizadorId != organizadorId)
+        {
+            throw new NoEsOrganizadorDelTorneoException();
+        }
+
+        return torneo;
     }
 
     private static SkillResponse CrearResponse(Skill skill)
