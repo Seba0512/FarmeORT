@@ -99,6 +99,12 @@ public sealed partial class Usuario
         return declarada;
     }
 
+    public void QuitarSkill(int skillId)
+    {
+        _ = skillId;
+        throw new NotImplementedException();
+    }
+
     // Baja lógica: se conservan los datos para el historial de batallas y torneos.
     public void Eliminar()
     {

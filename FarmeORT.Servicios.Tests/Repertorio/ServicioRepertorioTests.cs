@@ -108,6 +108,18 @@ public sealed class ServicioRepertorioTests
         Assert.AreEqual(mensaje, excepcion.Message);
     }
 
+    [TestMethod]
+    public void Quitar_SkillDeclarada_LaQuitaDelRepertorioYGuarda()
+    {
+        _jugador.DeclararSkill(_skill, 4, FechaActual);
+        _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
+        _repositorioUsuarios.Setup(r => r.GuardarRepertorio(_jugador));
+
+        _servicio.Quitar(JugadorId, SkillId);
+
+        _repositorioUsuarios.Verify(r => r.GuardarRepertorio(It.Is<Usuario>(u => u == _jugador && u.Repertorio.Count == 0)), Times.Once);
+    }
+
     private void ConfigurarDeclaracionValida()
     {
         _repositorioUsuarios.Setup(r => r.ObtenerConRepertorio(JugadorId)).Returns(_jugador);
