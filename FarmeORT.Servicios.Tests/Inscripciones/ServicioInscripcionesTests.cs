@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Inscripciones;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
@@ -76,6 +77,15 @@ public sealed class ServicioInscripcionesTests
         Assert.AreEqual("Copa Aura", response.Torneo);
         Assert.AreEqual(nameof(EstadoInscripcion.Aceptada), response.Estado);
         Assert.AreEqual(Ahora, response.Fecha);
+    }
+
+    [TestMethod]
+    public void Inscribir_TorneoInexistente_LanzaTorneoNoEncontradoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Inscribir(JugadorId, new InscripcionRequest { TorneoId = 99 }));
+        _repositorioInscripciones.Verify(r => r.Agregar(It.IsAny<Inscripcion>()), Times.Never);
     }
 
     private void ConfigurarInscripcionValida()
