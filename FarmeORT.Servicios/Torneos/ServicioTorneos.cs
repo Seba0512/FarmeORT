@@ -15,19 +15,16 @@ internal sealed class ServicioTorneos(
 {
     public TorneoResponse Crear(TorneoRequest request)
     {
-        var fechaInicio = ObtenerObligatorio(request.FechaInicio, "La fecha de inicio es obligatoria.");
-        var fechaFin = ObtenerObligatorio(request.FechaFin, "La fecha de fin es obligatoria.");
-        var cupo = ObtenerObligatorio(request.Cupo, "El cupo es obligatorio.");
-        var organizadorId = ObtenerObligatorio(request.OrganizadorId, "El organizador es obligatorio.");
+        var datos = ObtenerDatosObligatorios(request);
         ValidarCodigoDisponible(request.Codigo);
-        var organizador = ObtenerUsuarioExistente(organizadorId);
+        var organizador = ObtenerUsuarioExistente(datos.OrganizadorId);
         var torneo = new Torneo(
             request.Codigo,
             request.Nombre,
             request.Descripcion,
-            fechaInicio,
-            fechaFin,
-            cupo,
+            datos.FechaInicio,
+            datos.FechaFin,
+            datos.Cupo,
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Agregar(torneo);
@@ -70,12 +67,9 @@ internal sealed class ServicioTorneos(
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
     {
-        var fechaInicio = ObtenerObligatorio(request.FechaInicio, "La fecha de inicio es obligatoria.");
-        var fechaFin = ObtenerObligatorio(request.FechaFin, "La fecha de fin es obligatoria.");
-        var cupo = ObtenerObligatorio(request.Cupo, "El cupo es obligatorio.");
-        var organizadorId = ObtenerObligatorio(request.OrganizadorId, "El organizador es obligatorio.");
+        var datos = ObtenerDatosObligatorios(request);
         var torneo = ObtenerTorneoExistente(id);
-        var organizador = ObtenerUsuarioExistente(organizadorId);
+        var organizador = ObtenerUsuarioExistente(datos.OrganizadorId);
 
         // El índice único de SQL Server no distingue mayúsculas: cambiar solo mayúsculas no ocupa un código ajeno (D-31).
         if(!string.Equals(torneo.Codigo, request.Codigo, StringComparison.OrdinalIgnoreCase))
@@ -87,9 +81,9 @@ internal sealed class ServicioTorneos(
             request.Codigo,
             request.Nombre,
             request.Descripcion,
-            fechaInicio,
-            fechaFin,
-            cupo,
+            datos.FechaInicio,
+            datos.FechaFin,
+            datos.Cupo,
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Actualizar(torneo);
@@ -148,6 +142,15 @@ internal sealed class ServicioTorneos(
         return null;
     }
 
+    private static DatosObligatorios ObtenerDatosObligatorios(TorneoRequest request)
+    {
+        return new DatosObligatorios(
+            ObtenerObligatorio(request.FechaInicio, "La fecha de inicio es obligatoria."),
+            ObtenerObligatorio(request.FechaFin, "La fecha de fin es obligatoria."),
+            ObtenerObligatorio(request.Cupo, "El cupo es obligatorio."),
+            ObtenerObligatorio(request.OrganizadorId, "El organizador es obligatorio."));
+    }
+
     // El DTO ya exige estos datos; el servicio los vuelve a controlar porque no depende de quién lo invoque.
     private static T ObtenerObligatorio<T>(T? valor, string mensaje)
         where T : struct
@@ -183,4 +186,7 @@ internal sealed class ServicioTorneos(
             Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
         };
     }
+
+    // Datos que el DTO declara opcionales para poder detectar cuándo se omiten.
+    private sealed record DatosObligatorios(DateOnly FechaInicio, DateOnly FechaFin, int Cupo, int OrganizadorId);
 }
