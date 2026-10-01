@@ -16,4 +16,11 @@ public sealed class InscripcionesController(IServicioInscripciones servicioInscr
         var response = servicioInscripciones.Inscribir(sesion.UsuarioId, request);
         return Created($"/api/v1/inscripciones/{response.Id}", response);
     }
+
+    [HttpGet]
+    public IActionResult Listar([FromQuery] FiltroInscripcionesRequest filtro)
+    {
+        _ = filtro;
+        throw new NotImplementedException();
+    }
 }

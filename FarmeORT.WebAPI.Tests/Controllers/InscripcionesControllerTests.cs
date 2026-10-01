@@ -45,6 +45,21 @@ public sealed class InscripcionesControllerTests
         _servicio.Verify(s => s.Inscribir(JugadorId, request), Times.Once);
     }
 
+    [TestMethod]
+    public void Listar_ConFiltros_Devuelve200ConLasInscripcionesVisiblesParaElUsuarioAutenticado()
+    {
+        Autenticar(2, Roles.Organizador);
+        var filtro = new FiltroInscripcionesRequest { TorneoId = 4, Estado = "Aceptada" };
+        IReadOnlyList<InscripcionResponse> inscripciones = [CrearResponse()];
+        _servicio.Setup(s => s.Listar(filtro, 2, Roles.Organizador)).Returns(inscripciones);
+
+        var resultado = _controller.Listar(filtro) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(inscripciones, resultado.Value);
+    }
+
     private void Autenticar(int usuarioId, string rol)
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = rol };
