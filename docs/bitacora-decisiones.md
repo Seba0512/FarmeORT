@@ -976,6 +976,145 @@ un `limit` menor a 1, y que un tipo mal formado siga dando 400.
 
 ---
 
+### D-36 — Contrato y visibilidad de la gestión de torneos
+
+**Problema:** implementar alta, modificación, cancelación y consulta de torneos (letra 1.3 y 2.3) con la
+especificación de la API, que abre las consultas al anónimo con `Authorization` opcional y pide
+`TorneoDetalleResponse` para el detalle. Parte del detalle y del listado depende de entidades que todavía
+no existen (skills obligatorias, inscripciones y rondas).
+
+**Alternativas consideradas:**
+- Detalle: devolver `TorneoResponse` hasta que existan las rondas, o crear ya `TorneoDetalleResponse`.
+- `skillObligatoriaId` e inscripciones aceptadas: agregarlos al contrato cuando exista su funcionalidad,
+  o ya.
+- Anónimo: un filtro nuevo e independiente, o una variante de `[Autenticacion]`. Para saber quién
+  consulta, pasarle al servicio el rol o solo si es anónimo.
+- Torneo cancelado pedido por un anónimo: 404 o 401.
+
+**Decisión adoptada:**
+- Endpoints de la especificación. `POST`, `PUT` y `POST /torneos/{id}/cancelaciones` solo para el
+  Administrador. `GET /torneos` y `GET /torneos/{id}` con `[AutenticacionOpcional]`.
+- `[AutenticacionOpcional]` hereda de `[Autenticacion]` (como `[Autorizacion]`, D-13) y redefine
+  `PermiteAnonimo`. Sin el encabezado `Authorization` deja pasar como anónimo. Con un token inválido
+  responde 401, como dice la nota general de la especificación.
+- El controller solo calcula si quien consulta es anónimo (`ObtenerSesionOpcional`). La regla de
+  visibilidad la aplica el servicio, que recibe `esAnonimo`:
+  - el listado le pide al repositorio excluir los torneos cancelados;
+  - el detalle de un torneo cancelado responde 404 `TOURNAMENT_NOT_FOUND`, igual que un id inexistente.
+  - Un usuario autenticado, con cualquier rol, ve todos los estados.
+- `TorneoDetalleResponse` hereda de `TorneoResponse`: "se devuelven además" (letra 1.3). Por ahora no
+  agrega propiedades. Las skills obligatorias, los jugadores aceptados y las rondas se suman con sus
+  funcionalidades.
+- `TorneoResponse.InscripcionesAceptadas` y `FiltroTorneosRequest.SkillObligatoriaId` ya están en el
+  contrato. Mientras no existan esas entidades, la cantidad vale 0 y el repositorio no aplica el filtro
+  (pendiente).
+- Filtros:
+  - `estado` usa los nombres del enum (`Abierto`, `EnCurso`, `Finalizado`, `Cancelado`), comparados por
+    nombre como la categoría de skill (D-29).
+  - `fechaDesde` y `fechaHasta` filtran por la fecha de inicio, ambas incluidas.
+  - `nombre` filtra por contenido y sin distinguir mayúsculas.
+  - Se combinan con Y lógico; un estado que no existe no filtra y la paginación se ajusta como en D-35.
+    Orden por `Id`.
+
+**Justificación:**
+- El contrato queda igual a la especificación desde ahora, y las funcionalidades que faltan solo agregan
+  datos, sin cambiar tipos ni rutas.
+- Heredar el filtro reutiliza la validación del token sin duplicarla.
+- Pasar un booleano y no el rol mantiene la regla en el servicio sin acoplarlo a cómo se representa el
+  rol en la WebAPI.
+- El 404 no revela que existe un torneo cancelado, y la especificación de `GET /torneos/{id}` ya lista 200
+  y 404.
+
+**Conceptos del curso:** REST (autenticación opcional, sub-recurso `cancelaciones`, filtros en la query),
+Template Method (D-13), SRP en los filtros, Information Expert, Low Coupling.
+
+**Evidencia:**
+- `TorneosController`, `AutenticacionOpcionalAttribute`, `ExtensionesHttpContext.ObtenerSesionOpcional`.
+- `ServicioTorneos.ObtenerPorId` y `Listar`, `RepositorioTorneos.Listar`.
+- Los tests `Consultas_IncluidoAnonimo_UsanAutenticacionOpcional`,
+  `OnAuthorization_TokenEnviadoPeroInvalido_Devuelve401ConInvalidToken`,
+  `ObtenerPorId_TorneoCanceladoConsultadoPorAnonimo_LanzaTorneoNoEncontrado`,
+  `Listar_ConsultaAnonima_PideExcluirLosTorneosCancelados` y
+  `Listar_RangoDeFechas_DevuelveLosQueEmpiezanDentroDelRangoIncluyendoLosExtremos`.
+
+**Participación de IA:**
+- Los ciclos del controller y del filtro se hicieron en un chat sin las skills `da2-*` cargadas. Claude
+  Code los revisó después con las skills y verificó commit por commit que cada RED fallara por la razón
+  esperada y cada GREEN pasara.
+- En esa revisión encontró que faltaban `TorneoDetalleResponse`, `skillObligatoriaId` y la cantidad de
+  inscripciones aceptadas. Propuso agregarlos ya al contrato; el integrante aceptó, igual que el 404 para
+  el anónimo.
+- Problema que apareció: un RED de dominio (`rechaza cancelar un torneo ya cancelado`) incluyó además un
+  test que ya pasaba. En los ciclos siguientes, esos tests se commitearon aparte como
+  `test (...): documenta ...`.
+
+---
+
+### D-37 — Reglas del alta y la modificación de torneos y sus errores
+
+**Problema:** la letra fija los datos del torneo, pero no dice cómo responder a un organizador que no
+existe o no tiene el rol, si la regla "inicio no anterior a hoy" vale al modificar, ni con qué código se
+rechaza modificar o cancelar en un estado que no lo permite.
+
+**Alternativas consideradas:**
+- Organizador con otro rol: 400 o 409.
+- Fecha de inicio al modificar: validarla siempre, nunca, o solo si cambia.
+- Errores de estado: un `errorCode` genérico o uno por operación.
+
+**Decisión adoptada:**
+- Organizador inexistente o dado de baja: 404 `USER_NOT_FOUND` (se reutiliza
+  `UsuarioNoEncontradoException`). Con otro rol: 400 `INVALID_DATA` desde el dominio ("El organizador debe
+  ser un usuario con rol Organizador.").
+- En el borde: código, nombre de 5 a 60, descripción de 20 a 500, fechas, cupo entre 4 y 64 y organizador
+  obligatorios. En el dominio, además: cupo potencia de 2, fin posterior al inicio, inicio no anterior a
+  hoy y rol del organizador. La fecha actual llega por `TimeProvider` (D-18).
+- Al modificar, la regla de la fecha de inicio solo se aplica si la fecha cambia. Un torneo Abierto cuya
+  fecha ya pasó puede editar el resto, pero no se le puede poner una fecha pasada.
+- `Torneo` valida todo antes de asignar (`AsignarDatos`, compartido por el constructor y `Modificar`):
+  un dato inválido no deja el torneo a medio cambiar.
+- Orden en el servicio: datos obligatorios (400) → existencia (404) → unicidad del código (409) → dominio
+  → guardado, como D-28 y D-30. El código se compara sin distinguir mayúsculas y se traduce el conflicto
+  al guardar, como D-31.
+- Un `errorCode` por operación: `TOURNAMENT_NOT_MODIFIABLE` (modificar un torneo que no está Abierto) y
+  `TOURNAMENT_NOT_CANCELLABLE` (cancelar uno Finalizado o Cancelado), los dos 409. Además, 404
+  `TOURNAMENT_NOT_FOUND` y 409 `TOURNAMENT_CODE_ALREADY_EXISTS`. Las excepciones son propias porque cada
+  una tiene su código (D-30).
+- La FK `Torneos.OrganizadorId` es `Restrict`: un organizador no se borra físicamente (la baja es lógica,
+  D-27). La migración es `AgregaTorneos`.
+
+**Justificación:**
+- El rol equivocado es un dato inválido del pedido, no un conflicto con el estado del sistema.
+- La lectura literal de la fecha ("al momento del alta") dejaría modificar un torneo para que empiece en
+  el pasado, y validarla siempre bloquearía editar un torneo Abierto con la fecha vencida, cuando las
+  fechas son solo informativas.
+- Un código por operación le permite al cliente distinguir el caso sin leer el mensaje.
+
+**Conceptos del curso:** validación en el borde y en el dominio (D-16), Information Expert, status codes
+(400, 404, 409), excepciones propias justificadas, integridad referencial en EF Core.
+
+**Evidencia:**
+- `Torneo`, `ServicioTorneos`, `RepositorioTorneos`, `FiltroExcepciones`, `FarmeORTContext` y la migración
+  `AgregaTorneos`.
+- Los tests `Constructor_OrganizadorSinRolOrganizador_LanzaDatosInvalidos`,
+  `Modificar_FechaInicioNuevaAnteriorALaActual_LanzaDatosInvalidos`,
+  `Modificar_FechaInicioSinCambiosYaPasada_ReemplazaLosDemasDatos`,
+  `Modificar_DatosInvalidos_LanzaDatosInvalidosSinCambiarElTorneo`,
+  `OnException_ErrorDeTorneo_DevuelveSuStatusYCodigo` y
+  `Agregar_CodigoOcupadoDespuesDeConsultar_LanzaCodigoTorneoYaExisteSinDuplicar`.
+
+**Participación de IA:**
+- Claude Code planteó las alternativas de cada punto con una recomendación. El integrante eligió las
+  recomendadas: 404/400, la fecha solo si cambia, el filtro por fecha de inicio y un código por operación.
+- Problemas que aparecieron:
+  - El compilador no veía que `AsignarDatos` asigna `Organizador` (CS8618). Se resolvió con
+    `[MemberNotNull]`, que describe el método sin suprimir ninguna regla.
+  - El test de la fábrica mostró que registrar el servicio exige registrar antes el repositorio
+    (`ValidateOnBuild`), así que el GREEN del registro del servicio se cerró después del repositorio.
+  - En los tests del repositorio, un organizador desasociado del contexto hacía que EF intentara
+    insertarlo de nuevo. Los tests ahora lo toman del contexto, como en la API.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -1004,6 +1143,17 @@ un `limit` menor a 1, y que un tipo mal formado siga dando 400.
 - Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
   enrutamiento antes de los filtros. Igual con los errores de conversión de la query
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
+- Torneos (D-36, D-37), lo que espera a otras funcionalidades:
+  - Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
+    misma operación (atómica). Hoy solo cambia el estado.
+  - Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar` y calcular
+    `InscripcionesAceptadas` (hoy vale 0).
+  - Sumar al detalle las skills obligatorias, los jugadores aceptados y el cuadro (rondas y batallas).
+  - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya
+    está en `Torneo.Cancelar`, pero esa rama todavía no se puede cubrir.
+  - Postman: carpeta Torneos con los casos de alta, modificación, cancelación y consulta (anónimo y
+    autenticado). Diagrama de clases con `Torneo`, `EstadoTorneo`, `IRepositorioTorneos`,
+    `FiltroTorneos` y las excepciones nuevas.
 - Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
   eliminar si tiene batallas sin resolver o si organiza un torneo que no está Finalizado ni Cancelado.
   `DELETE /usuarios/{id}` ya existe (D-27): al implementar batallas y torneos hay que agregar estas
