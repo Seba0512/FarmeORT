@@ -270,6 +270,17 @@ public sealed class ServicioInscripcionesTests
         Assert.IsEmpty(inscripciones);
     }
 
+    [TestMethod]
+    public void Listar_PaginacionFueraDeRango_LaAjusta()
+    {
+        var filtro = new FiltroInscripciones(null, null, null, null, null, null, 100, 0);
+        _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
+
+        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest { Limit = 600, Offset = -2 }, 1, Roles.Administrador);
+
+        Assert.IsEmpty(inscripciones);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
