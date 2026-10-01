@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Inscripciones;
 using FarmeORT.IServicios.Inscripciones;
+using FarmeORT.IServicios.Sesiones;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
@@ -9,32 +10,31 @@ namespace FarmeORT.WebAPI.Controllers;
 [Route("api/v1/inscripciones")]
 public sealed class InscripcionesController(IServicioInscripciones servicioInscripciones) : ControllerBase
 {
+    // El usuario sale siempre del token: nunca de la ruta, la query ni el body.
+    private SesionAutenticada Sesion => HttpContext.ObtenerSesionAutenticada();
+
     [HttpPost]
     public IActionResult Inscribir([FromBody] InscripcionRequest request)
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        var response = servicioInscripciones.Inscribir(sesion.UsuarioId, request);
+        var response = servicioInscripciones.Inscribir(Sesion.UsuarioId, request);
         return Created($"/api/v1/inscripciones/{response.Id}", response);
     }
 
     [HttpGet]
     public IActionResult Listar([FromQuery] FiltroInscripcionesRequest filtro)
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        return Ok(servicioInscripciones.Listar(filtro, sesion.UsuarioId, sesion.Rol));
+        return Ok(servicioInscripciones.Listar(filtro, Sesion.UsuarioId, Sesion.Rol));
     }
 
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        return Ok(servicioInscripciones.ObtenerPorId(id, sesion.UsuarioId, sesion.Rol));
+        return Ok(servicioInscripciones.ObtenerPorId(id, Sesion.UsuarioId, Sesion.Rol));
     }
 
     [HttpPost("{id:int}/cancelaciones")]
     public IActionResult Cancelar(int id)
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        return Ok(servicioInscripciones.Cancelar(id, sesion.UsuarioId));
+        return Ok(servicioInscripciones.Cancelar(id, Sesion.UsuarioId));
     }
 }
