@@ -24,6 +24,12 @@ public sealed class FiltroExcepcionesBatallasTests
         VerificarMapa(new BatallaNoCancelableException(), 409, "BATTLE_NOT_CANCELLABLE", "Solo se puede cancelar una batalla Pendiente o En arbitraje.");
     }
 
+    [TestMethod]
+    public void OnException_BatallaNoPendiente_Devuelve409ConBATTLE_NOT_PENDING()
+    {
+        VerificarMapa(new BatallaNoPendienteException(), 409, "BATTLE_NOT_PENDING", "Solo se puede lanzar una skill en una batalla Pendiente.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
