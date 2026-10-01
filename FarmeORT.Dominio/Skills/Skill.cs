@@ -31,6 +31,11 @@ public sealed class Skill
         Dificultad = dificultad;
     }
 
+    public void Activar()
+    {
+        Activa = true;
+    }
+
     public void Desactivar()
     {
         Activa = false;
