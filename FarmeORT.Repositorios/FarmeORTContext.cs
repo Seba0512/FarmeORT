@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Sesiones;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Usuarios;
 using Microsoft.EntityFrameworkCore;
 
@@ -12,6 +13,10 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     private const int LargoMaximoNickname = 20;
     private const int LargoMaximoContrasenaHash = 128;
     private const int LargoMaximoRol = 20;
+    private const int LargoMaximoCodigoSkill = 20;
+    private const int LargoMaximoNombreSkill = 40;
+    private const int LargoMaximoDescripcionSkill = 300;
+    private const int LargoMaximoCategoriaSkill = 20;
 
     // Objeto anónimo porque HasData necesita fijar el Id, que el constructor de Usuario no recibe.
     // Hash PBKDF2 (formato de HasheadorContrasenas) calculado una sola vez, para que la migración no cambie en cada build.
@@ -32,6 +37,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     public DbSet<Usuario> Usuarios => Set<Usuario>();
 
     public DbSet<Sesion> Sesiones => Set<Sesion>();
+
+    public DbSet<Skill> Skills => Set<Skill>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,6 +64,16 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
                 .WithMany()
                 .HasForeignKey(s => s.UsuarioId)
                 .OnDelete(DeleteBehavior.Cascade);
+        });
+
+        modelBuilder.Entity<Skill>(skill =>
+        {
+            skill.HasKey(s => s.Id);
+            skill.Property(s => s.Codigo).HasMaxLength(LargoMaximoCodigoSkill).IsRequired();
+            skill.HasIndex(s => s.Codigo).IsUnique();
+            skill.Property(s => s.Nombre).HasMaxLength(LargoMaximoNombreSkill).IsRequired();
+            skill.Property(s => s.Descripcion).HasMaxLength(LargoMaximoDescripcionSkill).IsRequired();
+            skill.Property(s => s.Categoria).HasConversion<string>().HasMaxLength(LargoMaximoCategoriaSkill);
         });
     }
 }
