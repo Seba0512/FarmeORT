@@ -245,6 +245,17 @@ public sealed class ServicioInscripcionesTests
         Assert.IsEmpty(inscripciones);
     }
 
+    [TestMethod]
+    public void Listar_ConsultaUnOrganizador_PideSoloLasDeSusTorneos()
+    {
+        var filtro = new FiltroInscripciones(null, null, null, null, null, 2, 20, 0);
+        _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
+
+        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest(), 2, Roles.Organizador);
+
+        Assert.IsEmpty(inscripciones);
+    }
+
     private void ConfigurarInscripcionValida()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
