@@ -84,9 +84,14 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         catch(DbUpdateException)
         {
             contexto.Entry(usuario).State = EntityState.Detached;
-            if(ObtenerPorEmail(usuario.Email) is not null)
+            if(contexto.Usuarios.Any(u => u.Email == usuario.Email && u.Id != usuario.Id))
             {
                 throw new EmailYaExisteException();
+            }
+
+            if(ExistePorNickname(usuario.Nickname))
+            {
+                throw new NicknameYaExisteException();
             }
 
             throw;
