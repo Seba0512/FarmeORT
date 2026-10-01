@@ -25,6 +25,7 @@ public static class RegistroServicios
         servicios.AddScoped<IServicioSkills, ServicioSkills>();
         servicios.AddScoped<IServicioTorneos, ServicioTorneos>();
         servicios.AddScoped<IServicioRepertorio, ServicioRepertorio>();
+        servicios.AddScoped<IServicioSkillsObligatorias, ServicioSkillsObligatorias>();
         return servicios;
     }
 }
