@@ -120,6 +120,27 @@ public sealed class TorneoTests
         Assert.AreEqual("El organizador debe ser un usuario con rol Organizador.", excepcion.Message);
     }
 
+    [TestMethod]
+    [DataRow("ABC12", 5, 20, 4)]
+    [DataRow("ABCDEFGHIJ0123456789", 60, 500, 64)]
+    [DataRow("CopaAura2026", 30, 100, 16)]
+    public void Constructor_DatosEnLosLimites_CreaElTorneo(string codigo, int largoNombre, int largoDescripcion, int cupo)
+    {
+        var torneo = CrearTorneo(codigo, new string('a', largoNombre), new string('a', largoDescripcion), cupo: cupo);
+
+        Assert.AreEqual(codigo, torneo.Codigo);
+        Assert.AreEqual(cupo, torneo.Cupo);
+    }
+
+    [TestMethod]
+    public void Constructor_IniciaHoyYTerminaManana_CreaElTorneo()
+    {
+        var torneo = CrearTorneo(fechaInicio: FechaActual, fechaFin: FechaActual.AddDays(1));
+
+        Assert.AreEqual(FechaActual, torneo.FechaInicio);
+        Assert.AreEqual(FechaActual.AddDays(1), torneo.FechaFin);
+    }
+
     private static Torneo CrearTorneo(
         string codigo = "COPAAURA",
         string nombre = "Copa Aura",
