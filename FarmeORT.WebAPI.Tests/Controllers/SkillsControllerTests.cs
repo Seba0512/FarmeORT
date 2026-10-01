@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Skills;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Skills;
 using FarmeORT.WebAPI.Controllers;
 using FarmeORT.WebAPI.Filtros;
@@ -128,5 +129,21 @@ public sealed class SkillsControllerTests
         var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
         Assert.IsNotNull(atributo);
         Assert.IsNotInstanceOfType<AutorizacionAttribute>(atributo);
+    }
+
+    [TestMethod]
+    [DataRow(nameof(SkillsController.Crear))]
+    [DataRow(nameof(SkillsController.Modificar))]
+    [DataRow(nameof(SkillsController.CambiarEstado))]
+    public void Mantenimiento_CatalogoGlobal_RequiereRolAdministrador(string accion)
+    {
+        var metodo = typeof(SkillsController).GetMethod(accion);
+
+        Assert.IsNotNull(metodo);
+        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>()
+            .SingleOrDefault();
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
 }
