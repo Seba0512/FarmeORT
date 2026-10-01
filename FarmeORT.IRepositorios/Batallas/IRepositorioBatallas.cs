@@ -5,4 +5,6 @@ namespace FarmeORT.IRepositorios.Batallas;
 public interface IRepositorioBatallas
 {
     Batalla? ObtenerPorId(int id);
+
+    void Guardar();
 }
