@@ -56,7 +56,7 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
 
     public void Actualizar(Skill skill)
     {
-        _ = skill;
-        throw new NotImplementedException();
+        contexto.Skills.Update(skill);
+        contexto.SaveChanges();
     }
 }
