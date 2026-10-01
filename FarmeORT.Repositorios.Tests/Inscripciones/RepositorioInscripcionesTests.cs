@@ -135,6 +135,28 @@ public sealed class RepositorioInscripcionesTests
         Assert.AreEqual(skill.Id, inscripcion.Jugador.Repertorio.Single().SkillId);
     }
 
+    [TestMethod]
+    public void ListarAceptadasDelJugador_TraeSoloSusAceptadasConLasObligatoriasDeCadaTorneo()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var otroTorneoId = GuardarTorneo("COPAFUEGO");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        GuardarInscripcion(torneoId, jugadorId);
+        GuardarInscripcion(otroTorneoId, jugadorId, i => i.Eliminar());
+        GuardarInscripcion(torneoId, GuardarUsuario("brunolopez", Rol.Jugador));
+        var skill = new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2);
+        _baseDeDatos.Contexto.Skills.Add(skill);
+        _baseDeDatos.Contexto.Torneos.Include(t => t.SkillsObligatorias).Single(t => t.Id == torneoId).AsociarSkillObligatoria(skill);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var aceptadas = _repositorio.ListarAceptadasDelJugador(jugadorId);
+
+        var inscripcion = aceptadas.Single();
+        Assert.AreEqual(torneoId, inscripcion.TorneoId);
+        Assert.AreEqual("SIXSEVEN", inscripcion.Torneo.SkillsObligatorias.Single().Codigo);
+    }
+
     // Guarda una inscripción directamente con el contexto, sin usar métodos del repositorio (FIRST).
     private int GuardarInscripcion(int torneoId, int jugadorId, Action<Inscripcion>? cambiar = null)
     {
