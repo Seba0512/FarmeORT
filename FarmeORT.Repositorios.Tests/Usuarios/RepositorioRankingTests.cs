@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Repositorios.Usuarios;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Usuarios;
 
@@ -36,6 +37,24 @@ public sealed class RepositorioRankingTests
         var ranking = _repositorio.ListarRanking(10);
 
         CollectionAssert.AreEqual(new[] { "alto", "medio", "bajo" }, ranking.Select(u => u.Nickname).ToArray());
+    }
+
+    [TestMethod]
+    public void ListarRanking_EloEmpatado_DesempataPorIdDeMenorAMayor()
+    {
+        AgregarUsuario("primero", 1300);
+        AgregarUsuario("segundo", 1300);
+        AgregarUsuario("tercero", 1300);
+        GuardarYLimpiar();
+
+        // Sin índice, SQLite devuelve los empates en el orden en que se guardaron y el test pasaría por casualidad.
+        // Con un índice por ELO la base lo recorre al revés y los empates salen del id mayor al menor, como puede
+        // pasar en SQL Server según el plan. Así el test solo pasa si la consulta pide el desempate.
+        _baseDeDatos.Contexto.Database.ExecuteSqlRaw("CREATE INDEX IX_Usuarios_Elo_Prueba ON Usuarios (Elo);");
+
+        var ranking = _repositorio.ListarRanking(10);
+
+        CollectionAssert.AreEqual(new[] { "primero", "segundo", "tercero" }, ranking.Select(u => u.Nickname).ToArray());
     }
 
     private void AgregarUsuario(string nickname, int elo, Rol rol = Rol.Jugador)
