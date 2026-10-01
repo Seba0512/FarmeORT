@@ -33,8 +33,6 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     [HttpPut("{id:int}")]
     public IActionResult Modificar(int id, [FromBody] TorneoRequest request)
     {
-        _ = id;
-        _ = request;
-        throw new NotImplementedException();
+        return Ok(servicioTorneos.Modificar(id, request));
     }
 }
