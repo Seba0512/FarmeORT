@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Inscripciones;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -46,9 +47,12 @@ internal sealed class ServicioInscripciones(
 
     public InscripcionResponse ObtenerPorId(int id, int usuarioId, string rol)
     {
-        _ = usuarioId;
-        _ = rol;
         var inscripcion = ObtenerInscripcionExistente(id);
+        if(rol == Roles.Jugador && inscripcion.JugadorId != usuarioId)
+        {
+            throw new NoEsDuenoDeLaInscripcionException();
+        }
+
         return CrearResponse(inscripcion);
     }
 
