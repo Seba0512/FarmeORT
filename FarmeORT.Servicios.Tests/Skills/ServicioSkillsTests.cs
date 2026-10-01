@@ -84,6 +84,23 @@ public sealed class ServicioSkillsTests
         Assert.AreEqual("La dificultad es obligatoria.", excepcion.Message);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_SkillExistente_DevuelveSusDatos()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Vocal, 4) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+
+        var response = _servicio.ObtenerPorId(3);
+
+        Assert.AreEqual(3, response.Id);
+        Assert.AreEqual(Codigo, response.Codigo);
+        Assert.AreEqual(Nombre, response.Nombre);
+        Assert.AreEqual(Descripcion, response.Descripcion);
+        Assert.AreEqual(CategoriasSkill.Vocal, response.Categoria);
+        Assert.AreEqual(4, response.Dificultad);
+        Assert.IsTrue(response.Activa);
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
