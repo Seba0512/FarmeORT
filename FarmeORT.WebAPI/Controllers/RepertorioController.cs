@@ -9,26 +9,26 @@ namespace FarmeORT.WebAPI.Controllers;
 [Route("api/v1/jugadores/actual/repertorio")]
 public sealed class RepertorioController(IServicioRepertorio servicioRepertorio) : ControllerBase
 {
+    // "actual" es el jugador del token: el id nunca llega en la ruta ni en el body.
+    private int JugadorActualId => HttpContext.ObtenerSesionAutenticada().UsuarioId;
+
     [HttpGet]
     public IActionResult Listar()
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        return Ok(servicioRepertorio.Listar(sesion.UsuarioId));
+        return Ok(servicioRepertorio.Listar(JugadorActualId));
     }
 
     [HttpPost]
     public IActionResult Declarar([FromBody] SkillDeclaradaRequest request)
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        var response = servicioRepertorio.Declarar(sesion.UsuarioId, request);
+        var response = servicioRepertorio.Declarar(JugadorActualId, request);
         return Created($"/api/v1/jugadores/actual/repertorio/{response.SkillId}", response);
     }
 
     [HttpDelete("{skillId:int}")]
     public IActionResult Quitar(int skillId)
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        servicioRepertorio.Quitar(sesion.UsuarioId, skillId);
+        servicioRepertorio.Quitar(JugadorActualId, skillId);
         return NoContent();
     }
 }
