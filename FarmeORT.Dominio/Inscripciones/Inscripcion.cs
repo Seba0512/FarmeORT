@@ -62,6 +62,11 @@ public sealed class Inscripcion
     // La usa el fallo de una batalla: el perdedor queda fuera del torneo.
     public void Eliminar()
     {
+        if(Estado != EstadoInscripcion.Aceptada)
+        {
+            throw new InscripcionNoActivaException();
+        }
+
         Estado = EstadoInscripcion.Eliminada;
     }
 }
