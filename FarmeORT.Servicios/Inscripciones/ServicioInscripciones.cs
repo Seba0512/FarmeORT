@@ -60,6 +60,12 @@ internal sealed class ServicioInscripciones(
             throw new NoEsDuenoDeLaInscripcionException();
         }
 
+        // El jugador se puede retirar solo antes de que el torneo empiece.
+        if(inscripcion.Torneo.Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoAbiertoException();
+        }
+
         inscripcion.Cancelar();
         repositorioInscripciones.Actualizar(inscripcion);
         return CrearResponse(inscripcion);
