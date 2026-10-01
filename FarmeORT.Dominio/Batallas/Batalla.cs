@@ -13,6 +13,11 @@ public sealed class Batalla
 
     public Batalla(Torneo torneo, int numeroRonda, Usuario jugador1, Usuario jugador2, ISorteo sorteo)
     {
+        if(jugador1.Id == jugador2.Id)
+        {
+            throw new DatosInvalidosException("La batalla requiere dos jugadores distintos.");
+        }
+
         Torneo = torneo;
         TorneoId = torneo.Id;
         NumeroRonda = numeroRonda;
