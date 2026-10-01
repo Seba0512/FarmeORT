@@ -142,6 +142,18 @@ public sealed class TorneoTests
     }
 
     [TestMethod]
+    public void Modificar_TorneoCancelado_LanzaTorneoNoModificableSinCambiarlo()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+
+        Assert.ThrowsExactly<TorneoNoModificableException>(
+            () => torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, CrearOrganizador(Rol.Organizador), FechaActual));
+        Assert.AreEqual("COPAAURA", torneo.Codigo);
+        Assert.AreEqual(8, torneo.Cupo);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoAbierto_QuedaCancelado()
     {
         var torneo = CrearTorneo();
