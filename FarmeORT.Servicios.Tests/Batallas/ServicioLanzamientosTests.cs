@@ -100,6 +100,25 @@ public sealed class ServicioLanzamientosTests
         Assert.HasCount(0, _batalla.Lanzamientos);
     }
 
+    [TestMethod]
+    [DataRow(null)]
+    [DataRow(0)]
+    [DataRow(-1)]
+    public void Lanzar_SkillIdAusenteONoPositivo_RechazaDatosSinConsultarRepositorios(int? skillId)
+    {
+        ConfigurarLanzamientoValido();
+        if(skillId != null)
+        {
+            _skills.Setup(r => r.ObtenerPorId(skillId.Value)).Returns(_skill);
+        }
+
+        Assert.ThrowsExactly<DatosInvalidosException>(
+            () => _servicio.Lanzar(12, 7, new LanzamientoRequest { SkillId = skillId }));
+
+        _batallas.Verify(r => r.ObtenerPorId(It.IsAny<int>()), Times.Never);
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+    }
+
     private void ConfigurarLanzamientoValido()
     {
         _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
