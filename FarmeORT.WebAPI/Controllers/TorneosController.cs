@@ -21,12 +21,14 @@ public sealed class TorneosController(IServicioTorneos servicioTorneos) : Contro
     }
 
     [HttpGet]
+    [AutenticacionOpcional]
     public IActionResult Listar([FromQuery] FiltroTorneosRequest filtro)
     {
         return Ok(servicioTorneos.Listar(filtro, ConsultaUnAnonimo));
     }
 
     [HttpGet("{id:int}")]
+    [AutenticacionOpcional]
     public IActionResult ObtenerPorId(int id)
     {
         return Ok(servicioTorneos.ObtenerPorId(id, ConsultaUnAnonimo));
