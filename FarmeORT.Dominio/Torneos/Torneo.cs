@@ -63,8 +63,14 @@ public sealed class Torneo
 
     public Usuario Organizador { get; private set; }
 
+    // Solo se cancela un torneo que todavía se puede disputar: Abierto o En curso.
     public void Cancelar()
     {
+        if(Estado == EstadoTorneo.Finalizado || Estado == EstadoTorneo.Cancelado)
+        {
+            throw new TorneoNoCancelableException();
+        }
+
         Estado = EstadoTorneo.Cancelado;
     }
 
