@@ -202,6 +202,26 @@ public sealed class ServicioSkillsTests
         _repositorioSkills.Verify(r => r.ExistePorCodigo(It.IsAny<string>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Modificar_CodigoNuevoDisponible_GuardaConElNuevoCodigo()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.ExistePorCodigo("TRALALERO")).Returns(false);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+
+        var response = _servicio.Modificar(3, CrearRequest(codigo: "TRALALERO"));
+
+        Assert.AreEqual("TRALALERO", response.Codigo);
+        _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
+    }
+
+    [TestMethod]
+    public void Modificar_CategoriaInexistente_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(3, CrearRequest(categoria: "Cocina")));
+    }
+
     private void ConfigurarAltaValida()
     {
         _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
