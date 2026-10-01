@@ -84,6 +84,15 @@ public sealed class ServicioSkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void Asociar_SinSkill_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(
+            () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest(), OrganizadorId));
+
+        Assert.AreEqual("La skill es obligatoria.", excepcion.Message);
+    }
+
+    [TestMethod]
     public void Asociar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneoSinGuardar()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
