@@ -103,6 +103,16 @@ public sealed class InscripcionTests
         Assert.AreEqual(EstadoInscripcion.Eliminada, inscripcion.Estado);
     }
 
+    [TestMethod]
+    public void Eliminar_InscripcionCancelada_LanzaInscripcionNoActivaSinCambiarla()
+    {
+        var inscripcion = new Inscripcion(_torneo, _jugador, Ahora);
+        inscripcion.Cancelar();
+
+        Assert.ThrowsExactly<InscripcionNoActivaException>(inscripcion.Eliminar);
+        Assert.AreEqual(EstadoInscripcion.Cancelada, inscripcion.Estado);
+    }
+
     private static Skill CrearSkill(int id, string codigo)
     {
         return new Skill(codigo, "Skill " + id, "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2)
