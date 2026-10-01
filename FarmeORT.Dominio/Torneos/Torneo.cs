@@ -30,6 +30,7 @@ public sealed class Torneo
         ValidarDescripcion(descripcion);
         ValidarCupo(cupo);
         ValidarFechas(fechaInicio, fechaFin);
+        ValidarOrganizador(organizador);
 
         Codigo = codigo;
         Nombre = nombre;
@@ -118,6 +119,14 @@ public sealed class Torneo
         if(fechaInicio < fechaActual)
         {
             throw new DatosInvalidosException("La fecha de inicio no puede ser anterior a la fecha actual.");
+        }
+    }
+
+    private static void ValidarOrganizador(Usuario organizador)
+    {
+        if(organizador.Rol != Rol.Organizador)
+        {
+            throw new DatosInvalidosException("El organizador debe ser un usuario con rol Organizador.");
         }
     }
 }
