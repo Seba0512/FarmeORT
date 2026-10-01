@@ -70,6 +70,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "SKILL_ALREADY_THROWN", "Ya lanzaste esta skill en la batalla."),
         [typeof(BatallaModificadaException)] =
             new(StatusCodes.Status409Conflict, "BATTLE_CHANGED", "La batalla cambió mientras se procesaba el pedido. Volvé a consultarla."),
+        [typeof(SkillObligatoriaPendienteException)] =
+            new(StatusCodes.Status409Conflict, "MANDATORY_SKILL_PENDING", "Debés lanzar una skill obligatoria pendiente para completar tus cuatro turnos."),
     };
 
     public void OnException(ExceptionContext context)
