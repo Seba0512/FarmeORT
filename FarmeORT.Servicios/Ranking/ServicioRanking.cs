@@ -15,7 +15,7 @@ internal sealed class ServicioRanking(IRepositorioUsuarios repositorioUsuarios) 
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
-            // Las batallas ganadas y perdidas quedan en 0 hasta que exista Batalla (D-61).
+            // Las batallas ganadas y perdidas quedan en 0 hasta que se puedan fallar batallas (D-61).
             ranking.Add(new JugadorRankingResponse
             {
                 Posicion = i + 1,
