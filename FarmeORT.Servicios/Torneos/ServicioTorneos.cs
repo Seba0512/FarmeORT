@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
@@ -13,6 +14,7 @@ internal sealed class ServicioTorneos(
     IRepositorioTorneos repositorioTorneos,
     IRepositorioUsuarios repositorioUsuarios,
     IRepositorioInscripciones repositorioInscripciones,
+    IRepositorioBatallas repositorioBatallas,
     TimeProvider reloj) : IServicioTorneos
 {
     public TorneoResponse Crear(TorneoRequest request)
@@ -104,8 +106,22 @@ internal sealed class ServicioTorneos(
     {
         var torneo = ObtenerTorneoExistente(id);
         torneo.Cancelar();
+        foreach(var batalla in repositorioBatallas.ListarSinResolverDelTorneo(torneo.Id))
+        {
+            batalla.Cancelar();
+        }
+
+        foreach(var inscripcion in repositorioInscripciones.ListarAceptadasDelTorneo(torneo.Id))
+        {
+            inscripcion.Cancelar();
+        }
+
+        // Un solo guardado: los tres repositorios comparten el contexto Scoped, así que el SaveChanges del
+        // torneo persiste también las batallas y las inscripciones canceladas, o ninguna (D-42).
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+
+        // La cancelación acaba de pasar todas las Aceptadas a Cancelada.
+        return CrearResponse<TorneoResponse>(torneo, 0);
     }
 
     private Torneo ObtenerTorneoExistente(int id)

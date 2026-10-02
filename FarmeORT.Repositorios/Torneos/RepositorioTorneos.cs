@@ -83,6 +83,13 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
         {
             contexto.SaveChanges();
         }
+        catch(DbUpdateConcurrencyException)
+        {
+            // El único token de concurrencia es el estado de la batalla (D-52): otra operación cambió una de las
+            // batallas que la cancelación del torneo guardaba junto con él (D-42). SaveChanges ya revirtió todo.
+            contexto.ChangeTracker.Clear();
+            throw new BatallaModificadaException();
+        }
         catch(DbUpdateException)
         {
             // Se suelta el torneo que falló para que el contexto se pueda seguir usando.

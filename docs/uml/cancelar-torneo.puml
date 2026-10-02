@@ -1,0 +1,59 @@
+@startuml
+title Cancelar torneo — guardado atómico (D-42)
+actor Administrador
+participant ":TorneosController" as C
+participant ":ServicioTorneos" as S
+participant ":RepositorioTorneos" as RT
+participant ":RepositorioBatallas" as RB
+participant ":RepositorioInscripciones" as RI
+participant "torneo:Torneo" as T
+participant "batalla:Batalla" as B
+participant "inscripcion:Inscripcion" as I
+database ":FarmeORTContext" as Ctx
+
+Administrador -> C : POST /api/v1/torneos/{id}/cancelaciones\nAuthorization: Bearer {token}
+note over C : Autorizacion exige token válido y rol Administrador.
+C -> S : Cancelar(id)
+S -> RT : ObtenerPorId(id)
+RT --> S : torneo
+alt torneo inexistente
+  S --> C : TorneoNoEncontradoException
+  C --> Administrador : 404 TOURNAMENT_NOT_FOUND
+else torneo existente
+  S -> T : Cancelar()
+  alt Finalizado o Cancelado
+    T --> S : TorneoNoCancelableException
+    S --> C : excepción
+    C --> Administrador : 409 TOURNAMENT_NOT_CANCELLABLE
+  else Abierto o EnCurso
+    T --> S : estado Cancelado
+    S -> RB : ListarSinResolverDelTorneo(id)
+    RB --> S : batallas Pendientes y EnArbitraje (rastreadas)
+    loop cada batalla
+      S -> B : Cancelar()
+    end
+    S -> RI : ListarAceptadasDelTorneo(id)
+    RI --> S : inscripciones Aceptadas (rastreadas)
+    loop cada inscripción
+      S -> I : Cancelar()
+    end
+    S -> RT : Actualizar(torneo)
+    RT -> Ctx : SaveChanges()
+    note right of Ctx
+      Un solo SaveChanges guarda el torneo, las batallas
+      y las inscripciones: los tres repositorios comparten
+      el contexto Scoped del pedido.
+    end note
+    alt otra operación cambió una batalla
+      Ctx --> RT : DbUpdateConcurrencyException (se revierte todo)
+      RT --> S : BatallaModificadaException
+      S --> C : excepción
+      C --> Administrador : 409 BATTLE_CHANGED
+    else guardado
+      Ctx --> RT : ok
+      S --> C : TorneoResponse (Cancelado, 0 aceptadas)
+      C --> Administrador : 200 TorneoResponse
+    end
+  end
+end
+@enduml

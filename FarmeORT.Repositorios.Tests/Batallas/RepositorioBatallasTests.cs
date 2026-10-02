@@ -235,6 +235,42 @@ public sealed class RepositorioBatallasTests
         Assert.IsFalse(_baseDeDatos.Contexto.Skills.Any(s => s.Id == 4));
     }
 
+    [TestMethod]
+    public void ListarSinResolverDelTorneo_BatallasEnTodosLosEstados_DevuelveRastreadasLasPendientesYEnArbitrajeDelTorneo()
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        var organizador = CrearUsuario(2, Rol.Organizador);
+        var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, organizador, FechaActual)
+        { Id = 5 };
+        var otroTorneo = new Torneo("COPAFARM", "Copa Farm", "Otro torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, organizador, FechaActual)
+        { Id = 6 };
+        var sorteo = new SorteoInicial(jugador1);
+        var enArbitraje = new Batalla(torneo, 1, jugador1, jugador2, sorteo) { Id = 13 };
+        var cancelada = new Batalla(torneo, 1, jugador1, jugador2, sorteo) { Id = 14 };
+        var finalizada = new Batalla(torneo, 1, jugador1, jugador2, sorteo) { Id = 15 };
+        cancelada.Cancelar();
+        _baseDeDatos.Contexto.Batallas.AddRange(
+            new Batalla(torneo, 1, jugador1, jugador2, sorteo) { Id = 12 },
+            enArbitraje,
+            cancelada,
+            finalizada,
+            new Batalla(otroTorneo, 1, jugador1, jugador2, sorteo) { Id = 16 });
+
+        // Los ocho lanzamientos y el fallo no importan para la consulta: se fija el estado directamente.
+        _baseDeDatos.Contexto.Entry(enArbitraje).Property(b => b.Estado).CurrentValue = EstadoBatalla.EnArbitraje;
+        _baseDeDatos.Contexto.Entry(finalizada).Property(b => b.Estado).CurrentValue = EstadoBatalla.Finalizada;
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.ListarSinResolverDelTorneo(5);
+
+        CollectionAssert.AreEqual(new[] { 12, 13 }, resultado.Select(b => b.Id).ToArray());
+        Assert.IsTrue(resultado.All(b => _baseDeDatos.Contexto.Entry(b).State == EntityState.Unchanged));
+    }
+
     private FarmeORTContext CrearOtroContexto()
     {
         var opciones = new DbContextOptionsBuilder<FarmeORTContext>()

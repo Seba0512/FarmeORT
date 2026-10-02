@@ -1352,6 +1352,79 @@ uniforme, consultas sin N+1, Code First y migraciones.
 
 ---
 
+### D-42 — Cancelación del torneo atómica con un solo `SaveChanges` del contexto compartido
+
+**Problema:** la letra (gestión de torneos) pide que, al cancelarse un torneo, sus batallas no Finalizadas y
+sus inscripciones Aceptadas pasen a Cancelada. `POST /torneos/{id}/cancelaciones` solo cambiaba el estado
+del torneo (pendiente de D-36/D-37). Los tres cambios viven en entidades de tres repositorios distintos
+(`Torneo`, `Batalla` de la Persona B e `Inscripcion`) y AGENTS §6 exige que la operación sea atómica: o se
+guardan todos o ninguno.
+
+**Alternativas consideradas:**
+- **Un solo `SaveChanges`**: los repositorios comparten el `FarmeORTContext` Scoped del pedido; el servicio
+  carga las entidades rastreadas, aplica `Cancelar()` en cada una y guarda una sola vez. Es lo que ya hace
+  el lanzamiento (D-52).
+- **Transacción explícita** detrás de una abstracción nueva en IRepositorios (`ITransaccion` con iniciar y
+  confirmar) que envuelva varios `SaveChanges`. Es más explícita, pero es en la práctica una Unit of Work,
+  que AGENTS §1.6 pide aprobar y registrar aparte.
+- **Un método de repositorio** (`CancelarConEfectos`) que actualice batallas e inscripciones con
+  `ExecuteUpdate` dentro de una transacción. La regla (qué estados se cancelan) quedaría en el repositorio y
+  se saltearían `Batalla.Cancelar()` e `Inscripcion.Cancelar()`.
+
+**Decisión adoptada:** un solo `SaveChanges` (el integrante eligió la opción recomendada).
+- `ServicioTorneos.Cancelar` obtiene el torneo y llama primero a `Torneo.Cancelar()`: si el torneo no se
+  puede cancelar (409 `TOURNAMENT_NOT_CANCELLABLE`) no consulta batallas ni inscripciones.
+- Después trae las batallas sin resolver con `IRepositorioBatallas.ListarSinResolverDelTorneo` (consulta
+  nueva, agregada al final de la interfaz de B como estaba acordado) y las inscripciones Aceptadas con
+  `IRepositorioInscripciones.ListarAceptadasDelTorneo`, y llama a `Cancelar()` en cada una. Las reglas
+  quedan en las entidades; los repositorios solo devuelven entidades rastreadas.
+- Guarda una sola vez con `IRepositorioTorneos.Actualizar(torneo)`: su `SaveChanges` persiste todos los
+  cambios rastreados del contexto en una transacción, así que también las batallas y las inscripciones.
+- Si otra operación cambió una de esas batallas entre la lectura y el guardado (por ejemplo, el octavo
+  lanzamiento la pasó a EnArbitraje), el token de concurrencia del estado (D-52) hace fallar el
+  `SaveChanges`, que revierte todo. `RepositorioTorneos` lo traduce a 409 `BATTLE_CHANGED` (se reusa
+  `BatallaModificadaException`) y limpia el contexto.
+- La respuesta informa 0 inscripciones Aceptadas sin volver a contarlas: la cancelación acaba de pasarlas
+  todas a Cancelada.
+- No hay cambios en el modelo, así que no hay migración.
+
+**Justificación:**
+- `SaveChanges` ya es una unidad atómica de EF Core: no hace falta otra abstracción para un caso de uso que
+  usa un solo contexto. Se mantiene la misma solución que D-52, sin Unit of Work ni segundo contexto.
+- Cada entidad valida su propia transición (Information Expert): una batalla Finalizada o Cancelada no
+  aparece en la consulta, y si apareciera, `Batalla.Cancelar()` la rechazaría.
+- Contra: la atomicidad depende de que los repositorios compartan el contexto Scoped. Queda explícita en un
+  comentario del servicio, en esta decisión y en un test de repositorio que lo comprueba.
+- Limitación aceptada: `Torneo` no tiene token de concurrencia, así que una inscripción que se confirme
+  entre la consulta y el guardado quedaría Aceptada en un torneo Cancelado. Cerrar esa ventana necesita un
+  token en el torneo y una migración; con el plazo actual no se hace.
+
+**Conceptos del curso:** atomicidad, concurrencia optimista, Information Expert, SRP (el repositorio no
+decide reglas), DI Scoped, TDD Outside-In y tests de integración con SQLite.
+
+**Evidencia:**
+- `ServicioTorneosTests`: cancela la batalla y la inscripción **antes** del único `Actualizar` (se mira el
+  estado en el momento del guardado), responde cero aceptadas sin volver a contarlas, y un torneo ya
+  cancelado no toca batallas ni inscripciones.
+- `RepositorioBatallasTests`: `ListarSinResolverDelTorneo` devuelve rastreadas solo las Pendientes y
+  EnArbitraje de ese torneo.
+- `RepositorioTorneosTests`: `Actualizar` guarda junto con el torneo la batalla y la inscripción canceladas;
+  si otro contexto cambió la batalla, lanza `BatallaModificadaException` y no guarda ninguno de los tres
+  cambios.
+- Secuencia en `docs/uml/cancelar-torneo.puml` y contrato en `docs/api/torneos.md`.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) planteó las tres alternativas con una recomendación; el integrante
+  eligió el `SaveChanges` único. Se descartó la transacción explícita para no introducir una Unit of Work
+  sin aprobación del equipo.
+- Claude Code propuso además traducir el conflicto de concurrencia: sin eso, la carrera con un lanzamiento
+  respondía 500. También detectó que el test existente que esperaba la cantidad de Aceptadas después de
+  cancelar describía un caso imposible, y lo reemplazó en un RED.
+- Problema que apareció: el primer arrange del test de repositorio creaba la batalla con jugadores sin
+  guardar, y el constructor la rechazó porque los dos tenían id 0. Se guardan los jugadores primero.
+
+---
+
 ### D-50 — Coordinación del alcance de Persona B
 
 **Problema:** A, B y C trabajan en paralelo sobre un modelo compartido. Numerar decisiones y mantener migraciones sin coordinación puede causar conflictos y respuestas distintas para la misma autorización por torneo.
@@ -1580,8 +1653,8 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
   Pendiente: diagrama de clases con `SkillDeclarada` y la colección
   `Repertorio` de `Usuario`.
 - Torneos (D-36, D-37), lo que espera a otras funcionalidades:
-  - Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
-    misma operación (atómica). Hoy solo cambia el estado.
+  - ~~Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
+    misma operación (atómica). Hoy solo cambia el estado.~~ Resuelto en D-42.
   - ~~Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar`.~~ Resuelto en D-40.
   - ~~Calcular `InscripcionesAceptadas` (hoy vale 0).~~ Resuelto en D-41.
   - Sumar al detalle las skills obligatorias, los jugadores aceptados y el cuadro (rondas y batallas).
