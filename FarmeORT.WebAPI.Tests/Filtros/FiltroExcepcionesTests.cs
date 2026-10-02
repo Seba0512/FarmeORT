@@ -21,6 +21,22 @@ public sealed class FiltroExcepcionesTests
     }
 
     [TestMethod]
+    public void OnException_JugadorSinInscripcion_Devuelve403ConCodigoPropio()
+    {
+        var contexto = CrearContexto(new JugadorNoInscriptoEnTorneoException());
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status403Forbidden, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("PLAYER_NOT_IN_TOURNAMENT", error.ErrorCode);
+        Assert.AreEqual("No tenés una inscripción en este torneo.", error.UserMessage);
+    }
+
+    [TestMethod]
     public void OnException_CredencialesInvalidas_Devuelve401ConErrorInvalidCredentials()
     {
         var contexto = CrearContexto(new CredencialesInvalidasException());
