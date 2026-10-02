@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Usuarios;
@@ -23,8 +24,14 @@ internal sealed class ServicioBatallas(
 
         var torneo = repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value) ?? throw new TorneoNoEncontradoException();
         ValidarVisibilidad(torneo, usuarioId, rol);
-        _ = repositorioBatallas;
-        throw new NotImplementedException();
+        var consulta = new FiltroBatallas(
+            filtro.TorneoId.Value,
+            filtro.Estado == null ? null : ValoresPorNombre.Buscar<EstadoBatalla>(filtro.Estado),
+            filtro.Ronda > 0 ? filtro.Ronda : null,
+            filtro.JugadorId > 0 ? filtro.JugadorId : null,
+            Paginacion.AjustarLimite(filtro.Limit),
+            Paginacion.AjustarDesplazamiento(filtro.Offset));
+        return repositorioBatallas.Listar(consulta).Select(RespuestasBatallas.Resumen).ToList();
     }
 
     private void ValidarVisibilidad(Torneo torneo, int usuarioId, string rol)
