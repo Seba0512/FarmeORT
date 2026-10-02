@@ -1,4 +1,6 @@
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Batallas;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
@@ -20,10 +22,18 @@ internal sealed class ServicioBatallas(
         }
 
         var torneo = repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value) ?? throw new TorneoNoEncontradoException();
-        _ = torneo;
+        ValidarVisibilidad(torneo, usuarioId, rol);
         _ = repositorioBatallas;
         _ = repositorioInscripciones;
         throw new NotImplementedException();
+    }
+
+    private static void ValidarVisibilidad(Torneo torneo, int usuarioId, string rol)
+    {
+        if(rol == Roles.Organizador && torneo.OrganizadorId != usuarioId)
+        {
+            throw new NoEsOrganizadorDelTorneoException();
+        }
     }
 
     public BatallaDetalleResponse ObtenerPorId(int id, int usuarioId, string rol)
