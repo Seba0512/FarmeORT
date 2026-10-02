@@ -1,4 +1,3 @@
-using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
@@ -61,20 +60,9 @@ internal sealed class ServicioUsuarios(
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        if(usuario.Rol != rol && repositorioTorneos.ExisteVigenteDelOrganizador(usuario.Id))
+        if(usuario.Rol != rol)
         {
-            throw new UsuarioOrganizaTorneoVigenteException();
-        }
-
-        if(usuario.Rol != rol && repositorioBatallas.ExisteSinResolverDelJugador(usuario.Id))
-        {
-            throw new UsuarioConBatallasSinResolverException();
-        }
-
-        if(usuario.Rol != rol && repositorioInscripciones.ListarAceptadasDelJugador(usuario.Id)
-            .Any(i => i.Torneo.Estado != EstadoTorneo.Finalizado && i.Torneo.Estado != EstadoTorneo.Cancelado))
-        {
-            throw new UsuarioConInscripcionVigenteException();
+            ValidarSinParticipacionVigente(usuario);
         }
 
         if(!MismoTexto(usuario.Email, request.Email))
@@ -110,6 +98,14 @@ internal sealed class ServicioUsuarios(
         }
 
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        ValidarSinTorneosNiBatallasPendientes(usuario);
+        usuario.Eliminar();
+        repositorioUsuarios.Eliminar(usuario);
+    }
+
+    // Letra (usuarios): no se elimina a quien organiza un torneo vigente o tiene batallas sin resolver.
+    private void ValidarSinTorneosNiBatallasPendientes(Usuario usuario)
+    {
         if(repositorioTorneos.ExisteVigenteDelOrganizador(usuario.Id))
         {
             throw new UsuarioOrganizaTorneoVigenteException();
@@ -119,9 +115,16 @@ internal sealed class ServicioUsuarios(
         {
             throw new UsuarioConBatallasSinResolverException();
         }
+    }
 
-        usuario.Eliminar();
-        repositorioUsuarios.Eliminar(usuario);
+    // Cambiar el rol tiene las restricciones de eliminar y, además, la de una inscripción vigente (D-43).
+    private void ValidarSinParticipacionVigente(Usuario usuario)
+    {
+        ValidarSinTorneosNiBatallasPendientes(usuario);
+        if(repositorioInscripciones.ListarAceptadasDelJugador(usuario.Id).Any(i => i.EstaVigente))
+        {
+            throw new UsuarioConInscripcionVigenteException();
+        }
     }
 
     private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
