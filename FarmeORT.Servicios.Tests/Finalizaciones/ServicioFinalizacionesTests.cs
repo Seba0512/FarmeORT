@@ -123,6 +123,18 @@ public sealed class ServicioFinalizacionesTests
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
+    // Bug encontrado con Postman: un torneo Cancelado (sin inscripciones Aceptadas) respondía que no había campeón.
+    [TestMethod]
+    public void Finalizar_TorneoCancelado_LanzaTorneoNoEnCurso()
+    {
+        _torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([]);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([]);
+
+        Assert.ThrowsExactly<TorneoNoEnCursoException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
+    }
+
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.
     private void PrepararTorneoListoParaFinalizar()
     {
