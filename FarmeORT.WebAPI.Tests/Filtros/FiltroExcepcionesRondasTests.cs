@@ -24,6 +24,12 @@ public sealed class FiltroExcepcionesRondasTests
         VerificarMapa(new RondaNoEncontradaException(), 404, "ROUND_NOT_FOUND", "El torneo no tiene una ronda con ese número.");
     }
 
+    [TestMethod]
+    public void OnException_RondaSinResolver_Devuelve409ConROUND_NOT_RESOLVED()
+    {
+        VerificarMapa(new RondaSinResolverException(), 409, "ROUND_NOT_RESOLVED", "La ronda anterior todavía tiene batallas sin resolver.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
