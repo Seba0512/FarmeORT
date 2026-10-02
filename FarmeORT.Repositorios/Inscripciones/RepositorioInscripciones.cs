@@ -118,7 +118,7 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
                 throw new TorneoCompletoException();
             }
 
-            throw;
+            throw new TorneoModificadoException();
         }
     }
 
