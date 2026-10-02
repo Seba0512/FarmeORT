@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Finalizaciones;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
@@ -22,7 +23,8 @@ internal sealed class ServicioFinalizaciones(
             throw new TorneoNoEncontradoException();
         }
 
-        if(torneo.OrganizadorId != usuarioId)
+        // Un Administrador puede finalizar aunque no sea el organizador asignado (D-63).
+        if(rol != Roles.Administrador && torneo.OrganizadorId != usuarioId)
         {
             throw new NoEsOrganizadorDelTorneoException();
         }
