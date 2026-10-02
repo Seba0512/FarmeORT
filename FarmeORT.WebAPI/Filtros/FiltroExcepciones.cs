@@ -120,6 +120,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "TOURNAMENT_READY_TO_FINISH", "Queda un solo jugador sin eliminar: corresponde finalizar el torneo."),
         [typeof(TorneoNoEnCursoException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_IN_PROGRESS", "El torneo no está en curso."),
+        [typeof(TorneoConBatallasSinResolverException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_HAS_UNRESOLVED_BATTLES", "El torneo todavía tiene batallas sin resolver."),
     };
 
     public void OnException(ExceptionContext context)
