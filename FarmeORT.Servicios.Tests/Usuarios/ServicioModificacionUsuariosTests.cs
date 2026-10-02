@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.Servicios.Usuarios;
@@ -19,6 +20,7 @@ public sealed class ServicioModificacionUsuariosTests
     private static readonly DateOnly FechaActual = new(2026, 9, 30);
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
+    private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private Mock<IHasheadorContrasenas> _hasheadorContrasenas = null!;
     private Mock<TimeProvider> _reloj = null!;
     private ServicioUsuarios _servicio = null!;
@@ -27,9 +29,14 @@ public sealed class ServicioModificacionUsuariosTests
     public void Inicializar()
     {
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
+        _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
         _hasheadorContrasenas = new Mock<IHasheadorContrasenas>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
-        _servicio = new ServicioUsuarios(_repositorioUsuarios.Object, _hasheadorContrasenas.Object, _reloj.Object);
+        _servicio = new ServicioUsuarios(
+            _repositorioUsuarios.Object,
+            _repositorioTorneos.Object,
+            _hasheadorContrasenas.Object,
+            _reloj.Object);
     }
 
     [TestMethod]

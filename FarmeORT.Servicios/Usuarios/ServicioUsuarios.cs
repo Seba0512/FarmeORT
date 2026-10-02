@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Usuarios;
@@ -9,6 +10,7 @@ namespace FarmeORT.Servicios.Usuarios;
 
 internal sealed class ServicioUsuarios(
     IRepositorioUsuarios repositorioUsuarios,
+    IRepositorioTorneos repositorioTorneos,
     IHasheadorContrasenas hasheadorContrasenas,
     TimeProvider reloj) : IServicioUsuarios
 {
@@ -86,6 +88,7 @@ internal sealed class ServicioUsuarios(
             throw new OperacionSobreSiMismoException();
         }
 
+        _ = repositorioTorneos;
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
         usuario.Eliminar();
         repositorioUsuarios.Eliminar(usuario);

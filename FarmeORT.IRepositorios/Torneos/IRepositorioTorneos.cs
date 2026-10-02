@@ -13,4 +13,7 @@ public interface IRepositorioTorneos
     void Agregar(Torneo torneo);
 
     void Actualizar(Torneo torneo);
+
+    // Torneos del organizador que no están Finalizados ni Cancelados: impiden darlo de baja o cambiarle el rol.
+    bool ExisteVigenteDelOrganizador(int organizadorId);
 }
