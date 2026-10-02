@@ -419,16 +419,21 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
-    public void Cancelar_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    public void Cancelar_TorneoConInscripcionesAceptadas_DevuelveCeroAceptadasSinVolverAContarlas()
     {
         var torneo = CrearTorneo();
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(
+        [
+            new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0)),
+            new Inscripcion(torneo, CrearUsuario(8, Rol.Jugador), new DateTime(2026, 10, 1, 12, 5, 0)),
+        ]);
         _repositorioTorneos.Setup(r => r.Actualizar(torneo));
-        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(2);
 
         var response = _servicio.Cancelar(TorneoId);
 
-        Assert.AreEqual(2, response.InscripcionesAceptadas);
+        Assert.AreEqual(0, response.InscripcionesAceptadas);
+        _repositorioInscripciones.Verify(r => r.ContarAceptadas(It.IsAny<int>()), Times.Never);
     }
 
     [TestMethod]
