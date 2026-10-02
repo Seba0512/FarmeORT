@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Ranking;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Ranking;
@@ -14,7 +15,11 @@ internal sealed class ServicioRanking(
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
-        _ = repositorioTorneos;
+        if(filtro.TorneoId != null && repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value) == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
         var jugadores = repositorioUsuarios.ListarRanking(AjustarCantidad(filtro.Cantidad));
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
