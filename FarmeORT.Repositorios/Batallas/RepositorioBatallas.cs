@@ -136,7 +136,21 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
     {
         contexto.Batallas.AddRange(batallas);
         contexto.Torneos.Update(torneo);
-        contexto.SaveChanges();
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateConcurrencyException)
+        {
+            contexto.ChangeTracker.Clear();
+            if(contexto.Batallas.Any(b => b.TorneoId == torneo.Id
+                && (b.Estado == EstadoBatalla.Pendiente || b.Estado == EstadoBatalla.EnArbitraje)))
+            {
+                throw new RondaSinResolverException();
+            }
+
+            throw new TorneoModificadoException();
+        }
     }
 
     private static Dictionary<int, int> ContarPorJugador(IQueryable<Batalla> batallas, Expression<Func<Batalla, int>> jugador)
