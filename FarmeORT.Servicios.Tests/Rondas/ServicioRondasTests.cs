@@ -207,6 +207,29 @@ public sealed class ServicioRondasTests
         Assert.AreEqual("Finalizada", rondas[0].Batallas[0].Estado);
     }
 
+    [TestMethod]
+    public void Generar_TorneoEnCursoConRondaResuelta_EmparejaALosQueSiguenEnLaRondaSiguiente()
+    {
+        var ganadores = _jugadores.Take(2).Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
+        _torneo.Iniciar(4);
+        IReadOnlyList<Batalla> primeraRonda = [CrearBatallaFallada(10, 1, 0, 3), CrearBatallaFallada(11, 1, 1, 2)];
+        IReadOnlyList<ParDeJugadores> pares = [new(_jugadores[0], _jugadores[1])];
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns(primeraRonda);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(ganadores);
+        _estrategia.Setup(e => e.Emparejar(It.Is<IReadOnlyList<Usuario>>(j => j.SequenceEqual(_jugadores.Take(2))))).Returns(pares);
+        _sorteo.Setup(s => s.ElegirEntre(_jugadores[0], _jugadores[1])).Returns(_jugadores[0]);
+        _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 2 && b.Jugador1Id == 7 && b.Jugador2Id == 8)));
+        _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
+
+        var ronda = _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
+
+        Assert.AreEqual(2, ronda.Numero);
+        Assert.HasCount(1, ronda.Batallas);
+        _repositorioBatallas.Verify(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 2 && b.Jugador1Id == 7 && b.Jugador2Id == 8)), Times.Once);
+        _repositorioTorneos.Verify(r => r.Actualizar(_torneo), Times.Once);
+    }
+
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
     // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar. Todo se guarda con el torneo.
     private void PrepararPrimeraRondaCompleta()
@@ -228,6 +251,14 @@ public sealed class ServicioRondasTests
         var jugador1 = _jugadores[indiceJugador1];
         var jugador2 = _jugadores[indiceJugador2];
         return new Batalla(_torneo, numeroRonda, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = id };
+    }
+
+    // Gana el primero de los dos: la ronda queda resuelta.
+    private Batalla CrearBatallaFallada(int id, int numeroRonda, int indiceJugador1, int indiceJugador2)
+    {
+        var batalla = CrearBatalla(id, numeroRonda, indiceJugador1, indiceJugador2);
+        batalla.Fallar(batalla.Jugador1Id, "Ganó por mejor ejecución de las skills.", 16, -16);
+        return batalla;
     }
 
     private static Usuario CrearUsuario(int id, Rol rol)
