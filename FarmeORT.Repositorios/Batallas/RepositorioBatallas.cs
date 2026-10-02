@@ -1,3 +1,4 @@
+using System.Linq.Expressions;
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
@@ -102,22 +103,24 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             finalizadas = finalizadas.Where(b => b.TorneoId == torneoId.Value);
         }
 
-        var ganadas = finalizadas
-            .Where(b => jugadorIds.Contains(b.GanadorId!.Value))
-            .GroupBy(b => b.GanadorId!.Value)
-            .ToDictionary(g => g.Key, g => g.Count());
-        var perdidasComoJugador1 = finalizadas
-            .Where(b => jugadorIds.Contains(b.Jugador1Id) && b.GanadorId != b.Jugador1Id)
-            .GroupBy(b => b.Jugador1Id)
-            .ToDictionary(g => g.Key, g => g.Count());
-        var perdidasComoJugador2 = finalizadas
-            .Where(b => jugadorIds.Contains(b.Jugador2Id) && b.GanadorId != b.Jugador2Id)
-            .GroupBy(b => b.Jugador2Id)
-            .ToDictionary(g => g.Key, g => g.Count());
+        var ganadas = ContarPorJugador(
+            finalizadas.Where(b => jugadorIds.Contains(b.GanadorId!.Value)), b => b.GanadorId!.Value);
+
+        // Las perdidas se cuentan por cada lado de la batalla: agrupar por el perdedor calculado con un CASE dio un
+        // conteo incorrecto en los tests con SQLite (D-46).
+        var perdidasComoJugador1 = ContarPorJugador(
+            finalizadas.Where(b => jugadorIds.Contains(b.Jugador1Id) && b.GanadorId != b.Jugador1Id), b => b.Jugador1Id);
+        var perdidasComoJugador2 = ContarPorJugador(
+            finalizadas.Where(b => jugadorIds.Contains(b.Jugador2Id) && b.GanadorId != b.Jugador2Id), b => b.Jugador2Id);
         return ganadas.Keys.Union(perdidasComoJugador1.Keys).Union(perdidasComoJugador2.Keys).ToDictionary(
             id => id,
             id => new ResultadosDeBatallas(
                 ganadas.GetValueOrDefault(id),
                 perdidasComoJugador1.GetValueOrDefault(id) + perdidasComoJugador2.GetValueOrDefault(id)));
+    }
+
+    private static Dictionary<int, int> ContarPorJugador(IQueryable<Batalla> batallas, Expression<Func<Batalla, int>> jugador)
+    {
+        return batallas.GroupBy(jugador).ToDictionary(g => g.Key, g => g.Count());
     }
 }
