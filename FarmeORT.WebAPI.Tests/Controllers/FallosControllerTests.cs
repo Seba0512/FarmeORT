@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Batallas;
@@ -13,6 +14,25 @@ namespace FarmeORT.WebAPI.Tests.Controllers;
 [TestClass]
 public sealed class FallosControllerTests
 {
+    [TestMethod]
+    [DataRow(null, 10, false)]
+    [DataRow(0, 10, false)]
+    [DataRow(-1, 10, false)]
+    [DataRow(7, -1, false)]
+    [DataRow(7, 0, false)]
+    [DataRow(7, 9, false)]
+    [DataRow(7, 501, false)]
+    [DataRow(7, 10, true)]
+    [DataRow(7, 500, true)]
+    public void FalloRequest_DatosDeBorde_ValidaGanadorYComentario(int? ganadorId, int largo, bool esperado)
+    {
+        var request = new FalloRequest { GanadorId = ganadorId, Comentario = largo < 0 ? null : new string('a', largo) };
+
+        var valido = Validator.TryValidateObject(request, new ValidationContext(request), [], validateAllProperties: true);
+
+        Assert.AreEqual(esperado, valido);
+    }
+
     [TestMethod]
     public void Fallar_RequiereAutenticacionYRolOrganizador()
     {
