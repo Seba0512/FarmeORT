@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Rondas;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Rondas;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
@@ -25,7 +26,9 @@ internal sealed class ServicioRondas(
             throw new TorneoNoEncontradoException();
         }
 
-        if(torneo.OrganizadorId != usuarioId)
+        // El filtro solo sabe el rol: si un Organizador es el asignado a este torneo lo decide el servicio (D-40).
+        // Un Administrador puede generarla aunque no lo sea (D-63).
+        if(rol != Roles.Administrador && torneo.OrganizadorId != usuarioId)
         {
             throw new NoEsOrganizadorDelTorneoException();
         }
