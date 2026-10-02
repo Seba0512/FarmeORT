@@ -25,6 +25,11 @@ internal sealed class ServicioRondas(
             throw new TorneoNoEncontradoException();
         }
 
+        if(torneo.OrganizadorId != usuarioId)
+        {
+            throw new NoEsOrganizadorDelTorneoException();
+        }
+
         torneo.Iniciar();
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
         var pares = estrategiaEmparejamiento.Emparejar(jugadores);
