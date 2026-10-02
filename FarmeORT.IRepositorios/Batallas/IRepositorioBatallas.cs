@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Torneos;
 
 namespace FarmeORT.IRepositorios.Batallas;
 
@@ -17,9 +18,13 @@ public interface IRepositorioBatallas
     // Persona B: filtros y paginación de batallas de un torneo ya autorizado.
     IReadOnlyList<Batalla> Listar(FiltroBatallas filtro);
 
-    // Persona C: deja la batalla nueva rastreada para guardarla junto con el torneo (D-62).
-    void Agregar(Batalla batalla);
+    // Persona A: ganadas y perdidas de los jugadores del ranking en una sola consulta, opcionalmente de un torneo.
+    // Un jugador sin batallas Finalizadas no figura.
+    IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId);
 
     // Persona C: las batallas del torneo con sus jugadores, ordenadas por ronda y por id, para armar las rondas.
     IReadOnlyList<Batalla> ListarDelTorneo(int torneoId);
+
+    // Persona C: guarda las batallas nuevas de la ronda y el estado del torneo en un solo SaveChanges (D-62).
+    void GuardarRonda(Torneo torneo, IReadOnlyList<Batalla> batallas);
 }

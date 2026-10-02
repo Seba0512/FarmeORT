@@ -26,7 +26,7 @@ internal sealed class ServicioRondas(
         var batallas = CrearBatallas(torneo, numero, estrategiaEmparejamiento.Emparejar(jugadores));
 
         // Un solo guardado: las batallas nuevas y el cambio de estado del torneo quedan juntos o no queda nada.
-        repositorioTorneos.Actualizar(torneo);
+        repositorioBatallas.GuardarRonda(torneo, batallas);
         return RespuestasRondas.Crear(numero, batallas);
     }
 
@@ -86,13 +86,14 @@ internal sealed class ServicioRondas(
             return 1;
         }
 
-        // Un torneo En curso sin batallas (por ejemplo, cargado a mano) arranca por la ronda 1.
+        // Sin batallas sería la primera ronda, que la letra exige con el torneo Abierto y el cupo completo.
         var anteriores = repositorioBatallas.ListarDelTorneo(torneo.Id);
-        var ultima = 0;
-        if(anteriores.Count > 0)
+        if(anteriores.Count == 0)
         {
-            ultima = anteriores.Max(b => b.NumeroRonda);
+            throw new TorneoNoAbiertoException();
         }
+
+        var ultima = anteriores.Max(b => b.NumeroRonda);
 
         if(anteriores.Any(b => b.NumeroRonda == ultima && !EstaResuelta(b)))
         {
@@ -113,15 +114,13 @@ internal sealed class ServicioRondas(
         return batalla.Estado == EstadoBatalla.Finalizada || batalla.Estado == EstadoBatalla.Cancelada;
     }
 
-    // Crea una batalla Pendiente por par y la deja lista para guardarse junto con el torneo.
+    // Crea una batalla Pendiente por par; se guardan después, todas juntas con el torneo.
     private List<Batalla> CrearBatallas(Torneo torneo, int numeroRonda, IReadOnlyList<ParDeJugadores> pares)
     {
         List<Batalla> batallas = [];
         foreach(var par in pares)
         {
-            var batalla = new Batalla(torneo, numeroRonda, par.Jugador1, par.Jugador2, sorteo);
-            repositorioBatallas.Agregar(batalla);
-            batallas.Add(batalla);
+            batallas.Add(new Batalla(torneo, numeroRonda, par.Jugador1, par.Jugador2, sorteo));
         }
 
         return batallas;

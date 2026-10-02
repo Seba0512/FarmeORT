@@ -28,19 +28,25 @@ public sealed class RepositorioRondasTests
     }
 
     [TestMethod]
-    public void Agregar_BatallaNueva_QuedaRastreadaSinGuardarseTodavia()
+    public void GuardarRonda_RondaNueva_GuardaLasBatallasYElEstadoDelTorneoJuntos()
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        var jugadores = Enumerable.Range(7, 4).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
         var torneo = CrearTorneo();
-        _baseDeDatos.Contexto.AddRange(jugador1, jugador2, torneo);
+        _baseDeDatos.Contexto.AddRange(jugadores);
+        _baseDeDatos.Contexto.Add(torneo);
         _baseDeDatos.Contexto.SaveChanges();
-        var batalla = new Batalla(torneo, 1, jugador1, jugador2, new SorteoInicial(jugador1));
+        torneo.Iniciar(4);
+        IReadOnlyList<Batalla> ronda =
+        [
+            new Batalla(torneo, 1, jugadores[0], jugadores[3], new SorteoInicial(jugadores[0])),
+            new Batalla(torneo, 1, jugadores[1], jugadores[2], new SorteoInicial(jugadores[1])),
+        ];
 
-        _repositorio.Agregar(batalla);
+        _repositorio.GuardarRonda(torneo, ronda);
 
-        Assert.AreEqual(EntityState.Added, _baseDeDatos.Contexto.Entry(batalla).State);
-        Assert.AreEqual(0, _baseDeDatos.Contexto.Batallas.Count());
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual(EstadoTorneo.EnCurso, _baseDeDatos.Contexto.Torneos.Single(t => t.Id == 4).Estado);
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Batallas.Count(b => b.TorneoId == 4 && b.NumeroRonda == 1));
     }
 
     [TestMethod]

@@ -1600,7 +1600,7 @@ determinismo, TDD Outside-In, tests de repositorio con SQLite y DRY.
 - Postman, carpeta "Ranking": los cuatro aceptados del torneo de cupo 4, la cantidad, un torneo inexistente,
   un torneo cancelado y `torneoId=abc`.
 
-**Pendiente:** `batallasGanadas` y `batallasPerdidas` (ver arriba).
+**Pendiente:** ~~`batallasGanadas` y `batallasPerdidas` (ver arriba).~~ Resuelto en D-46.
 
 **Participación de IA:**
 - Claude Code (agente de la Persona A) propuso las opciones de quién entra y el conteo por torneo; el
@@ -1608,6 +1608,65 @@ determinismo, TDD Outside-In, tests de repositorio con SQLite y DRY.
   propuso Claude Code siguiendo D-36 y la especificación; el integrante los aprobó antes del PR.
 - Para que el test del desempate no pasara por casualidad, Claude Code quitó `ThenBy` a propósito, vio
   fallar los dos tests de desempate y restauró el código antes de commitear.
+
+---
+
+### D-46 — Batallas ganadas y perdidas del ranking en una sola consulta
+
+**Problema:** `batallasGanadas` y `batallasPerdidas` valían 0 desde D-61 porque la batalla no guardaba el
+ganador. Con los fallos de la Persona B en develop, `Batalla` tiene `GanadorId` y el estado `Finalizada`.
+D-45 dejó acordado que, con `torneoId`, se cuentan solo las batallas de ese torneo.
+
+**Alternativas consideradas:**
+- Contar por jugador con una consulta para cada uno (N+1, hasta 100 consultas por ranking) o con una sola
+  consulta agrupada para todos los jugadores de la página.
+- Dónde contar: en el servicio, trayendo las batallas Finalizadas, o en la base.
+- Cómo calcular las perdidas: agrupar por el perdedor calculado con un `CASE` (el jugador que no es el
+  ganador), o contar por separado las perdidas como jugador 1 y como jugador 2.
+
+**Decisión adoptada:**
+- `IRepositorioBatallas.ContarResultadosPorJugador(jugadorIds, torneoId?)`, al final de la interfaz de B,
+  devuelve un diccionario jugador → `ResultadosDeBatallas(Ganadas, Perdidas)`. Un jugador sin batallas
+  Finalizadas no figura y el servicio le muestra 0.
+- Solo cuentan las batallas `Finalizada` con ganador. Las Pendientes, EnArbitraje y Canceladas no son ni
+  ganadas ni perdidas.
+- Ganadas: se agrupa por `GanadorId`. Perdidas: se suman dos conteos, como jugador 1 y como jugador 2 cuando
+  el ganador es el otro. En total son tres consultas agrupadas por ranking, sin importar cuántos jugadores
+  muestre.
+- Con `torneoId` se filtran las batallas de ese torneo; sin filtro cuentan todas.
+- Si la lista de jugadores está vacía, el servicio no consulta las batallas.
+
+**Justificación:**
+- Una consulta agrupada evita N+1 y no trae batallas a memoria.
+- Contar las perdidas por cada lado es más simple de leer que un `CASE`. Además, la versión con `CASE`
+  devolvió un conteo incorrecto en el test con SQLite (3 perdidas en lugar de 2), aunque el SQL de la
+  proyección sola era correcto. Con dos agrupaciones el resultado coincide y no depende de esa
+  traducción.
+
+**Conceptos del curso:** consultas sin N+1, el repositorio consulta y no decide reglas (qué es una batalla
+resuelta lo define el estado de `Batalla`), TDD Outside-In y tests de repositorio con SQLite.
+
+**Evidencia:**
+- `ServicioRankingTests`: el test que afirmaba 0 (pendiente de D-61) ahora espera las ganadas y perdidas
+  que devuelve el repositorio, y 0 para un jugador sin batallas. El test con `torneoId` exige que se pida
+  el conteo de ese torneo (mock estricto con el valor exacto).
+- `RepositorioBatallasTests`: ganadas y perdidas solo de las Finalizadas y solo de los jugadores pedidos, y
+  con torneo solo las de ese torneo. Las batallas se fallan con `Batalla.Fallar` de B.
+- Postman: el test "Ganadas y perdidas en 0" pasó a comprobar que son enteros no negativos.
+
+**Pendiente:** en el Runner no hay batallas falladas hasta que C conecte Rondas con las carpetas de B
+(documentado por B en `docs/api/batallas-lanzamientos.md`). Cuando eso pase, agregar en Ranking un request
+con `torneoId={{bTorneoId}}` que verifique la ganada de `bJugador1Id` y la perdida de `bJugador2Id`.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) propuso la consulta agrupada y el tipo de resultado.
+- Problemas que aparecieron:
+  - La primera versión con `CASE` contó de más. Claude Code miró el SQL generado y cambió a dos
+    agrupaciones simples.
+  - Un REFACTOR que filtraba después de agrupar no se podía traducir a SQL y se descartó.
+  - El primer commit RED del filtro por torneo fallaba por un error de armado (dos organizadores con el
+    mismo id), no por el comportamiento. Como no se había publicado, se corrigió el arrange y se rehízo ese
+    commit (amend) para que la evidencia mostrara el fallo de la aserción.
 
 ---
 
@@ -1848,9 +1907,9 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
   colección completa contra SQL Server sin fallos.
 
 **Pendientes:**
-- Calcular `batallasGanadas` y `batallasPerdidas` cuando se puedan fallar batallas. En ese momento hay
+- ~~Calcular `batallasGanadas` y `batallasPerdidas` cuando se puedan fallar batallas. En ese momento hay
   que actualizar `ServicioRankingTests.Obtener_CantidadValida_DevuelveLosJugadoresConSuPosicion`, que hoy
-  afirma que valen 0, y el test de Postman que comprueba lo mismo.
+  afirma que valen 0, y el test de Postman que comprueba lo mismo.~~ Resuelto en D-46.
 - ~~El filtro `torneoId`, con su 404: definir qué jugadores del torneo entran.~~ Resuelto en D-45.
 - Agregar `ServicioRanking` al diagrama de clases. La especificación de esta parte está en
   `docs/api/ranking.md`.
@@ -1896,14 +1955,15 @@ entidad, dónde vive el emparejamiento, cómo se cruzan los jugadores y cómo se
   1. Valida el torneo y quién llama (D-63).
   2. Trae a los jugadores con inscripción Aceptada.
   3. Prepara la ronda. Si el torneo no está En curso, es la primera: llama a `Iniciar`. Si está En curso, es una
-     siguiente: la última ronda tiene que estar resuelta (todas sus batallas Finalizadas o Canceladas, si no 409
-     `ROUND_NOT_RESOLVED`) y tienen que quedar al menos dos jugadores. Con uno solo ya hay campeón y responde 409
-     `TOURNAMENT_READY_TO_FINISH`, porque corresponde finalizar el torneo.
+     siguiente: tiene que tener batallas (si no, 409 `TOURNAMENT_NOT_OPEN`), la última ronda tiene que estar
+     resuelta (todas sus batallas Finalizadas o Canceladas, si no 409 `ROUND_NOT_RESOLVED`) y tienen que quedar al
+     menos dos jugadores. Con uno solo ya hay campeón y responde 409 `TOURNAMENT_READY_TO_FINISH`, porque
+     corresponde finalizar el torneo.
   4. Empareja y crea una batalla por par con el constructor de Batalla y el `ISorteo` inyectado (empieza el de
      mayor ELO; si empatan, el sorteo).
-  5. Agrega cada batalla con `IRepositorioBatallas.Agregar`, que no guarda, y guarda todo una sola vez con
-     `IRepositorioTorneos.Actualizar`: las batallas y el cambio de estado del torneo quedan juntos o no queda nada
-     (como D-42).
+  5. Guarda todo con `IRepositorioBatallas.GuardarRonda(torneo, batallas)`, que agrega las batallas y actualiza el
+     torneo en un solo `SaveChanges`: las batallas y el cambio de estado del torneo quedan juntos o no queda nada
+     (como D-42). La firma deja la atomicidad a la vista en el contrato de la interfaz.
 - **Consultas:** `GET /torneos/{id}/rondas` y `GET /torneos/{id}/rondas/{numero}`, con autenticación opcional. El
   anónimo no ve las rondas de un torneo Cancelado (D-36). Un número que el torneo no tiene responde 404
   `ROUND_NOT_FOUND`. `IRepositorioBatallas.ListarDelTorneo` trae las batallas con sus jugadores, ordenadas por
@@ -1914,8 +1974,14 @@ entidad, dónde vive el emparejamiento, cómo se cruzan los jugadores y cómo se
 - **Cuadro:** el detalle del torneo trae `rondas` con todas las rondas y sus batallas, así una sola llamada alcanza
   para dibujar el cuadro (letra). El armado de las rondas lo comparten `ServicioRondas` y `ServicioTorneos` en
   `RespuestasRondas`.
-- Un torneo En curso sin batallas (cargado a mano) arranca por la ronda 1 en lugar de fallar.
-- Las consultas nuevas van al final de `IRepositorioBatallas`, la interfaz de la persona B, como estaba acordado.
+- Un torneo En curso sin batallas (por ejemplo, cargado a mano) responde 409 `TOURNAMENT_NOT_OPEN`: generar su
+  ronda 1 se saltearía la regla de que la primera ronda exige el torneo Abierto y el cupo completo.
+- `EmparejamientoPorElo` rechaza una cantidad impar de jugadores con `InvalidOperationException`, que responde 500.
+  Por la API no pasa (el cupo es potencia de 2 y cada batalla elimina a uno), así que sería un error de datos y no
+  del cliente; sin la excepción, un jugador quedaría afuera sin aviso.
+- `TOURNAMENT_NOT_OPEN` (de la persona A) dice "El torneo no está abierto.", que sirve para las inscripciones y
+  para las rondas. Antes decía "...a inscripciones"; se cambió con el acuerdo de la persona A.
+- Los métodos nuevos van al final de `IRepositorioBatallas`, la interfaz de la persona B, como estaba acordado.
 
 **Justificación:**
 - La ronda derivada evita duplicar un dato que Batalla ya tiene: con una tabla aparte, el número de ronda podría
@@ -1933,22 +1999,20 @@ atomicidad con un solo `SaveChanges`, REST (sub-recurso `/rondas`), status 404 y
 
 **Evidencia:**
 - Dominio: `IEstrategiaEmparejamiento`, `EmparejamientoPorElo`, `ParDeJugadores`, `Torneo.Iniciar`;
-  `EmparejamientoPorEloTests` (dos jugadores, ELO igual con desempate por id, ELO distinto) y
+  `EmparejamientoPorEloTests` (dos jugadores, ELO igual con desempate por id, ELO distinto, cantidad impar) y
   `TorneoRondasTests`.
 - `ServicioRondas` y `ServicioRondasTests`: primera ronda, estado En curso con un solo guardado, torneo
   inexistente, organizador no asignado, administrador, torneo incompleto, rondas siguientes, ronda sin resolver,
-  un solo jugador, batalla cancelada como resuelta, consultas, anónimo y ganador.
+  un solo jugador, batalla cancelada como resuelta, torneo En curso sin batallas, consultas, anónimo y ganador.
 - `RondasController` y `RondasControllerTests` (201 con `Location`, 200 y la seguridad por reflexión).
-- `RepositorioBatallas.Agregar` y `ListarDelTorneo`, y `RepositorioRondasTests`, que incluye que actualizar el
-  torneo guarda junto con él las batallas de la ronda.
+- `RepositorioBatallas.GuardarRonda` y `ListarDelTorneo`, y `RepositorioRondasTests`, que incluye que las batallas
+  de la ronda se guardan junto con el estado del torneo.
 - `FiltroExcepcionesRondasTests` y `docs/api/rondas.md`.
 
 **Supuestos y pendientes:**
 - Dos pedidos simultáneos de generar la misma ronda podrían crear batallas repetidas: `Torneo` no tiene token de
   concurrencia. Se acepta el riesgo, porque la ronda la genera una sola persona (el organizador asignado o un
   administrador).
-- `TOURNAMENT_NOT_OPEN` reusa el mensaje de las inscripciones ("El torneo no está abierto a inscripciones."), que
-  en las rondas se lee algo forzado. Cambiarlo toca el mapeo de la persona A.
 - La secuencia de generar ronda y las clases que participan están en `docs/uml/generar-ronda.puml` y
   `docs/uml/rondas-clases.puml`; falta sumarlas al diagrama de clases general del informe.
 
@@ -1963,6 +2027,9 @@ atomicidad con un solo `SaveChanges`, REST (sub-recurso `/rondas`), status 404 y
     probando la consulta sin desempate antes del GREEN y agregó el índice de prueba.
   - `dotnet format` convierte las lambdas de los `Assert.ThrowsExactly` en method groups; un script de edición dejó
     de coincidir con el archivo y hubo que rehacerlo sobre el archivo real.
+- La review técnica del PR #25 pidió cuatro cambios: rechazar el torneo En curso sin batallas, que la interfaz
+  muestre la atomicidad (`GuardarRonda` en lugar de un `Agregar` que no guardaba), el mensaje de
+  `TOURNAMENT_NOT_OPEN` y la cantidad impar. Claude Code los hizo con ciclos RED/GREEN y un REFACTOR.
 
 ---
 
@@ -1980,7 +2047,7 @@ el organizador asignado, que es lo que dice la letra).
 - El servicio decide si el Organizador es el asignado a ese torneo; si no, 403 `NOT_TOURNAMENT_ORGANIZER` (se
   reusa `NoEsOrganizadorDelTorneoException`, D-40). Un Administrador pasa sin esa comprobación.
 - Es un supuesto: si una aclaración docente dice que solo el organizador, alcanza con sacar el rol del atributo
-  y la condición del servicio. Se aplica igual a finalizar el torneo.
+  y la condición del servicio. Queda para consultar en el foro del curso.
 
 **Justificación:** mantiene la regla de D-40 para los organizadores y le da al Administrador, que ya crea y cancela
 torneos, la posibilidad de destrabar uno.

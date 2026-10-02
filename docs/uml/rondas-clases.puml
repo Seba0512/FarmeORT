@@ -65,15 +65,14 @@ package FarmeORT.Dominio {
 
 package FarmeORT.IRepositorios {
   interface IRepositorioBatallas {
-    + Agregar(batalla : Batalla) : void
     + ListarDelTorneo(torneoId : int) : IReadOnlyList<Batalla>
+    + GuardarRonda(torneo : Torneo, batallas : IReadOnlyList<Batalla>) : void
   }
   interface IRepositorioInscripciones {
     + ListarAceptadasDelTorneo(torneoId : int) : IReadOnlyList<Inscripcion>
   }
   interface IRepositorioTorneos {
     + ObtenerPorId(id : int) : Torneo
-    + Actualizar(torneo : Torneo) : void
   }
 }
 

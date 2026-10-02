@@ -41,7 +41,10 @@ else organizador asignado o Administrador
   else torneo En curso (ronda siguiente)
     S -> RB : ListarDelTorneo(torneoId)
     RB --> S : batallas ordenadas por ronda e id
-    alt la última ronda tiene batallas sin resolver
+    alt no tiene batallas (sería la primera ronda)
+      S --> C : TorneoNoAbiertoException
+      C --> U : 409 TOURNAMENT_NOT_OPEN
+    else la última ronda tiene batallas sin resolver
       S --> C : RondaSinResolverException
       C --> U : 409 ROUND_NOT_RESOLVED
     else queda un solo jugador
@@ -55,16 +58,14 @@ else organizador asignado o Administrador
   E --> S : pares (ELO de mayor a menor, desempate por id,\nmejor contra peor)
   loop cada par
     S -> B ** : new Batalla(torneo, numero, jugador1, jugador2, sorteo)
-    S -> RB : Agregar(batalla)
-    note right of RB : No guarda: queda rastreada.
   end
-  S -> RT : Actualizar(torneo)
-  RT -> Ctx : SaveChanges()
+  S -> RB : GuardarRonda(torneo, batallas)
+  RB -> Ctx : SaveChanges()
   note right of Ctx
     Un solo SaveChanges guarda las batallas nuevas
     y el estado del torneo: quedan juntos o no queda nada.
   end note
-  Ctx --> RT : ok
+  Ctx --> RB : ok
   S --> C : RondaResponse
   C --> U : 201 RondaResponse\nLocation: /api/v1/torneos/{torneoId}/rondas/{numero}
 end

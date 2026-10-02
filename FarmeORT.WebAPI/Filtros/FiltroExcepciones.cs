@@ -63,7 +63,7 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         [typeof(NoEsDuenoDeLaInscripcionException)] =
             new(StatusCodes.Status403Forbidden, "NOT_REGISTRATION_OWNER", "La inscripción no es tuya."),
         [typeof(TorneoNoAbiertoException)] =
-            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto a inscripciones."),
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto."),
         [typeof(InscripcionYaExisteException)] =
             new(StatusCodes.Status409Conflict, "ALREADY_REGISTERED", "Ya tenés una inscripción aceptada en este torneo."),
         [typeof(TorneoCompletoException)] =
