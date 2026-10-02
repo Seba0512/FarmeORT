@@ -14,6 +14,22 @@ namespace FarmeORT.WebAPI.Tests.Controllers;
 public sealed class BatallasControllerTests
 {
     [TestMethod]
+    public void ObtenerPorId_BatallaExistente_Devuelve200YUsaSesion()
+    {
+        var servicio = new Mock<IServicioBatallas>(MockBehavior.Strict);
+        var response = new BatallaDetalleResponse { Id = 12, Estado = "Finalizada", GanadorId = 7, Comentario = "Victoria por abandono." };
+        servicio.Setup(s => s.ObtenerPorId(12, 7, Roles.Jugador)).Returns(response);
+        var controller = CrearController(servicio.Object);
+
+        var resultado = controller.ObtenerPorId(12) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(response, resultado.Value);
+        servicio.Verify(s => s.ObtenerPorId(12, 7, Roles.Jugador), Times.Once);
+    }
+
+    [TestMethod]
     public void Listar_FiltroValido_Devuelve200YUsaIdentidadYRolAutenticados()
     {
         var servicio = new Mock<IServicioBatallas>(MockBehavior.Strict);
