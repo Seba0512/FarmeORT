@@ -69,9 +69,9 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             && (b.Estado == EstadoBatalla.Pendiente || b.Estado == EstadoBatalla.EnArbitraje));
     }
 
+    // No guarda: la batalla se persiste con el SaveChanges que guarda el torneo, en la misma transacción (D-62).
     public void Agregar(Batalla batalla)
     {
-        _ = batalla;
-        throw new NotImplementedException();
+        contexto.Batallas.Add(batalla);
     }
 }
