@@ -31,6 +31,8 @@ internal sealed class ServicioFallos(
             throw new NoEsOrganizadorDelTorneoException();
         }
 
+        batalla.ValidarFallo(ganadorId, request.Comentario);
+
         var ganador = ganadorId == batalla.Jugador1Id ? batalla.Jugador1 : batalla.Jugador2;
         var perdedor = ganadorId == batalla.Jugador1Id ? batalla.Jugador2 : batalla.Jugador1;
         var inscripcion = repositorioInscripciones.ObtenerAceptada(batalla.TorneoId, perdedor.Id);

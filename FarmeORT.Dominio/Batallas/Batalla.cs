@@ -90,6 +90,8 @@ public sealed class Batalla
 
     public void Fallar(int ganadorId, string? comentario, int cambioEloJugador1, int cambioEloJugador2)
     {
+        ValidarFallo(ganadorId, comentario);
+
         Ganador = ganadorId == Jugador1Id ? Jugador1 : Jugador2;
         GanadorId = ganadorId;
         Comentario = comentario;
@@ -97,6 +99,14 @@ public sealed class Batalla
         CambioEloJugador2 = cambioEloJugador2;
         Estado = EstadoBatalla.Finalizada;
         JugadorTurnoId = null;
+    }
+
+    public void ValidarFallo(int ganadorId, string? comentario)
+    {
+        if(Estado != EstadoBatalla.Pendiente && Estado != EstadoBatalla.EnArbitraje)
+        {
+            throw new BatallaNoFallableException();
+        }
     }
 
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
