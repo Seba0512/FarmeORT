@@ -105,6 +105,23 @@ public sealed class RepositorioRankingTests
         CollectionAssert.AreEqual(new[] { "eliminado", "aceptado" }, ranking.Select(u => u.Nickname).ToArray());
     }
 
+    [TestMethod]
+    public void ListarRankingDelTorneo_EloEmpatadoYMasParticipantesQueLaCantidad_DesempataPorIdYCorta()
+    {
+        // El mismo índice que en el desempate del ranking general: sin ThenBy, los empates saldrían al revés.
+        _baseDeDatos.Contexto.Database.ExecuteSqlRaw("CREATE INDEX IX_Usuarios_Elo_Prueba ON Usuarios (Elo);");
+        var organizador = AgregarUsuario("organizador", 1200, Rol.Organizador);
+        var torneo = AgregarTorneo("COPAAURA", organizador);
+        Inscribir(torneo, AgregarUsuario("primero", 1300));
+        Inscribir(torneo, AgregarUsuario("segundo", 1300));
+        Inscribir(torneo, AgregarUsuario("tercero", 1300));
+        GuardarYLimpiar();
+
+        var ranking = _repositorio.ListarRankingDelTorneo(torneo.Id, 2);
+
+        CollectionAssert.AreEqual(new[] { "primero", "segundo" }, ranking.Select(u => u.Nickname).ToArray());
+    }
+
     private Torneo AgregarTorneo(string codigo, Usuario organizador)
     {
         var torneo = new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.",
