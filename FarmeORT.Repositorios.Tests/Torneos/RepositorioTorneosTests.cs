@@ -1,3 +1,5 @@
+using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
@@ -254,6 +256,45 @@ public sealed class RepositorioTorneosTests
         Assert.AreEqual("COPAAURA", _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Codigo);
     }
 
+    // La cancelación del torneo (D-42) carga la batalla y la inscripción con el mismo contexto Scoped y guarda
+    // una sola vez con Actualizar: ese SaveChanges persiste los tres cambios juntos.
+    [TestMethod]
+    public void Actualizar_TorneoCanceladoConBatallaEInscripcionRastreadas_GuardaLosTresCambiosJuntos()
+    {
+        var torneo = GuardarTorneoConBatallaEInscripcion();
+        var batalla = _baseDeDatos.Contexto.Batallas.Single(b => b.TorneoId == torneo.Id);
+        var inscripcion = _baseDeDatos.Contexto.Inscripciones.Single(i => i.TorneoId == torneo.Id);
+        torneo.Cancelar();
+        batalla.Cancelar();
+        inscripcion.Cancelar();
+
+        _repositorio.Actualizar(torneo);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.AreEqual(EstadoTorneo.Cancelado, _baseDeDatos.Contexto.Torneos.Single(t => t.Id == torneo.Id).Estado);
+        Assert.AreEqual(EstadoBatalla.Cancelada, _baseDeDatos.Contexto.Batallas.Single(b => b.Id == batalla.Id).Estado);
+        Assert.AreEqual(EstadoInscripcion.Cancelada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
+    }
+
+    [TestMethod]
+    public void Actualizar_BatallaModificadaPorOtroPedido_LanzaBatallaModificadaSinGuardarNingunCambio()
+    {
+        var torneo = GuardarTorneoConBatallaEInscripcion();
+        var batalla = _baseDeDatos.Contexto.Batallas.Single(b => b.TorneoId == torneo.Id);
+        var inscripcion = _baseDeDatos.Contexto.Inscripciones.Single(i => i.TorneoId == torneo.Id);
+        torneo.Cancelar();
+        batalla.Cancelar();
+        inscripcion.Cancelar();
+        CambiarEstadoDesdeOtroContexto(batalla.Id, EstadoBatalla.EnArbitraje);
+
+        Assert.ThrowsExactly<BatallaModificadaException>(() => _repositorio.Actualizar(torneo));
+
+        Assert.AreEqual(EstadoTorneo.Abierto, _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Estado);
+        Assert.AreEqual(EstadoBatalla.EnArbitraje, _baseDeDatos.Contexto.Batallas.AsNoTracking().Single(b => b.Id == batalla.Id).Estado);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _baseDeDatos.Contexto.Inscripciones.AsNoTracking().Single(i => i.Id == inscripcion.Id).Estado);
+        AssertPuedeGuardarOtroTorneo();
+    }
+
     [TestMethod]
     [DataRow(EstadoTorneo.Abierto, true)]
     [DataRow(EstadoTorneo.EnCurso, true)]
@@ -321,6 +362,42 @@ public sealed class RepositorioTorneosTests
         return new Torneo(codigo, nombre, Descripcion, inicio, inicio.AddDays(29), 8, OrganizadorCargado(), FechaActual);
     }
 
+    // Deja guardado un torneo Abierto con una inscripción Aceptada y una batalla Pendiente, y devuelve el torneo
+    // cargado desde el contexto.
+    private Torneo GuardarTorneoConBatallaEInscripcion()
+    {
+        var torneo = CrearTorneo("COPAAURA");
+        var jugador1 = CrearJugador(7);
+        var jugador2 = CrearJugador(8);
+
+        // Los jugadores se guardan primero: la batalla los distingue por id.
+        _baseDeDatos.Contexto.Usuarios.AddRange(jugador1, jugador2);
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.Torneos.Add(torneo);
+        _baseDeDatos.Contexto.Inscripciones.Add(new Inscripcion(torneo, jugador1, new DateTime(2026, 10, 1, 12, 0, 0)));
+        _baseDeDatos.Contexto.Batallas.Add(new Batalla(torneo, 1, jugador1, jugador2, new SorteoDelPrimero()));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        return _baseDeDatos.Contexto.Torneos.Include(t => t.Organizador).Single(t => t.Id == torneo.Id);
+    }
+
+    // Simula otro pedido (por ejemplo, el octavo lanzamiento) que cambia la batalla con su propio contexto.
+    private void CambiarEstadoDesdeOtroContexto(int batallaId, EstadoBatalla estado)
+    {
+        var opciones = new DbContextOptionsBuilder<FarmeORTContext>()
+            .UseSqlite(_baseDeDatos.Contexto.Database.GetDbConnection())
+            .Options;
+        using var otroContexto = new FarmeORTContext(opciones);
+        var batalla = otroContexto.Batallas.Single(b => b.Id == batallaId);
+        otroContexto.Entry(batalla).Property(b => b.Estado).CurrentValue = estado;
+        otroContexto.SaveChanges();
+    }
+
+    private static Usuario CrearJugador(int numero)
+    {
+        return new Usuario("Ana", "Perez", $"jugador{numero}@farmeort.com", $"jugador{numero}", new DateOnly(2000, 1, 1), Rol.Jugador, "hash", FechaActual);
+    }
+
     private Usuario OrganizadorCargado()
     {
         return _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == _organizador.Id);
@@ -332,5 +409,13 @@ public sealed class RepositorioTorneosTests
         _baseDeDatos.Contexto.Usuarios.Add(organizador);
         _baseDeDatos.Contexto.SaveChanges();
         return organizador;
+    }
+
+    private sealed class SorteoDelPrimero : ISorteo
+    {
+        public Usuario ElegirEntre(Usuario jugador1, Usuario jugador2)
+        {
+            return jugador1;
+        }
     }
 }

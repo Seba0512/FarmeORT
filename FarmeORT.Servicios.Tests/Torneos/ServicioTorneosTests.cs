@@ -1,7 +1,10 @@
+using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
@@ -27,6 +30,7 @@ public sealed class ServicioTorneosTests
     private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
     private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
+    private Mock<IRepositorioBatallas> _repositorioBatallas = null!;
     private Mock<TimeProvider> _reloj = null!;
     private Usuario _organizador = null!;
     private ServicioTorneos _servicio = null!;
@@ -37,13 +41,24 @@ public sealed class ServicioTorneosTests
         _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
         _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
+        _repositorioBatallas = new Mock<IRepositorioBatallas>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
         _organizador = CrearUsuario(OrganizadorId, Rol.Organizador);
 
         // Por defecto el torneo no tiene inscriptos; los tests que lo necesitan redefinen la cantidad.
         _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(0);
         _repositorioInscripciones.Setup(r => r.ContarAceptadasPorTorneo(new[] { TorneoId })).Returns(new Dictionary<int, int>());
-        _servicio = new ServicioTorneos(_repositorioTorneos.Object, _repositorioUsuarios.Object, _repositorioInscripciones.Object, _reloj.Object);
+
+        // Por defecto el torneo no tiene batallas sin resolver ni inscripciones Aceptadas; los tests de la
+        // cancelación agregan las suyas.
+        _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([]);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([]);
+        _servicio = new ServicioTorneos(
+            _repositorioTorneos.Object,
+            _repositorioUsuarios.Object,
+            _repositorioInscripciones.Object,
+            _repositorioBatallas.Object,
+            _reloj.Object);
     }
 
     [TestMethod]
@@ -404,16 +419,67 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
-    public void Cancelar_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    public void Cancelar_TorneoConInscripcionesAceptadas_DevuelveCeroAceptadasSinVolverAContarlas()
     {
         var torneo = CrearTorneo();
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(
+        [
+            new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0)),
+            new Inscripcion(torneo, CrearUsuario(8, Rol.Jugador), new DateTime(2026, 10, 1, 12, 5, 0)),
+        ]);
         _repositorioTorneos.Setup(r => r.Actualizar(torneo));
-        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(2);
 
         var response = _servicio.Cancelar(TorneoId);
 
-        Assert.AreEqual(2, response.InscripcionesAceptadas);
+        Assert.AreEqual(0, response.InscripcionesAceptadas);
+        _repositorioInscripciones.Verify(r => r.ContarAceptadas(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoConBatallaSinResolver_CancelaLaBatallaEnElMismoGuardado()
+    {
+        var torneo = CrearTorneo();
+        var batalla = CrearBatalla(torneo);
+        EstadoBatalla? estadoAlGuardar = null;
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([batalla]);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo)).Callback(() => estadoAlGuardar = batalla.Estado);
+
+        _servicio.Cancelar(TorneoId);
+
+        Assert.AreEqual(EstadoBatalla.Cancelada, estadoAlGuardar);
+        _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoConInscripcionAceptada_CancelaLaInscripcionEnElMismoGuardado()
+    {
+        var torneo = CrearTorneo();
+        var inscripcion = new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0));
+        EstadoInscripcion? estadoAlGuardar = null;
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([inscripcion]);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo)).Callback(() => estadoAlGuardar = inscripcion.Estado);
+
+        _servicio.Cancelar(TorneoId);
+
+        Assert.AreEqual(EstadoInscripcion.Cancelada, estadoAlGuardar);
+        _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoYaCancelado_LanzaTorneoNoCancelableSinTocarBatallasNiInscripciones()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+
+        Assert.ThrowsExactly<TorneoNoCancelableException>(() => _servicio.Cancelar(TorneoId));
+
+        _repositorioBatallas.Verify(r => r.ListarSinResolverDelTorneo(It.IsAny<int>()), Times.Never);
+        _repositorioInscripciones.Verify(r => r.ListarAceptadasDelTorneo(It.IsAny<int>()), Times.Never);
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
     private void ConfigurarAltaValida()
@@ -436,6 +502,15 @@ public sealed class ServicioTorneosTests
         {
             Id = TorneoId,
         };
+    }
+
+    private static Batalla CrearBatalla(Torneo torneo)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        var sorteo = new Mock<ISorteo>(MockBehavior.Strict);
+        sorteo.Setup(s => s.ElegirEntre(jugador1, jugador2)).Returns(jugador1);
+        return new Batalla(torneo, 1, jugador1, jugador2, sorteo.Object);
     }
 
     private static Usuario CrearUsuario(int id, Rol rol)
