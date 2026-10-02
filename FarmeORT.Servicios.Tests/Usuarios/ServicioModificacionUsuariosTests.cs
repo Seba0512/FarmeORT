@@ -1,7 +1,10 @@
+using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
@@ -23,6 +26,7 @@ public sealed class ServicioModificacionUsuariosTests
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
     private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private Mock<IRepositorioBatallas> _repositorioBatallas = null!;
+    private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
     private Mock<IHasheadorContrasenas> _hasheadorContrasenas = null!;
     private Mock<TimeProvider> _reloj = null!;
     private ServicioUsuarios _servicio = null!;
@@ -33,16 +37,19 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
         _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
         _repositorioBatallas = new Mock<IRepositorioBatallas>(MockBehavior.Strict);
+        _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         _hasheadorContrasenas = new Mock<IHasheadorContrasenas>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
 
         // Por defecto el usuario no tiene torneos, batallas ni inscripciones vigentes que impidan cambiarle el rol.
         _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(false);
         _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(false);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId)).Returns([]);
         _servicio = new ServicioUsuarios(
             _repositorioUsuarios.Object,
             _repositorioTorneos.Object,
             _repositorioBatallas.Object,
+            _repositorioInscripciones.Object,
             _hasheadorContrasenas.Object,
             _reloj.Object);
     }
@@ -218,6 +225,26 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(true);
 
         Assert.ThrowsExactly<UsuarioConBatallasSinResolverException>(
+            () => _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId));
+
+        Assert.AreEqual(Rol.Jugador, usuario.Rol);
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnJugadorInscriptoEnTorneoVigente_LanzaUsuarioConInscripcionVigenteSinActualizar()
+    {
+        var usuario = ConfigurarModificacionValida(Rol.Jugador);
+        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
+        {
+            Id = 2,
+        };
+        var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(30), 8, organizador, FechaActual);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId))
+            .Returns([new Inscripcion(torneo, usuario, new DateTime(2026, 9, 30, 12, 0, 0))]);
+
+        Assert.ThrowsExactly<UsuarioConInscripcionVigenteException>(
             () => _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId));
 
         Assert.AreEqual(Rol.Jugador, usuario.Rol);

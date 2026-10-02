@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
@@ -13,6 +14,7 @@ internal sealed class ServicioUsuarios(
     IRepositorioUsuarios repositorioUsuarios,
     IRepositorioTorneos repositorioTorneos,
     IRepositorioBatallas repositorioBatallas,
+    IRepositorioInscripciones repositorioInscripciones,
     IHasheadorContrasenas hasheadorContrasenas,
     TimeProvider reloj) : IServicioUsuarios
 {
@@ -68,6 +70,7 @@ internal sealed class ServicioUsuarios(
             throw new UsuarioConBatallasSinResolverException();
         }
 
+        _ = repositorioInscripciones;
         if(!MismoTexto(usuario.Email, request.Email))
         {
             ValidarEmailDisponible(request.Email);
