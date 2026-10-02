@@ -134,13 +134,17 @@ public sealed class Torneo
         _skillsObligatorias.Remove(obligatoria);
     }
 
-    // La primera ronda pone el torneo En curso (D-62).
+    // La primera ronda pone el torneo En curso, y solo si ya se cubrió el cupo (D-62).
     public void Iniciar(int inscripcionesAceptadas)
     {
-        _ = inscripcionesAceptadas;
         if(Estado != EstadoTorneo.Abierto)
         {
             throw new TorneoNoAbiertoException();
+        }
+
+        if(inscripcionesAceptadas != Cupo)
+        {
+            throw new TorneoIncompletoException();
         }
 
         Estado = EstadoTorneo.EnCurso;
