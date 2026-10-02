@@ -1412,6 +1412,9 @@ decide reglas), DI Scoped, TDD Outside-In y tests de integración con SQLite.
   si otro contexto cambió la batalla, lanza `BatallaModificadaException` y no guarda ninguno de los tres
   cambios.
 - Secuencia en `docs/uml/cancelar-torneo.puml` y contrato en `docs/api/torneos.md`.
+- Postman, en "Torneos - Éxito": cuatro jugadores completan el cupo, el administrador genera la primera
+  ronda (endpoint de C) y la cancelación deja Canceladas las dos batallas Pendientes y las inscripciones.
+  Se agregó cuando las rondas llegaron a develop; antes solo se podía mostrar la inscripción.
 
 **Participación de IA:**
 - Claude Code (agente de la Persona A) planteó las tres alternativas con una recomendación; el integrante
@@ -1654,9 +1657,13 @@ resuelta lo define el estado de `Batalla`), TDD Outside-In y tests de repositori
   con torneo solo las de ese torneo. Las batallas se fallan con `Batalla.Fallar` de B.
 - Postman: el test "Ganadas y perdidas en 0" pasó a comprobar que son enteros no negativos.
 
-**Pendiente:** en el Runner no hay batallas falladas hasta que C conecte Rondas con las carpetas de B
+**Pendiente:** ~~en el Runner no hay batallas falladas hasta que C conecte Rondas con las carpetas de B
 (documentado por B en `docs/api/batallas-lanzamientos.md`). Cuando eso pase, agregar en Ranking un request
-con `torneoId={{bTorneoId}}` que verifique la ganada de `bJugador1Id` y la perdida de `bJugador2Id`.
+con `torneoId={{bTorneoId}}` que verifique la ganada de `bJugador1Id` y la perdida de `bJugador2Id`.~~
+Resuelto con "Ranking - el torneo de las batallas cuenta ganadas y perdidas". Como la respuesta del ranking
+no trae ids y las rondas siguientes fallan más batallas, el request comprueba lo que vale siempre: los
+cuatro participantes, tantas ganadas como perdidas (al menos los dos fallos de B) y nadie con más de una
+perdida.
 
 **Participación de IA:**
 - Claude Code (agente de la Persona A) propuso la consulta agrupada y el tipo de resultado.
@@ -2125,8 +2132,11 @@ asignado; el integrante eligió sumar al Administrador.
   `IRepositorioSkills` y `RepositorioSkills` con los nombres del código (`ObtenerPorId`, `Listar`,
   `ExistePorCodigo`), `FiltroSkills` con `Nombre`, `Limite` y `Desplazamiento`, las excepciones por caso
   (D-07, D-30) y el nombre real del contexto (`FarmeORTContext`).
-- Repertorio, skills obligatorias e inscripción tienen que aplicar la regla de skill inactiva (letra
-  2.2): no puede declararse en un repertorio ni asociarse como obligatoria, sin efecto retroactivo.
+- ~~Repertorio, skills obligatorias e inscripción tienen que aplicar la regla de skill inactiva (letra
+  2.2): no puede declararse en un repertorio ni asociarse como obligatoria, sin efecto retroactivo.~~
+  Resuelto: `Usuario` (repertorio, D-38) y `Torneo` (obligatorias, D-40) lanzan `SkillInactivaException`
+  (409 `SKILL_INACTIVE`). La inscripción no la aplica porque la regla no es retroactiva: una obligatoria
+  desactivada después de declararla no impide inscribirse (D-41).
 - Notificaciones: la letra oficial 2026.2 no las incluye (el borrador leído en clase sí); `AGENTS.md` §8 ya
   lo refleja. Se postergan: confirmarlo en el foro antes de que cierre.
 - Documentar en el informe de diseño qué tipos forman la interfaz de cada assembly (letra,

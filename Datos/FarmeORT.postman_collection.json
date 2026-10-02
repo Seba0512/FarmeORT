@@ -563,6 +563,22 @@
     {
       "key": "rondasFinalGanadorId",
       "value": ""
+    },
+    {
+      "key": "cancelIndice",
+      "value": ""
+    },
+    {
+      "key": "cancelSufijo",
+      "value": ""
+    },
+    {
+      "key": "cancelJugadoresTokens",
+      "value": ""
+    },
+    {
+      "key": "cancelTokenActual",
+      "value": ""
     }
   ],
   "item": [
@@ -7332,7 +7348,7 @@
               ]
             },
             {
-              "name": "Torneos - alta de un torneo para cancelar con inscriptos → 201",
+              "name": "Torneos - alta de un torneo para cancelar con inscriptos y batallas → 201",
               "request": {
                 "method": "POST",
                 "header": [
@@ -7382,7 +7398,11 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.collectionVariables.set(\"torneoCancelCodigo\", (\"TCANC\" + Date.now().toString(36).toUpperCase()).slice(0, 20));"
+                      "pm.collectionVariables.set(\"torneoCancelCodigo\", (\"TCANC\" + Date.now().toString(36).toUpperCase()).slice(0, 20));",
+                      "// Cuatro jugadores completan el cupo para poder generar la primera ronda (D-42).",
+                      "pm.collectionVariables.set(\"cancelIndice\", 0);",
+                      "pm.collectionVariables.set(\"cancelSufijo\", pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 10));",
+                      "pm.collectionVariables.set(\"cancelJugadoresTokens\", \"[]\");"
                     ]
                   }
                 },
@@ -7399,7 +7419,7 @@
               ]
             },
             {
-              "name": "Torneos - registro de un jugador del torneo a cancelar → 201",
+              "name": "Torneos - registro de los cuatro jugadores del torneo a cancelar (se repite) → 201",
               "request": {
                 "method": "POST",
                 "header": [
@@ -7442,9 +7462,10 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
-                      "pm.collectionVariables.set(\"cancelJugadorEmail\", \"canc.\" + guid + \"@farmeort.test\");",
-                      "pm.collectionVariables.set(\"cancelJugadorNickname\", \"can\" + guid);"
+                      "const indice = Number(pm.collectionVariables.get(\"cancelIndice\"));",
+                      "const sufijo = pm.collectionVariables.get(\"cancelSufijo\");",
+                      "pm.collectionVariables.set(\"cancelJugadorEmail\", \"canc\" + indice + \".\" + sufijo + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"cancelJugadorNickname\", \"canc\" + indice + sufijo);"
                     ]
                   }
                 },
@@ -7453,14 +7474,21 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                      "const indice = Number(pm.collectionVariables.get(\"cancelIndice\"));",
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "if(indice + 1 < 4) {",
+                      "    pm.collectionVariables.set(\"cancelIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"cancelIndice\", 0);",
+                      "}"
                     ]
                   }
                 }
               ]
             },
             {
-              "name": "Torneos - login del jugador del torneo a cancelar → 201",
+              "name": "Torneos - login de los cuatro jugadores del torneo a cancelar (se repite) → 201",
               "request": {
                 "method": "POST",
                 "header": [
@@ -7499,19 +7527,44 @@
               },
               "event": [
                 {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cancelIndice\"));",
+                      "const sufijo = pm.collectionVariables.get(\"cancelSufijo\");",
+                      "pm.collectionVariables.set(\"cancelJugadorEmail\", \"canc\" + indice + \".\" + sufijo + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"cancelJugadorNickname\", \"canc\" + indice + sufijo);"
+                    ]
+                  }
+                },
+                {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cancelIndice\"));",
                       "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-                      "pm.collectionVariables.set(\"cancelJugadorToken\", pm.response.json().token);"
+                      "const tokens = JSON.parse(pm.collectionVariables.get(\"cancelJugadoresTokens\"));",
+                      "tokens[indice] = pm.response.json().token;",
+                      "pm.collectionVariables.set(\"cancelJugadoresTokens\", JSON.stringify(tokens));",
+                      "if(indice === 0) {",
+                      "    pm.collectionVariables.set(\"cancelJugadorToken\", tokens[0]);",
+                      "}",
+                      "",
+                      "if(indice + 1 < 4) {",
+                      "    pm.collectionVariables.set(\"cancelIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"cancelIndice\", 0);",
+                      "}"
                     ]
                   }
                 }
               ]
             },
             {
-              "name": "Torneos - el jugador se inscribe en el torneo a cancelar → 201",
+              "name": "Torneos - los cuatro jugadores se inscriben en el torneo a cancelar (se repite) → 201",
               "request": {
                 "method": "POST",
                 "header": [
@@ -7540,7 +7593,7 @@
                   "bearer": [
                     {
                       "key": "token",
-                      "value": "{{cancelJugadorToken}}",
+                      "value": "{{cancelTokenActual}}",
                       "type": "string"
                     }
                   ]
@@ -7557,20 +7610,87 @@
               },
               "event": [
                 {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cancelIndice\"));",
+                      "pm.collectionVariables.set(\"cancelTokenActual\", JSON.parse(pm.collectionVariables.get(\"cancelJugadoresTokens\"))[indice]);"
+                    ]
+                  }
+                },
+                {
                   "listen": "test",
                   "script": {
                     "type": "text/javascript",
                     "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cancelIndice\"));",
                       "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
                       "pm.test(\"Aceptada\", () => pm.expect(pm.response.json().estado).to.eql(\"Aceptada\"));",
-                      "pm.collectionVariables.set(\"inscripcionTorneoCanceladoId\", pm.response.json().id);"
+                      "if(indice === 0) {",
+                      "    pm.collectionVariables.set(\"inscripcionTorneoCanceladoId\", pm.response.json().id);",
+                      "}",
+                      "",
+                      "if(indice + 1 < 4) {",
+                      "    pm.collectionVariables.set(\"cancelIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"cancelIndice\", 0);",
+                      "}"
                     ]
                   }
                 }
               ]
             },
             {
-              "name": "Torneos - cancelación de un torneo con inscriptos → 200",
+              "name": "Torneos - el administrador genera la primera ronda del torneo a cancelar → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoCancelId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoCancelId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Dos batallas Pendientes\", () => { const ronda = pm.response.json(); pm.expect(ronda.batallas).to.have.lengthOf(2); ronda.batallas.forEach(b => pm.expect(b.estado).to.eql(\"Pendiente\")); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - cancelación de un torneo en curso con inscriptos y batallas → 200",
               "request": {
                 "method": "POST",
                 "header": [
@@ -7612,6 +7732,54 @@
                       "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                       "const torneo = pm.response.json();",
                       "pm.test(\"Queda Cancelado sin inscripciones aceptadas\", () => { pm.expect(torneo.estado).to.eql(\"Cancelado\"); pm.expect(torneo.inscripcionesAceptadas).to.eql(0); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - las batallas del torneo cancelado quedan canceladas → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoCancelId}}/rondas/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoCancelId}}",
+                    "rondas",
+                    "1"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Las dos batallas pasaron a Cancelada junto con el torneo\", () => { const ronda = pm.response.json(); pm.expect(ronda.batallas).to.have.lengthOf(2); ronda.batallas.forEach(b => pm.expect(b.estado).to.eql(\"Cancelada\")); });"
                     ]
                   }
                 }
@@ -20115,6 +20283,60 @@
                     "exec": [
                       "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                       "pm.test(\"Solo los dos primeros\", () => pm.expect(pm.response.json()).to.have.lengthOf(2));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - el torneo de las batallas cuenta ganadas y perdidas → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{bTorneoId}}&cantidad=100",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{bTorneoId}}"
+                    },
+                    {
+                      "key": "cantidad",
+                      "value": "100"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const ranking = pm.response.json();",
+                      "const ganadas = ranking.reduce((total, jugador) => total + jugador.batallasGanadas, 0);",
+                      "const perdidas = ranking.reduce((total, jugador) => total + jugador.batallasPerdidas, 0);",
+                      "// Las rondas siguientes pueden fallar más batallas: se comprueba lo que vale en cualquier caso (D-46).",
+                      "pm.test(\"Los cuatro participantes, aceptados o eliminados\", () => pm.expect(ranking).to.have.lengthOf(4));",
+                      "pm.test(\"Cada batalla fallada suma una ganada y una perdida, y hay al menos los dos fallos de B\", () => { pm.expect(ganadas).to.eql(perdidas); pm.expect(ganadas).to.be.at.least(2); });",
+                      "pm.test(\"Es eliminatorio: nadie pierde más de una vez\", () => ranking.forEach(jugador => pm.expect(jugador.batallasPerdidas).to.be.at.most(1)));"
                     ]
                   }
                 }
