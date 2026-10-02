@@ -132,6 +132,9 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         ConfigurarInscripciones(modelBuilder);
 
         ConfigurarBatallas(modelBuilder);
+
+        // Persona B: fallo opcional de la batalla.
+        ConfigurarFallos(modelBuilder);
     }
 
     // Muchos a muchos sin datos propios: una skill puede ser obligatoria en varios torneos (D-40).
@@ -165,6 +168,18 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
             inscripcion.HasOne(i => i.Jugador)
                 .WithMany()
                 .HasForeignKey(i => i.JugadorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    private static void ConfigurarFallos(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Batalla>(batalla =>
+        {
+            batalla.Property(b => b.Comentario).HasMaxLength(500);
+            batalla.HasOne(b => b.Ganador)
+                .WithMany()
+                .HasForeignKey(b => b.GanadorId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
