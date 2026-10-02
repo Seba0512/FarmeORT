@@ -37,6 +37,7 @@ public sealed class RegistroServiciosTests
     [DataRow(typeof(ICalculadorElo), typeof(CalculadorEloBase))]
     [DataRow(typeof(IServicioRanking), typeof(ServicioRanking))]
     [DataRow(typeof(IServicioFallos), typeof(ServicioFallos))]
+    [DataRow(typeof(IServicioBatallas), typeof(ServicioBatallas))]
     public void AgregarServicios_InterfazDeServicio_RegistraImplementacionScoped(Type interfaz, Type implementacion)
     {
         var servicios = new ServiceCollection();
