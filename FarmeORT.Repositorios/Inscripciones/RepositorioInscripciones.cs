@@ -104,7 +104,7 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public void Actualizar(Inscripcion inscripcion)
     {
-        _ = inscripcion;
-        throw new NotImplementedException();
+        contexto.Inscripciones.Update(inscripcion);
+        contexto.SaveChanges();
     }
 }
