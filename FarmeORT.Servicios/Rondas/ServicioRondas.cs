@@ -97,8 +97,14 @@ internal sealed class ServicioRondas(
             return 1;
         }
 
+        // Un torneo En curso sin batallas (por ejemplo, cargado a mano) arranca por la ronda 1.
         var anteriores = repositorioBatallas.ListarDelTorneo(torneo.Id);
-        var ultima = anteriores.Max(b => b.NumeroRonda);
+        var ultima = 0;
+        if(anteriores.Count > 0)
+        {
+            ultima = anteriores.Max(b => b.NumeroRonda);
+        }
+
         if(anteriores.Any(b => b.NumeroRonda == ultima && !EstaResuelta(b)))
         {
             throw new RondaSinResolverException();
