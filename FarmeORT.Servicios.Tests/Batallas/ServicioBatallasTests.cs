@@ -41,6 +41,19 @@ public sealed class ServicioBatallasTests
     }
 
     [TestMethod]
+    public void Listar_JugadorSinInscripcion_RechazaAunqueFiltroIncluyaOtroJugador()
+    {
+        _torneos.Setup(r => r.ObtenerPorId(5)).Returns(_batalla.Torneo);
+        _inscripciones.Setup(r => r.ExisteDelJugador(5, 9)).Returns(false);
+
+        Assert.ThrowsExactly<JugadorNoInscriptoEnTorneoException>(() =>
+            _servicio.Listar(new FiltroBatallasRequest { TorneoId = 5, JugadorId = 7 }, 9, Roles.Jugador));
+
+        _inscripciones.Verify(r => r.ExisteDelJugador(5, 9), Times.Once);
+        _batallas.VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
     public void Listar_OrganizadorAjeno_RechazaAntesDeConsultarBatallas()
     {
         _torneos.Setup(r => r.ObtenerPorId(5)).Returns(_batalla.Torneo);
