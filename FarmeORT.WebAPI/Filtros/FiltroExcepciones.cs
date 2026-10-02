@@ -92,6 +92,14 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "BATTLE_CHANGED", "La batalla cambió mientras se procesaba el pedido. Volvé a consultarla."),
         [typeof(SkillObligatoriaPendienteException)] =
             new(StatusCodes.Status409Conflict, "MANDATORY_SKILL_PENDING", "Debés lanzar una skill obligatoria pendiente para completar tus cuatro turnos."),
+
+        // Persona A: eliminación y cambio de rol de usuarios (D-43).
+        [typeof(UsuarioOrganizaTorneoVigenteException)] =
+            new(StatusCodes.Status409Conflict, "USER_ORGANIZES_ACTIVE_TOURNAMENT", "El usuario organiza un torneo que no está Finalizado ni Cancelado."),
+        [typeof(UsuarioConBatallasSinResolverException)] =
+            new(StatusCodes.Status409Conflict, "USER_HAS_UNRESOLVED_BATTLES", "El usuario tiene batallas Pendientes o En arbitraje."),
+        [typeof(UsuarioConInscripcionVigenteException)] =
+            new(StatusCodes.Status409Conflict, "USER_HAS_ACTIVE_REGISTRATION", "El usuario está inscripto en un torneo que no está Finalizado ni Cancelado."),
     };
 
     public void OnException(ExceptionContext context)
