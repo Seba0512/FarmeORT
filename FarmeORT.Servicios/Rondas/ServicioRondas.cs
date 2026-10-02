@@ -68,7 +68,13 @@ internal sealed class ServicioRondas(
 
     public RondaResponse ObtenerPorNumero(int torneoId, int numero, bool esAnonimo)
     {
-        return Listar(torneoId, esAnonimo).Single(r => r.Numero == numero);
+        var ronda = Listar(torneoId, esAnonimo).SingleOrDefault(r => r.Numero == numero);
+        if(ronda == null)
+        {
+            throw new RondaNoEncontradaException();
+        }
+
+        return ronda;
     }
 
     private static RondaResponse CrearResponse(int numero, IReadOnlyList<Batalla> batallas)
