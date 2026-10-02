@@ -111,6 +111,11 @@ internal sealed class ServicioTorneos(
             batalla.Cancelar();
         }
 
+        foreach(var inscripcion in repositorioInscripciones.ListarAceptadasDelTorneo(torneo.Id))
+        {
+            inscripcion.Cancelar();
+        }
+
         repositorioTorneos.Actualizar(torneo);
         return CrearResponse<TorneoResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }
