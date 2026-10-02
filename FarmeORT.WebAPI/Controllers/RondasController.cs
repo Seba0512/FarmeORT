@@ -1,4 +1,5 @@
 using FarmeORT.IServicios.Rondas;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -10,8 +11,8 @@ public sealed class RondasController(IServicioRondas servicioRondas) : Controlle
     [HttpPost]
     public IActionResult Generar(int torneoId)
     {
-        _ = servicioRondas;
-        _ = torneoId;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        var response = servicioRondas.Generar(torneoId, sesion.UsuarioId, sesion.Rol);
+        return Created($"/api/v1/torneos/{torneoId}/rondas/{response.Numero}", response);
     }
 }
