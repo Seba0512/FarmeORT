@@ -96,6 +96,19 @@ public sealed class ServicioRankingTests
         _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Obtener_TorneoExistente_DevuelveElRankingDeSusParticipantesConSuPosicion()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+        _repositorioUsuarios.Setup(r => r.ListarRanking(5)).Returns([CrearJugador(9, "otrotorneo")]);
+        _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 5)).Returns([CrearJugador(4, "aurafarmer"), CrearJugador(2, "sixseven")]);
+
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5, TorneoId = TorneoId });
+
+        CollectionAssert.AreEqual(new[] { "aurafarmer", "sixseven" }, ranking.Select(j => j.Nickname).ToArray());
+        CollectionAssert.AreEqual(new[] { 1, 2 }, ranking.Select(j => j.Posicion).ToArray());
+    }
+
     private static Torneo CrearTorneo()
     {
         var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
