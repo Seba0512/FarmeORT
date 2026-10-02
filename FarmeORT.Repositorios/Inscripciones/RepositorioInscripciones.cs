@@ -16,8 +16,13 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public IReadOnlyList<Inscripcion> Listar(FiltroInscripciones filtro)
     {
-        _ = filtro;
-        throw new NotImplementedException();
+        return contexto.Inscripciones
+            .Include(i => i.Torneo)
+            .Include(i => i.Jugador)
+            .OrderBy(i => i.Id)
+            .Skip(filtro.Desplazamiento)
+            .Take(filtro.Limite)
+            .ToList();
     }
 
     public bool ExisteAceptada(int torneoId, int jugadorId)
