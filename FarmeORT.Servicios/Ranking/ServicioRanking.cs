@@ -15,6 +15,7 @@ internal sealed class ServicioRanking(
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
+        var cantidad = AjustarCantidad(filtro.Cantidad);
         if(filtro.TorneoId != null)
         {
             // El ranking es público y para el público un torneo cancelado no existe (D-36).
@@ -25,7 +26,9 @@ internal sealed class ServicioRanking(
             }
         }
 
-        var jugadores = repositorioUsuarios.ListarRanking(AjustarCantidad(filtro.Cantidad));
+        var jugadores = filtro.TorneoId != null
+            ? repositorioUsuarios.ListarRankingDelTorneo(filtro.TorneoId.Value, cantidad)
+            : repositorioUsuarios.ListarRanking(cantidad);
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
