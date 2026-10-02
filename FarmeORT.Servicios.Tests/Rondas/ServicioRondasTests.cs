@@ -294,17 +294,19 @@ public sealed class ServicioRondasTests
         Assert.AreEqual(7, rondas[0].Batallas[0].JugadorTurnoId);
     }
 
+    // Por la API no se llega a "En curso sin batallas": sería una primera ronda, que la letra exige con el torneo
+    // Abierto y el cupo completo, así que no se saltea esa regla (review del PR #25).
     [TestMethod]
-    public void Generar_TorneoEnCursoSinBatallas_GeneraLaPrimeraRonda()
+    public void Generar_TorneoEnCursoSinBatallas_LanzaTorneoNoAbierto()
     {
-        PrepararPrimeraRondaCompleta();
+        var aceptadas = _jugadores.Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
         _torneo.Iniciar(4);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(aceptadas);
         _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns([]);
 
-        var ronda = _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
-
-        Assert.AreEqual(1, ronda.Numero);
-        Assert.HasCount(2, ronda.Batallas);
+        Assert.ThrowsExactly<TorneoNoAbiertoException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
+        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
     }
 
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
