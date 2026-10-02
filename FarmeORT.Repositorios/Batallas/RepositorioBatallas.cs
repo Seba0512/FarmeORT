@@ -56,7 +56,7 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public bool ExisteSinResolverDelJugador(int jugadorId)
     {
-        _ = jugadorId;
-        throw new NotImplementedException();
+        return contexto.Batallas.Any(b => (b.Jugador1Id == jugadorId || b.Jugador2Id == jugadorId)
+            && (b.Estado == EstadoBatalla.Pendiente || b.Estado == EstadoBatalla.EnArbitraje));
     }
 }
