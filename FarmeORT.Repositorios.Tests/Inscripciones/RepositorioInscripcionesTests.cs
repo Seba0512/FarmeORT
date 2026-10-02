@@ -312,6 +312,22 @@ public sealed class RepositorioInscripcionesTests
     }
 
     [TestMethod]
+    public void Listar_FechaHastaMaxima_IncluyeElUltimoDiaCompletoYConservaDesdeYPaginacion()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var anterior = GuardarInscripcion(torneoId, GuardarUsuario("anaperez", Rol.Jugador));
+        var inicio = GuardarInscripcion(torneoId, GuardarUsuario("brunolopez", Rol.Jugador), fecha: DateOnly.MaxValue.ToDateTime(TimeOnly.MinValue));
+        var final = GuardarInscripcion(torneoId, GuardarUsuario("carlagomez", Rol.Jugador), fecha: DateTime.MaxValue);
+
+        var resultado = _repositorio.Listar(Filtro(fechaHasta: DateOnly.MaxValue));
+
+        CollectionAssert.AreEqual(new[] { anterior, inicio, final }, resultado.Select(i => i.Id).ToArray());
+        var pagina = _repositorio.Listar(Filtro(fechaDesde: DateOnly.MaxValue, fechaHasta: DateOnly.MaxValue, limite: 1, desplazamiento: 1));
+        Assert.AreEqual(final, pagina.Single().Id);
+        Assert.AreEqual(DateTime.MaxValue, pagina.Single().Fecha);
+    }
+
+    [TestMethod]
     public void Listar_FiltrosPorTorneoEstadoYFechas_DevuelveLasQueCumplenTodos()
     {
         var torneoId = GuardarTorneo("COPAAURA");
@@ -374,9 +390,9 @@ public sealed class RepositorioInscripcionesTests
     }
 
     // Guarda una inscripción directamente con el contexto, sin usar métodos del repositorio (FIRST).
-    private int GuardarInscripcion(int torneoId, int jugadorId, Action<Inscripcion>? cambiar = null)
+    private int GuardarInscripcion(int torneoId, int jugadorId, Action<Inscripcion>? cambiar = null, DateTime? fecha = null)
     {
-        var inscripcion = CrearInscripcion(torneoId, jugadorId);
+        var inscripcion = CrearInscripcion(torneoId, jugadorId, fecha);
         cambiar?.Invoke(inscripcion);
         _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
         _baseDeDatos.Contexto.SaveChanges();
@@ -385,11 +401,11 @@ public sealed class RepositorioInscripcionesTests
     }
 
     // El torneo y el jugador se toman del contexto, como en la API: el servicio los obtiene con el mismo contexto.
-    private Inscripcion CrearInscripcion(int torneoId, int jugadorId)
+    private Inscripcion CrearInscripcion(int torneoId, int jugadorId, DateTime? fecha = null)
     {
         var torneo = _baseDeDatos.Contexto.Torneos.Include(t => t.SkillsObligatorias).Single(t => t.Id == torneoId);
         var jugador = _baseDeDatos.Contexto.Usuarios.Include(u => u.Repertorio).Single(u => u.Id == jugadorId);
-        return new Inscripcion(torneo, jugador, Ahora);
+        return new Inscripcion(torneo, jugador, fecha ?? Ahora);
     }
 
     private int GuardarTorneo(string codigo, int? organizadorId = null, int cupo = 8)
