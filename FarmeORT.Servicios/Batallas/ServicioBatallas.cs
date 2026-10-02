@@ -34,6 +34,25 @@ internal sealed class ServicioBatallas(
         return repositorioBatallas.Listar(consulta).Select(RespuestasBatallas.Resumen).ToList();
     }
 
+    public BatallaDetalleResponse ObtenerPorId(int id, int usuarioId, string rol)
+    {
+        var batalla = ObtenerAutorizada(id, usuarioId, rol);
+        return RespuestasBatallas.Detalle(batalla);
+    }
+
+    public IReadOnlyList<LanzamientoResponse> ListarLanzamientos(int id, int usuarioId, string rol)
+    {
+        var batalla = ObtenerAutorizada(id, usuarioId, rol);
+        return RespuestasBatallas.Lanzamientos(batalla);
+    }
+
+    private Batalla ObtenerAutorizada(int id, int usuarioId, string rol)
+    {
+        var batalla = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
+        ValidarVisibilidad(batalla.Torneo, usuarioId, rol);
+        return batalla;
+    }
+
     private void ValidarVisibilidad(Torneo torneo, int usuarioId, string rol)
     {
         if(rol == Roles.Jugador && !repositorioInscripciones.ExisteDelJugador(torneo.Id, usuarioId))
@@ -45,19 +64,5 @@ internal sealed class ServicioBatallas(
         {
             throw new NoEsOrganizadorDelTorneoException();
         }
-    }
-
-    public BatallaDetalleResponse ObtenerPorId(int id, int usuarioId, string rol)
-    {
-        var batalla = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
-        ValidarVisibilidad(batalla.Torneo, usuarioId, rol);
-        return RespuestasBatallas.Detalle(batalla);
-    }
-
-    public IReadOnlyList<LanzamientoResponse> ListarLanzamientos(int id, int usuarioId, string rol)
-    {
-        var batalla = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
-        ValidarVisibilidad(batalla.Torneo, usuarioId, rol);
-        return RespuestasBatallas.Detalle(batalla).Lanzamientos;
     }
 }
