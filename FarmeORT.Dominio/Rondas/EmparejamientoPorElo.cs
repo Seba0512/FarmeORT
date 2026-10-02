@@ -6,7 +6,6 @@ public sealed class EmparejamientoPorElo : IEstrategiaEmparejamiento
 {
     public IReadOnlyList<ParDeJugadores> Emparejar(IReadOnlyList<Usuario> jugadores)
     {
-        _ = jugadores;
-        throw new NotImplementedException();
+        return [new ParDeJugadores(jugadores[0], jugadores[1])];
     }
 }
