@@ -1,10 +1,13 @@
+using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Elo;
+using FarmeORT.IServicios.Batallas;
 using FarmeORT.IServicios.Repertorio;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Skills;
 using FarmeORT.IServicios.Torneos;
 using FarmeORT.IServicios.Usuarios;
+using FarmeORT.Servicios.Batallas;
 using FarmeORT.Servicios.Repertorio;
 using FarmeORT.Servicios.Seguridad;
 using FarmeORT.Servicios.Sesiones;
@@ -29,6 +32,10 @@ public static class RegistroServicios
         servicios.AddScoped<IServicioSkillsObligatorias, ServicioSkillsObligatorias>();
 
         servicios.AddScoped<ICalculadorElo, CalculadorEloBase>();
+
+        // Persona B: batallas y lanzamientos.
+        servicios.AddScoped<ISorteo, SorteoAleatorio>();
+        servicios.AddScoped<IServicioLanzamientos, ServicioLanzamientos>();
         return servicios;
     }
 }
