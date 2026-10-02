@@ -100,6 +100,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "USER_HAS_UNRESOLVED_BATTLES", "El usuario tiene batallas Pendientes o En arbitraje."),
         [typeof(UsuarioConInscripcionVigenteException)] =
             new(StatusCodes.Status409Conflict, "USER_HAS_ACTIVE_REGISTRATION", "El usuario está inscripto en un torneo que no está Finalizado ni Cancelado."),
+
+        // Persona C: rondas (D-62).
+        [typeof(TorneoIncompletoException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas."),
     };
 
     public void OnException(ExceptionContext context)
