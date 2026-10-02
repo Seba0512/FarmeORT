@@ -1925,6 +1925,144 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
 
 ---
 
+### D-62 — Rondas: emparejamiento como Strategy, ronda derivada de las batallas y guardado atómico
+
+**Problema:** la letra pide generar las rondas del torneo eliminatorio. La primera exige torneo Abierto y tantas
+inscripciones Aceptadas como el cupo, y pasa el torneo a En curso. Las siguientes exigen la ronda anterior
+resuelta y emparejan a los jugadores que no fueron eliminados. El emparejamiento tiene que ser determinístico y
+documentado, con un desempate explícito (nunca el orden accidental de la base). Hay que decidir si la ronda es una
+entidad, dónde vive el emparejamiento, cómo se cruzan los jugadores y cómo se guarda todo junto.
+
+**Alternativas consideradas:**
+- Ronda: una entidad con tabla propia (`Id`, `TorneoId`, `Numero`) o derivarla de `Batalla.NumeroRonda`, que ya
+  está en el contrato de Batalla.
+- Emparejamiento: un método privado del servicio o una Strategy (`IEstrategiaEmparejamiento`), que el diseño del
+  equipo marca como punto de variación.
+- Cruces: mejor contra peor (1.º contra último, 2.º contra penúltimo) o vecinos de ELO (1.º contra 2.º).
+- Guardado: un `SaveChanges` por batalla o uno solo para las batallas y el torneo.
+
+**Decisión adoptada:**
+- **La ronda es derivada:** es el grupo de batallas del torneo con el mismo número. No hay tabla ni migración; la
+  ronda siguiente es la última más uno, y las consultas agrupan las batallas por número.
+- **Strategy:** `IEstrategiaEmparejamiento.Emparejar(jugadores)` devuelve `ParDeJugadores`. `EmparejamientoPorElo`
+  (en `FarmeORT.Dominio/Rondas/`, registrada Scoped) ordena en memoria por ELO de mayor a menor y desempata por id,
+  así el resultado no depende del orden en que llegan los jugadores. Cruza mejor contra peor: es el cruce
+  clásico de los cuadros eliminatorios, en el que los favoritos se encuentran al final. Lo eligió el integrante.
+- **`Torneo.Iniciar(aceptadas)`**, al final de los métodos públicos de `Torneo`: si no está Abierto, 409
+  `TOURNAMENT_NOT_OPEN` (se reusa `TorneoNoAbiertoException`); si las aceptadas no igualan el cupo, 409
+  `TOURNAMENT_NOT_FULL` (`TorneoIncompletoException`); si no, pasa a En curso.
+- **Servicio (`ServicioRondas.Generar`):**
+  1. Valida el torneo y quién llama (D-63).
+  2. Trae a los jugadores con inscripción Aceptada.
+  3. Prepara la ronda. Si el torneo no está En curso, es la primera: llama a `Iniciar`. Si está En curso, es una
+     siguiente: tiene que tener batallas (si no, 409 `TOURNAMENT_NOT_OPEN`), la última ronda tiene que estar
+     resuelta (todas sus batallas Finalizadas o Canceladas, si no 409 `ROUND_NOT_RESOLVED`) y tienen que quedar al
+     menos dos jugadores. Con uno solo ya hay campeón y responde 409 `TOURNAMENT_READY_TO_FINISH`, porque
+     corresponde finalizar el torneo.
+  4. Empareja y crea una batalla por par con el constructor de Batalla y el `ISorteo` inyectado (empieza el de
+     mayor ELO; si empatan, el sorteo).
+  5. Guarda todo con `IRepositorioBatallas.GuardarRonda(torneo, batallas)`, que agrega las batallas y actualiza el
+     torneo en un solo `SaveChanges`: las batallas y el cambio de estado del torneo quedan juntos o no queda nada
+     (como D-42). La firma deja la atomicidad a la vista en el contrato de la interfaz.
+- **Consultas:** `GET /torneos/{id}/rondas` y `GET /torneos/{id}/rondas/{numero}`, con autenticación opcional. El
+  anónimo no ve las rondas de un torneo Cancelado (D-36). Un número que el torneo no tiene responde 404
+  `ROUND_NOT_FOUND`. `IRepositorioBatallas.ListarDelTorneo` trae las batallas con sus jugadores, ordenadas por
+  ronda y por id.
+- **Respuesta:** `RondaResponse` con el número y sus batallas en el mismo `BatallaResponse` que `GET /batallas`
+  (se reusa `RespuestasBatallas.Resumen` de la persona B, en lugar de un DTO propio que repetía los mismos campos).
+  `ganadorId` vale `null` hasta que la batalla se falle.
+- **Cuadro:** el detalle del torneo trae `rondas` con todas las rondas y sus batallas, así una sola llamada alcanza
+  para dibujar el cuadro (letra). El armado de las rondas lo comparten `ServicioRondas` y `ServicioTorneos` en
+  `RespuestasRondas`.
+- Un torneo En curso sin batallas (por ejemplo, cargado a mano) responde 409 `TOURNAMENT_NOT_OPEN`: generar su
+  ronda 1 se saltearía la regla de que la primera ronda exige el torneo Abierto y el cupo completo.
+- `EmparejamientoPorElo` rechaza una cantidad impar de jugadores con `InvalidOperationException`, que responde 500.
+  Por la API no pasa (el cupo es potencia de 2 y cada batalla elimina a uno), así que sería un error de datos y no
+  del cliente; sin la excepción, un jugador quedaría afuera sin aviso.
+- `TOURNAMENT_NOT_OPEN` (de la persona A) dice "El torneo no está abierto.", que sirve para las inscripciones y
+  para las rondas. Antes decía "...a inscripciones"; se cambió con el acuerdo de la persona A.
+- Los métodos nuevos van al final de `IRepositorioBatallas`, la interfaz de la persona B, como estaba acordado.
+
+**Justificación:**
+- La ronda derivada evita duplicar un dato que Batalla ya tiene: con una tabla aparte, el número de ronda podría
+  quedar distinto en los dos lugares.
+- Strategy (OCP, Protected Variations, Polymorphism): otra forma de emparejar (por ejemplo, vecinos de ELO o por
+  sorteo) es una clase nueva y un cambio en el registro, sin tocar el servicio. El servicio depende de la
+  abstracción (DIP) y en sus tests se reemplaza por un mock.
+- `Torneo` controla su propio paso a En curso (Information Expert), como ya controlaba su cancelación.
+- El orden de las consultas está escrito en la consulta. Para que el test falle si falta el desempate, crea un
+  índice de prueba con el id descendente: sin un orden explícito, SQLite devuelve las batallas de una misma ronda
+  del id mayor al menor (la misma técnica de D-61).
+
+**Conceptos del curso:** Strategy, OCP, DIP, Protected Variations, Polymorphism e Information Expert (GRASP),
+atomicidad con un solo `SaveChanges`, REST (sub-recurso `/rondas`), status 404 y 409, TDD Outside-In.
+
+**Evidencia:**
+- Dominio: `IEstrategiaEmparejamiento`, `EmparejamientoPorElo`, `ParDeJugadores`, `Torneo.Iniciar`;
+  `EmparejamientoPorEloTests` (dos jugadores, ELO igual con desempate por id, ELO distinto, cantidad impar) y
+  `TorneoRondasTests`.
+- `ServicioRondas` y `ServicioRondasTests`: primera ronda, estado En curso con un solo guardado, torneo
+  inexistente, organizador no asignado, administrador, torneo incompleto, rondas siguientes, ronda sin resolver,
+  un solo jugador, batalla cancelada como resuelta, torneo En curso sin batallas, consultas, anónimo y ganador.
+- `RondasController` y `RondasControllerTests` (201 con `Location`, 200 y la seguridad por reflexión).
+- `RepositorioBatallas.GuardarRonda` y `ListarDelTorneo`, y `RepositorioRondasTests`, que incluye que las batallas
+  de la ronda se guardan junto con el estado del torneo.
+- `FiltroExcepcionesRondasTests` y `docs/api/rondas.md`.
+
+**Supuestos y pendientes:**
+- Dos pedidos simultáneos de generar la misma ronda podrían crear batallas repetidas: `Torneo` no tiene token de
+  concurrencia. Se acepta el riesgo, porque la ronda la genera una sola persona (el organizador asignado o un
+  administrador).
+- La secuencia de generar ronda y las clases que participan están en `docs/uml/generar-ronda.puml` y
+  `docs/uml/rondas-clases.puml`; falta sumarlas al diagrama de clases general del informe.
+
+**Participación de IA:**
+- Claude Code propuso el contrato, la ronda derivada, mejor contra peor y los códigos de error nuevos; el
+  integrante eligió la ronda derivada y mejor contra peor, y aprobó el resto de las etapas en bloque.
+- Problemas que aparecieron:
+  - `Usuario.ActualizarElo` (persona B) no estaba en develop, así que no se podían armar jugadores con distinto ELO
+    en los tests. Primero se hicieron los ciclos que no lo necesitaban (dos jugadores y desempate por id) y el de
+    "mayor ELO contra menor ELO" se hizo después de traer los fallos.
+  - El test del orden de `ListarDelTorneo` pasaba por el orden accidental de SQLite. Claude Code lo detectó
+    probando la consulta sin desempate antes del GREEN y agregó el índice de prueba.
+  - `dotnet format` convierte las lambdas de los `Assert.ThrowsExactly` en method groups; un script de edición dejó
+    de coincidir con el archivo y hubo que rehacerlo sobre el archivo real.
+- La review técnica del PR #25 pidió cuatro cambios: rechazar el torneo En curso sin batallas, que la interfaz
+  muestre la atomicidad (`GuardarRonda` en lugar de un `Agregar` que no guardaba), el mensaje de
+  `TOURNAMENT_NOT_OPEN` y la cantidad impar. Claude Code los hizo con ciclos RED/GREEN y un REFACTOR.
+
+---
+
+### D-63 — Generan rondas el organizador asignado o un administrador (supuesto)
+
+**Problema:** la letra asigna al Organizador generar las rondas de sus torneos, pero no dice nada del
+Administrador. Si el organizador asignado no está disponible, nadie podría avanzar el torneo.
+
+**Alternativas consideradas:** solo el organizador asignado, como las skills obligatorias (D-40); cualquier
+Organizador; el organizador asignado o un Administrador.
+
+**Decisión adoptada:** el organizador asignado o un Administrador (lo eligió el integrante; la IA recomendaba solo
+el organizador asignado, que es lo que dice la letra).
+- El filtro de autorización admite los roles Organizador y Administrador; otro rol recibe 403 `FORBIDDEN`.
+- El servicio decide si el Organizador es el asignado a ese torneo; si no, 403 `NOT_TOURNAMENT_ORGANIZER` (se
+  reusa `NoEsOrganizadorDelTorneoException`, D-40). Un Administrador pasa sin esa comprobación.
+- Es un supuesto: si una aclaración docente dice que solo el organizador, alcanza con sacar el rol del atributo
+  y la condición del servicio. Queda para consultar en el foro del curso.
+
+**Justificación:** mantiene la regla de D-40 para los organizadores y le da al Administrador, que ya crea y cancela
+torneos, la posibilidad de destrabar uno.
+
+**Conceptos del curso:** autorización por rol en el filtro y regla de negocio en el servicio (SRP), status 403.
+
+**Evidencia:** `RondasController.Generar` con `[Autorizacion(Roles.Organizador, Roles.Administrador)]`,
+`ServicioRondas.ObtenerTorneoDelOrganizador` y los tests `Generar_OrganizadorNoAsignado_...` y
+`Generar_AdministradorQueNoEsElOrganizador_GeneraLaRonda`.
+
+**Participación de IA:** Claude Code planteó las tres opciones citando la letra y recomendó solo el organizador
+asignado; el integrante eligió sumar al Administrador.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -1962,8 +2100,8 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
     misma operación (atómica). Hoy solo cambia el estado.~~ Resuelto en D-42.
   - ~~Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar`.~~ Resuelto en D-40.
   - ~~Calcular `InscripcionesAceptadas` (hoy vale 0).~~ Resuelto en D-41.
-  - ~~Sumar al detalle las skills obligatorias y los jugadores aceptados.~~ Resuelto en D-44. Falta el
-    cuadro (rondas y batallas), que agrega la Persona C.
+  - ~~Sumar al detalle las skills obligatorias y los jugadores aceptados.~~ Resuelto en D-44.
+    ~~Falta el cuadro (rondas y batallas), que agrega la Persona C.~~ Resuelto en D-62.
   - ~~Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
     que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).~~ Resuelto en D-41.
   - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya

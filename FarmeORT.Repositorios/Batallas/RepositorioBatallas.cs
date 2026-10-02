@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using Microsoft.EntityFrameworkCore;
@@ -117,6 +118,25 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             id => new ResultadosDeBatallas(
                 ganadas.GetValueOrDefault(id),
                 perdidasComoJugador1.GetValueOrDefault(id) + perdidasComoJugador2.GetValueOrDefault(id)));
+    }
+
+    public IReadOnlyList<Batalla> ListarDelTorneo(int torneoId)
+    {
+        return contexto.Batallas
+            .Include(b => b.Jugador1)
+            .Include(b => b.Jugador2)
+            .Where(b => b.TorneoId == torneoId)
+            .OrderBy(b => b.NumeroRonda)
+            .ThenBy(b => b.Id)
+            .ToList();
+    }
+
+    // Un solo SaveChanges: las batallas de la ronda y el torneo En curso se guardan juntos o no se guarda nada (D-62).
+    public void GuardarRonda(Torneo torneo, IReadOnlyList<Batalla> batallas)
+    {
+        contexto.Batallas.AddRange(batallas);
+        contexto.Torneos.Update(torneo);
+        contexto.SaveChanges();
     }
 
     private static Dictionary<int, int> ContarPorJugador(IQueryable<Batalla> batallas, Expression<Func<Batalla, int>> jugador)

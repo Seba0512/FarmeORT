@@ -17,7 +17,7 @@ Rol: todos, incluido el anónimo. Un token enviado pero inválido responde 401 (
   `dificultad`, `activa`), el mismo formato que `GET /torneos/{id}/skills-obligatorias`.
 - `jugadoresAceptados`: `JugadorAceptadoResponse[]` (`jugadorId`, `nickname`, `elo`), en orden de
   inscripción. Solo las inscripciones Aceptadas.
-- El cuadro (rondas y batallas) se agrega con las rondas.
+- `rondas`: `RondaResponse[]`, el cuadro completo (cada ronda con sus batallas, ambos jugadores y el ganador si lo hay), con el mismo formato que `GET /torneos/{id}/rondas` (D-62). Antes de la primera ronda viene vacío.
 
 | Estado | errorCode | Cuándo |
 |---|---|---|

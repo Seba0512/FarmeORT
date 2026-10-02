@@ -63,7 +63,7 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         [typeof(NoEsDuenoDeLaInscripcionException)] =
             new(StatusCodes.Status403Forbidden, "NOT_REGISTRATION_OWNER", "La inscripción no es tuya."),
         [typeof(TorneoNoAbiertoException)] =
-            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto a inscripciones."),
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto."),
         [typeof(InscripcionYaExisteException)] =
             new(StatusCodes.Status409Conflict, "ALREADY_REGISTERED", "Ya tenés una inscripción aceptada en este torneo."),
         [typeof(TorneoCompletoException)] =
@@ -108,6 +108,16 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         // Persona B: visibilidad de consultas de batallas (D-55).
         [typeof(JugadorNoInscriptoEnTorneoException)] =
             new(StatusCodes.Status403Forbidden, "PLAYER_NOT_IN_TOURNAMENT", "No tenés una inscripción en este torneo."),
+
+        // Persona C: rondas (D-62).
+        [typeof(TorneoIncompletoException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas."),
+        [typeof(RondaNoEncontradaException)] =
+            new(StatusCodes.Status404NotFound, "ROUND_NOT_FOUND", "El torneo no tiene una ronda con ese número."),
+        [typeof(RondaSinResolverException)] =
+            new(StatusCodes.Status409Conflict, "ROUND_NOT_RESOLVED", "La ronda anterior todavía tiene batallas sin resolver."),
+        [typeof(TorneoListoParaFinalizarException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_READY_TO_FINISH", "Queda un solo jugador sin eliminar: corresponde finalizar el torneo."),
     };
 
     public void OnException(ExceptionContext context)

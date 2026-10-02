@@ -98,7 +98,7 @@ public sealed class FiltroExcepcionesTests
     [DataRow(typeof(SkillObligatoriaNoEncontradaException), StatusCodes.Status404NotFound, "MANDATORY_SKILL_NOT_FOUND", "La skill no es obligatoria en este torneo.")]
     [DataRow(typeof(InscripcionNoEncontradaException), StatusCodes.Status404NotFound, "REGISTRATION_NOT_FOUND", "No existe una inscripción con ese id.")]
     [DataRow(typeof(NoEsDuenoDeLaInscripcionException), StatusCodes.Status403Forbidden, "NOT_REGISTRATION_OWNER", "La inscripción no es tuya.")]
-    [DataRow(typeof(TorneoNoAbiertoException), StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto a inscripciones.")]
+    [DataRow(typeof(TorneoNoAbiertoException), StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto.")]
     [DataRow(typeof(InscripcionYaExisteException), StatusCodes.Status409Conflict, "ALREADY_REGISTERED", "Ya tenés una inscripción aceptada en este torneo.")]
     [DataRow(typeof(TorneoCompletoException), StatusCodes.Status409Conflict, "TOURNAMENT_FULL", "El torneo ya alcanzó su cupo de inscripciones aceptadas.")]
     [DataRow(typeof(InscripcionNoActivaException), StatusCodes.Status409Conflict, "REGISTRATION_NOT_ACTIVE", "La inscripción ya no está aceptada.")]

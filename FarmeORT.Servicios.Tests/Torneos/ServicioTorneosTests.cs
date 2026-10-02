@@ -53,6 +53,9 @@ public sealed class ServicioTorneosTests
         // Por defecto el torneo no tiene batallas sin resolver ni inscripciones Aceptadas; los tests de la
         // cancelación agregan las suyas.
         _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([]);
+
+        // Ni rondas: el test del cuadro agrega las suyas.
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns([]);
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([]);
         _servicio = new ServicioTorneos(
             _repositorioTorneos.Object,
@@ -526,6 +529,31 @@ public sealed class ServicioTorneosTests
         CollectionAssert.AreEqual(new[] { 7, 8 }, response.JugadoresAceptados.Select(j => j.JugadorId).ToArray());
         CollectionAssert.AreEqual(new[] { "aurafarmer", "sixseven" }, response.JugadoresAceptados.Select(j => j.Nickname).ToArray());
         CollectionAssert.AreEqual(new[] { 1200, 1200 }, response.JugadoresAceptados.Select(j => j.Elo).ToArray());
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_TorneoConRondas_DevuelveElCuadroConLasBatallasDeCadaRonda()
+    {
+        var torneo = CrearTorneo();
+        var jugadores = Enumerable.Range(7, 4).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
+        var sorteo = new Mock<ISorteo>(MockBehavior.Strict);
+        sorteo.Setup(s => s.ElegirEntre(jugadores[0], jugadores[3])).Returns(jugadores[0]);
+        sorteo.Setup(s => s.ElegirEntre(jugadores[1], jugadores[2])).Returns(jugadores[1]);
+        sorteo.Setup(s => s.ElegirEntre(jugadores[0], jugadores[1])).Returns(jugadores[0]);
+        IReadOnlyList<Batalla> batallas =
+        [
+            new Batalla(torneo, 1, jugadores[0], jugadores[3], sorteo.Object) { Id = 10 },
+            new Batalla(torneo, 1, jugadores[1], jugadores[2], sorteo.Object) { Id = 11 },
+            new Batalla(torneo, 2, jugadores[0], jugadores[1], sorteo.Object) { Id = 12 },
+        ];
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns(batallas);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: true);
+
+        CollectionAssert.AreEqual(new[] { 1, 2 }, response.Rondas.Select(r => r.Numero).ToArray());
+        CollectionAssert.AreEqual(new[] { 10, 11 }, response.Rondas[0].Batallas.Select(b => b.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { 12 }, response.Rondas[1].Batallas.Select(b => b.Id).ToArray());
     }
 
     private void ConfigurarAltaValida()
