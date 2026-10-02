@@ -63,6 +63,11 @@ internal sealed class ServicioUsuarios(
             throw new UsuarioOrganizaTorneoVigenteException();
         }
 
+        if(usuario.Rol != rol && repositorioBatallas.ExisteSinResolverDelJugador(usuario.Id))
+        {
+            throw new UsuarioConBatallasSinResolverException();
+        }
+
         if(!MismoTexto(usuario.Email, request.Email))
         {
             ValidarEmailDisponible(request.Email);
