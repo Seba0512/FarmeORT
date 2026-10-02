@@ -258,6 +258,28 @@ public sealed class ServicioRondasTests
         _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Generar_RondaAnteriorConUnaBatallaCancelada_LaTomaComoResuelta()
+    {
+        var siguen = _jugadores.Take(2).Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
+        _torneo.Iniciar(4);
+        var cancelada = CrearBatalla(11, 1, 1, 2);
+        cancelada.Cancelar();
+        IReadOnlyList<Batalla> primeraRonda = [CrearBatallaFallada(10, 1, 0, 3), cancelada];
+        IReadOnlyList<ParDeJugadores> pares = [new(_jugadores[0], _jugadores[1])];
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns(primeraRonda);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(siguen);
+        _estrategia.Setup(e => e.Emparejar(It.Is<IReadOnlyList<Usuario>>(j => j.SequenceEqual(_jugadores.Take(2))))).Returns(pares);
+        _sorteo.Setup(s => s.ElegirEntre(_jugadores[0], _jugadores[1])).Returns(_jugadores[0]);
+        _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 2)));
+        _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
+
+        var ronda = _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
+
+        Assert.AreEqual(2, ronda.Numero);
+    }
+
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
     // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar. Todo se guarda con el torneo.
     private void PrepararPrimeraRondaCompleta()
