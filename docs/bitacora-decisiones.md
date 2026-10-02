@@ -2100,8 +2100,10 @@ asignado; el integrante eligió sumar al Administrador.
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
 - ~~Repertorio (D-38): quitar una skill tiene que rechazarse (409) si es obligatoria de un torneo donde el
   jugador tiene una inscripción Aceptada y el torneo no está Finalizado ni Cancelado.~~ Resuelto en D-41.
-  Pendiente: diagrama de clases con `SkillDeclarada` y la colección
-  `Repertorio` de `Usuario`.
+  ~~Pendiente: diagrama de clases con `SkillDeclarada` y la colección
+  `Repertorio` de `Usuario`.~~ Resuelto en `docs/uml/inscripciones-dominio-clases.puml`, junto con
+  `Inscripcion`, `EstadoInscripcion` y las skills obligatorias de `Torneo`. La secuencia de la inscripción
+  está en `docs/uml/inscripcion.puml` y los servicios en `docs/uml/inscripciones-servicios-clases.puml`.
 - Torneos (D-36, D-37), lo que espera a otras funcionalidades:
   - ~~Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
     misma operación (atómica). Hoy solo cambia el estado.~~ Resuelto en D-42.
