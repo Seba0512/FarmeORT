@@ -77,7 +77,12 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Batalla> ListarDelTorneo(int torneoId)
     {
-        _ = torneoId;
-        throw new NotImplementedException();
+        return contexto.Batallas
+            .Include(b => b.Jugador1)
+            .Include(b => b.Jugador2)
+            .Where(b => b.TorneoId == torneoId)
+            .OrderBy(b => b.NumeroRonda)
+            .ThenBy(b => b.Id)
+            .ToList();
     }
 }
