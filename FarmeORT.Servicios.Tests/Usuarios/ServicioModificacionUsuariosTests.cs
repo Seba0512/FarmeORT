@@ -235,12 +235,7 @@ public sealed class ServicioModificacionUsuariosTests
     public void Modificar_CambiaElRolDeUnJugadorInscriptoEnTorneoVigente_LanzaUsuarioConInscripcionVigenteSinActualizar()
     {
         var usuario = ConfigurarModificacionValida(Rol.Jugador);
-        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
-        {
-            Id = 2,
-        };
-        var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
-            FechaActual.AddDays(1), FechaActual.AddDays(30), 8, organizador, FechaActual);
+        var torneo = CrearTorneo();
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId))
             .Returns([new Inscripcion(torneo, usuario, new DateTime(2026, 9, 30, 12, 0, 0))]);
 
@@ -249,6 +244,30 @@ public sealed class ServicioModificacionUsuariosTests
 
         Assert.AreEqual(Rol.Jugador, usuario.Rol);
         _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnJugadorConInscripcionDeTorneoCancelado_ActualizaElRol()
+    {
+        var usuario = ConfigurarModificacionValida(Rol.Jugador);
+        var torneo = CrearTorneo();
+        var inscripcion = new Inscripcion(torneo, usuario, new DateTime(2026, 9, 30, 12, 0, 0));
+        torneo.Cancelar();
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId)).Returns([inscripcion]);
+
+        _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId);
+
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.Is<Usuario>(u => u == usuario && u.Rol == Rol.Organizador)), Times.Once);
+    }
+
+    private static Torneo CrearTorneo()
+    {
+        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
+        {
+            Id = 2,
+        };
+        return new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(30), 8, organizador, FechaActual);
     }
 
     private Usuario ConfigurarModificacionValida(Rol rolActual = Rol.Organizador)
