@@ -217,6 +217,9 @@ namespace FarmeORT.Repositorios.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CampeonId")
+                        .HasColumnType("int");
+
                     b.Property<string>("Codigo")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -250,6 +253,8 @@ namespace FarmeORT.Repositorios.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("CampeonId");
 
                     b.HasIndex("Codigo")
                         .IsUnique();
@@ -464,11 +469,18 @@ namespace FarmeORT.Repositorios.Migrations
 
             modelBuilder.Entity("FarmeORT.Dominio.Torneos.Torneo", b =>
                 {
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Campeon")
+                        .WithMany()
+                        .HasForeignKey("CampeonId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Organizador")
                         .WithMany()
                         .HasForeignKey("OrganizadorId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Campeon");
 
                     b.Navigation("Organizador");
                 });
