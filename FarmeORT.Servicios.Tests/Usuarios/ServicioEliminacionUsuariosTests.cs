@@ -1,5 +1,10 @@
+using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
+using FarmeORT.IRepositorios.Inscripciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.Servicios.Usuarios;
@@ -11,17 +16,36 @@ namespace FarmeORT.Servicios.Tests.Usuarios;
 public sealed class ServicioEliminacionUsuariosTests
 {
     private const int AdministradorActualId = 1;
+    private const int UsuarioId = 5;
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
+    private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
+    private Mock<IRepositorioBatallas> _repositorioBatallas = null!;
+    private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
     private ServicioUsuarios _servicio = null!;
 
     [TestInitialize]
     public void Inicializar()
     {
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
+        _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
+        _repositorioBatallas = new Mock<IRepositorioBatallas>(MockBehavior.Strict);
+        _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         var hasheadorContrasenas = new Mock<IHasheadorContrasenas>(MockBehavior.Strict);
         var reloj = new Mock<TimeProvider>(MockBehavior.Strict);
-        _servicio = new ServicioUsuarios(_repositorioUsuarios.Object, hasheadorContrasenas.Object, reloj.Object);
+
+        // Por defecto el usuario no organiza torneos vigentes, no tiene batallas sin resolver ni inscripciones
+        // vigentes; los tests de cada regla lo redefinen.
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(false);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(false);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId)).Returns([]);
+        _servicio = new ServicioUsuarios(
+            _repositorioUsuarios.Object,
+            _repositorioTorneos.Object,
+            _repositorioBatallas.Object,
+            _repositorioInscripciones.Object,
+            hasheadorContrasenas.Object,
+            reloj.Object);
     }
 
     [TestMethod]
@@ -41,15 +65,69 @@ public sealed class ServicioEliminacionUsuariosTests
     [TestMethod]
     public void Eliminar_UsuarioExistente_LoDaDeBajaYGuardaLaBaja()
     {
-        var usuario = new Usuario("Carlos", "Suarez", "carlos@farmeort.com", "carlossuarez", new DateOnly(2001, 8, 2), Rol.Jugador, "hash", new DateOnly(2026, 9, 30))
-        {
-            Id = 5,
-        };
-        _repositorioUsuarios.Setup(r => r.ObtenerPorId(5)).Returns(usuario);
+        var usuario = CrearUsuario(Rol.Jugador);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(UsuarioId)).Returns(usuario);
         _repositorioUsuarios.Setup(r => r.Eliminar(usuario));
 
-        _servicio.Eliminar(5, AdministradorActualId);
+        _servicio.Eliminar(UsuarioId, AdministradorActualId);
 
         _repositorioUsuarios.Verify(r => r.Eliminar(It.Is<Usuario>(u => u == usuario && u.Eliminado)), Times.Once);
+    }
+
+    [TestMethod]
+    public void Eliminar_OrganizadorDeTorneoVigente_LanzaUsuarioOrganizaTorneoVigenteSinDarDeBaja()
+    {
+        var organizador = CrearUsuario(Rol.Organizador);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(UsuarioId)).Returns(organizador);
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(true);
+        _repositorioUsuarios.Setup(r => r.Eliminar(organizador));
+
+        Assert.ThrowsExactly<UsuarioOrganizaTorneoVigenteException>(() => _servicio.Eliminar(UsuarioId, AdministradorActualId));
+
+        Assert.IsFalse(organizador.Eliminado);
+        _repositorioUsuarios.Verify(r => r.Eliminar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Eliminar_JugadorConBatallasSinResolver_LanzaUsuarioConBatallasSinResolverSinDarDeBaja()
+    {
+        var jugador = CrearUsuario(Rol.Jugador);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(UsuarioId)).Returns(jugador);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(true);
+        _repositorioUsuarios.Setup(r => r.Eliminar(jugador));
+
+        Assert.ThrowsExactly<UsuarioConBatallasSinResolverException>(() => _servicio.Eliminar(UsuarioId, AdministradorActualId));
+
+        Assert.IsFalse(jugador.Eliminado);
+        _repositorioUsuarios.Verify(r => r.Eliminar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Eliminar_JugadorInscriptoEnTorneoVigente_LanzaUsuarioConInscripcionVigenteSinDarDeBaja()
+    {
+        var jugador = CrearUsuario(Rol.Jugador);
+        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", new DateOnly(2026, 9, 30))
+        {
+            Id = 2,
+        };
+        var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            new DateOnly(2026, 10, 1), new DateOnly(2026, 10, 30), 8, organizador, new DateOnly(2026, 9, 30));
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(UsuarioId)).Returns(jugador);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId))
+            .Returns([new Inscripcion(torneo, jugador, new DateTime(2026, 9, 30, 12, 0, 0))]);
+        _repositorioUsuarios.Setup(r => r.Eliminar(jugador));
+
+        Assert.ThrowsExactly<UsuarioConInscripcionVigenteException>(() => _servicio.Eliminar(UsuarioId, AdministradorActualId));
+
+        Assert.IsFalse(jugador.Eliminado);
+        _repositorioUsuarios.Verify(r => r.Eliminar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    private static Usuario CrearUsuario(Rol rol)
+    {
+        return new Usuario("Carlos", "Suarez", "carlos@farmeort.com", "carlossuarez", new DateOnly(2001, 8, 2), rol, "hash", new DateOnly(2026, 9, 30))
+        {
+            Id = UsuarioId,
+        };
     }
 }

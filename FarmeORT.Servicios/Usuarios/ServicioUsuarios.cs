@@ -1,6 +1,9 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
+using FarmeORT.IRepositorios.Inscripciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.IServicios.Usuarios;
@@ -9,6 +12,9 @@ namespace FarmeORT.Servicios.Usuarios;
 
 internal sealed class ServicioUsuarios(
     IRepositorioUsuarios repositorioUsuarios,
+    IRepositorioTorneos repositorioTorneos,
+    IRepositorioBatallas repositorioBatallas,
+    IRepositorioInscripciones repositorioInscripciones,
     IHasheadorContrasenas hasheadorContrasenas,
     TimeProvider reloj) : IServicioUsuarios
 {
@@ -54,6 +60,11 @@ internal sealed class ServicioUsuarios(
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        if(usuario.Rol != rol)
+        {
+            ValidarSinParticipacionVigente(usuario);
+        }
+
         if(!MismoTexto(usuario.Email, request.Email))
         {
             ValidarEmailDisponible(request.Email);
@@ -87,8 +98,29 @@ internal sealed class ServicioUsuarios(
         }
 
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        ValidarSinParticipacionVigente(usuario);
         usuario.Eliminar();
         repositorioUsuarios.Eliminar(usuario);
+    }
+
+    // Eliminar y cambiar el rol tienen las mismas restricciones (D-43): las dos primeras son de la letra y la
+    // inscripción vigente evita que las rondas emparejen a alguien dado de baja o que ya no es Jugador.
+    private void ValidarSinParticipacionVigente(Usuario usuario)
+    {
+        if(repositorioTorneos.ExisteVigenteDelOrganizador(usuario.Id))
+        {
+            throw new UsuarioOrganizaTorneoVigenteException();
+        }
+
+        if(repositorioBatallas.ExisteSinResolverDelJugador(usuario.Id))
+        {
+            throw new UsuarioConBatallasSinResolverException();
+        }
+
+        if(repositorioInscripciones.ListarAceptadasDelJugador(usuario.Id).Any(i => i.EstaVigente))
+        {
+            throw new UsuarioConInscripcionVigenteException();
+        }
     }
 
     private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)

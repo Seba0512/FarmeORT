@@ -295,6 +295,28 @@ public sealed class RepositorioTorneosTests
         AssertPuedeGuardarOtroTorneo();
     }
 
+    [TestMethod]
+    [DataRow(EstadoTorneo.Abierto, true)]
+    [DataRow(EstadoTorneo.EnCurso, true)]
+    [DataRow(EstadoTorneo.Finalizado, false)]
+    [DataRow(EstadoTorneo.Cancelado, false)]
+    public void ExisteVigenteDelOrganizador_TorneoEnUnEstado_IndicaSiNoEstaFinalizadoNiCancelado(EstadoTorneo estado, bool esperado)
+    {
+        var otroOrganizador = new Usuario("Otro", "Organizador", "otro@farmeort.com", "otroorg", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual);
+        var propio = CrearTorneo("COPAAURA");
+        var ajeno = new Torneo("COPAAJENA", "Copa Ajena", Descripcion, FechaInicio, FechaFin, 8, otroOrganizador, FechaActual);
+        _baseDeDatos.Contexto.Torneos.AddRange(propio, ajeno);
+
+        // Fuera de Abierto y Cancelado, los estados los fijan las rondas: el test los asigna directamente.
+        _baseDeDatos.Contexto.Entry(propio).Property(t => t.Estado).CurrentValue = estado;
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var existe = _repositorio.ExisteVigenteDelOrganizador(_organizador.Id);
+
+        Assert.AreEqual(esperado, existe);
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroTorneos Filtro(
         EstadoTorneo? estado = null,

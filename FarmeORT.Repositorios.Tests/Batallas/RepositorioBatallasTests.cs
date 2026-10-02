@@ -271,6 +271,33 @@ public sealed class RepositorioBatallasTests
         Assert.IsTrue(resultado.All(b => _baseDeDatos.Contexto.Entry(b).State == EntityState.Unchanged));
     }
 
+    [TestMethod]
+    [DataRow(EstadoBatalla.Pendiente, 7, true)]
+    [DataRow(EstadoBatalla.EnArbitraje, 8, true)]
+    [DataRow(EstadoBatalla.Finalizada, 7, false)]
+    [DataRow(EstadoBatalla.Cancelada, 8, false)]
+    public void ExisteSinResolverDelJugador_BatallaEnUnEstado_IndicaSiEstaPendienteOEnArbitraje(EstadoBatalla estado, int jugadorId, bool esperado)
+    {
+        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        var otro1 = CrearUsuario(9, Rol.Jugador);
+        var otro2 = CrearUsuario(10, Rol.Jugador);
+        var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, CrearUsuario(2, Rol.Organizador), FechaActual)
+        { Id = 5 };
+        var propia = new Batalla(torneo, 1, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 12 };
+        _baseDeDatos.Contexto.Batallas.AddRange(propia, new Batalla(torneo, 1, otro1, otro2, new SorteoInicial(otro1)) { Id = 13 });
+
+        // Los lanzamientos y el fallo no importan para la consulta: se fija el estado directamente.
+        _baseDeDatos.Contexto.Entry(propia).Property(b => b.Estado).CurrentValue = estado;
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var existe = _repositorio.ExisteSinResolverDelJugador(jugadorId);
+
+        Assert.AreEqual(esperado, existe);
+    }
+
     private FarmeORTContext CrearOtroContexto()
     {
         var opciones = new DbContextOptionsBuilder<FarmeORTContext>()

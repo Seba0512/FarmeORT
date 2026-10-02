@@ -1,6 +1,9 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
+using FarmeORT.IRepositorios.Inscripciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.Servicios.Usuarios;
@@ -27,7 +30,12 @@ public sealed class ServicioRegistroJugadorTests
         _repositorio = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
         _hasheador = new Mock<IHasheadorContrasenas>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
-        _servicio = new ServicioUsuarios(_repositorio.Object, _hasheador.Object, _reloj.Object);
+        _servicio = new ServicioUsuarios(
+            _repositorio.Object,
+            new Mock<IRepositorioTorneos>(MockBehavior.Strict).Object,
+            new Mock<IRepositorioBatallas>(MockBehavior.Strict).Object,
+            new Mock<IRepositorioInscripciones>(MockBehavior.Strict).Object,
+            _hasheador.Object, _reloj.Object);
     }
 
     [TestMethod]

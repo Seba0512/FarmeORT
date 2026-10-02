@@ -1,0 +1,55 @@
+@startuml
+hide circle
+title Eliminar y cambiar el rol de un usuario: clases que participan (D-43)
+
+package FarmeORT.Servicios {
+  class ServicioUsuarios {
+    + Modificar(id : int, request : UsuarioAdminRequest, usuarioActualId : int) : UsuarioResponse
+    + Eliminar(id : int, usuarioActualId : int) : void
+    - ValidarSinParticipacionVigente(usuario : Usuario) : void
+  }
+}
+
+package FarmeORT.IRepositorios {
+  interface IRepositorioUsuarios {
+    + ObtenerPorId(id : int) : Usuario
+    + Actualizar(usuario : Usuario) : void
+    + Eliminar(usuario : Usuario) : void
+  }
+  interface IRepositorioTorneos {
+    + ExisteVigenteDelOrganizador(organizadorId : int) : bool
+  }
+  interface IRepositorioBatallas {
+    + ExisteSinResolverDelJugador(jugadorId : int) : bool
+  }
+  interface IRepositorioInscripciones {
+    + ListarAceptadasDelJugador(jugadorId : int) : IReadOnlyList<Inscripcion>
+  }
+}
+
+package FarmeORT.Dominio {
+  class Inscripcion {
+    + Estado : EstadoInscripcion
+    + EstaVigente : bool
+    + ExigeSkill(skillId : int) : bool
+  }
+  class Torneo {
+    + Estado : EstadoTorneo
+  }
+}
+
+package FarmeORT.Excepciones {
+  class UsuarioOrganizaTorneoVigenteException
+  class UsuarioConBatallasSinResolverException
+  class UsuarioConInscripcionVigenteException
+}
+
+ServicioUsuarios ..> IRepositorioUsuarios : <<use>>
+ServicioUsuarios ..> IRepositorioTorneos : <<use>>
+ServicioUsuarios ..> IRepositorioBatallas : <<use>>
+ServicioUsuarios ..> IRepositorioInscripciones : <<use>>
+ServicioUsuarios ..> UsuarioOrganizaTorneoVigenteException : <<create>>
+ServicioUsuarios ..> UsuarioConBatallasSinResolverException : <<create>>
+ServicioUsuarios ..> UsuarioConInscripcionVigenteException : <<create>>
+Inscripcion "0..*" --> "1" Torneo
+@enduml
