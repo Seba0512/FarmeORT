@@ -1,0 +1,78 @@
+@startuml
+title Inscripción a un torneo (D-41)
+actor Jugador
+participant ":InscripcionesController" as C
+participant ":ServicioInscripciones" as S
+participant ":RepositorioTorneos" as RT
+participant ":RepositorioUsuarios" as RU
+participant ":RepositorioInscripciones" as RI
+participant ":TimeProvider" as T
+participant "torneo:Torneo" as To
+participant "jugador:Usuario" as U
+
+Jugador -> C : POST /api/v1/inscripciones\nAuthorization: Bearer {token}\n{ torneoId }
+note over C
+  [Autorizacion(Roles.Jugador)]: token válido (401)
+  y rol Jugador (403). El jugador sale de la sesión,
+  nunca del body.
+end note
+C -> S : Inscribir(sesion.UsuarioId, request)
+note over S
+  DatosObligatorios.Obtener(request.TorneoId):
+  sin torneoId → 400 INVALID_DATA.
+end note
+S -> RT : ObtenerPorId(torneoId)
+RT --> S : torneo (con sus skills obligatorias)
+opt torneo == null
+  S --> C : TorneoNoEncontradoException
+  C --> Jugador : 404 TOURNAMENT_NOT_FOUND
+end
+S -> RU : ObtenerConRepertorio(jugadorId)
+RU --> S : jugador (con su repertorio)
+opt jugador == null
+  S --> C : UsuarioNoEncontradoException
+  C --> Jugador : 404 USER_NOT_FOUND
+end
+S -> RI : ExisteAceptada(torneoId, jugadorId)
+RI --> S : bool
+opt ya tiene una Aceptada
+  S --> C : InscripcionYaExisteException
+  C --> Jugador : 409 ALREADY_REGISTERED
+end
+S -> RI : ContarAceptadas(torneoId)
+RI --> S : aceptadas
+opt aceptadas >= torneo.Cupo
+  S --> C : TorneoCompletoException
+  C --> Jugador : 409 TOURNAMENT_FULL
+end
+S -> T : GetLocalNow()
+T --> S : fecha
+create participant "inscripcion:Inscripcion" as I
+S -> I : new Inscripcion(torneo, jugador, fecha)
+I -> To : Estado
+To --> I : estado
+opt estado != Abierto
+  I --> S : TorneoNoAbiertoException
+  S --> C : excepción
+  C --> Jugador : 409 TOURNAMENT_NOT_OPEN
+end
+I -> To : SkillsObligatorias
+To --> I : obligatorias
+I -> U : SkillsFaltantes(obligatorias)
+U --> I : faltantes
+opt faltantes no vacía
+  I --> S : SkillsObligatoriasFaltantesException(códigos)
+  S --> C : excepción
+  C --> Jugador : 409 MISSING_MANDATORY_SKILLS\n(códigos en detalles)
+end
+I --> S : inscripción Aceptada
+S -> RI : Agregar(inscripcion)
+note right of RI : Un SaveChanges.
+RI --> S
+S --> C : InscripcionResponse
+C --> Jugador : 201 Created\nLocation: /api/v1/inscripciones/{id}
+note over C
+  Las excepciones las traduce FiltroExcepciones
+  (diccionario tipo → status y errorCode, D-07).
+end note
+@enduml
