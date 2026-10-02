@@ -1,3 +1,5 @@
+using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Repositorios.Usuarios;
 using Microsoft.EntityFrameworkCore;
@@ -80,6 +82,59 @@ public sealed class RepositorioRankingTests
         var ranking = _repositorio.ListarRanking(2);
 
         CollectionAssert.AreEqual(new[] { "primero", "segundo" }, ranking.Select(u => u.Nickname).ToArray());
+    }
+
+    [TestMethod]
+    public void ListarRankingDelTorneo_InscripcionesEnDistintosEstados_DevuelveSoloAceptadosYEliminadosDeMayorAMenorElo()
+    {
+        var organizador = AgregarUsuario("organizador", 1200, Rol.Organizador);
+        var torneo = AgregarTorneo("COPAAURA", organizador);
+        var otroTorneo = AgregarTorneo("COPAFARM", organizador);
+        Inscribir(torneo, AgregarUsuario("aceptado", 1300));
+        Inscribir(torneo, AgregarUsuario("eliminado", 1500)).Eliminar();
+        Inscribir(torneo, AgregarUsuario("cancelado", 1600)).Cancelar();
+        Inscribir(otroTorneo, AgregarUsuario("otrotorneo", 1700));
+        AgregarUsuario("sininscripcion", 1800);
+        var dadoDeBaja = AgregarUsuario("debaja", 1400);
+        Inscribir(torneo, dadoDeBaja);
+        dadoDeBaja.Eliminar();
+        GuardarYLimpiar();
+
+        var ranking = _repositorio.ListarRankingDelTorneo(torneo.Id, 10);
+
+        CollectionAssert.AreEqual(new[] { "eliminado", "aceptado" }, ranking.Select(u => u.Nickname).ToArray());
+    }
+
+    [TestMethod]
+    public void ListarRankingDelTorneo_EloEmpatadoYMasParticipantesQueLaCantidad_DesempataPorIdYCorta()
+    {
+        // El mismo índice que en el desempate del ranking general: sin ThenBy, los empates saldrían al revés.
+        _baseDeDatos.Contexto.Database.ExecuteSqlRaw("CREATE INDEX IX_Usuarios_Elo_Prueba ON Usuarios (Elo);");
+        var organizador = AgregarUsuario("organizador", 1200, Rol.Organizador);
+        var torneo = AgregarTorneo("COPAAURA", organizador);
+        Inscribir(torneo, AgregarUsuario("primero", 1300));
+        Inscribir(torneo, AgregarUsuario("segundo", 1300));
+        Inscribir(torneo, AgregarUsuario("tercero", 1300));
+        GuardarYLimpiar();
+
+        var ranking = _repositorio.ListarRankingDelTorneo(torneo.Id, 2);
+
+        CollectionAssert.AreEqual(new[] { "primero", "segundo" }, ranking.Select(u => u.Nickname).ToArray());
+    }
+
+    private Torneo AgregarTorneo(string codigo, Usuario organizador)
+    {
+        var torneo = new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(30), 8, organizador, FechaActual);
+        _baseDeDatos.Contexto.Torneos.Add(torneo);
+        return torneo;
+    }
+
+    private Inscripcion Inscribir(Torneo torneo, Usuario jugador)
+    {
+        var inscripcion = new Inscripcion(torneo, jugador, new DateTime(2026, 10, 1, 12, 0, 0));
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        return inscripcion;
     }
 
     private Usuario AgregarUsuario(string nickname, int elo, Rol rol = Rol.Jugador)

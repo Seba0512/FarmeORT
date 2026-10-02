@@ -1548,6 +1548,69 @@ Information Expert y refactor sin cambiar comportamiento.
 
 ---
 
+### D-45 — Ranking de un torneo: participantes Aceptados y Eliminados, y 404 para inexistente o cancelado
+
+**Problema:** la letra (2.6) permite filtrar el ranking por torneo, y la especificación de la API pide
+`torneoId` con 404 si el torneo no existe. D-61 dejó pendiente qué jugadores del torneo entran. El ranking
+pasó a la Persona A en la ola 2, y D-61 sigue valiendo: el desempate es por id y el orden va en la
+consulta. Las batallas ganadas y perdidas siguen en 0 hasta que los fallos de la Persona B lleguen a
+develop.
+
+**Alternativas consideradas:**
+- Quién entra: los que tienen inscripción Aceptada o Eliminada, solo los que jugaron al menos una
+  batalla, o toda inscripción incluidas las Canceladas.
+- Torneo Cancelado: devolver su ranking, o responder 404 como el detalle del torneo para el anónimo
+  (D-36).
+- `torneoId` no positivo: ignorarlo (como un filtro inválido de un listado, D-35) o tratarlo como un torneo
+  que no existe.
+- La consulta: un parámetro opcional en `ListarRanking` o una consulta nueva que comparta el orden.
+
+**Decisión adoptada:**
+- Entran los jugadores sin baja con inscripción **Aceptada o Eliminada** en el torneo (lo eligió el
+  integrante). Las Canceladas no entran, porque se retiraron antes de jugar. El ELO es el actual, que es
+  global.
+- Torneo inexistente o **Cancelado** → 404 `TOURNAMENT_NOT_FOUND`. El ranking es público y no distingue
+  quién consulta, y para el público un torneo cancelado no existe (D-36).
+- Un `torneoId` que no existe, incluso 0 o negativo, responde 404. La especificación pide 404 para un
+  torneo inexistente; ignorar el filtro devolvería el ranking general como si fuera el del torneo. Un
+  `torneoId` que no es un número sigue siendo 400 `VALIDATION_ERROR`.
+- `IRepositorioUsuarios.ListarRankingDelTorneo(torneoId, cantidad)` es una consulta nueva. Comparte con
+  `ListarRanking` el filtro de jugadores activos y el orden (ELO descendente y id ascendente, D-61), que se
+  extrajeron en un REFACTOR. La cantidad se ajusta igual que sin filtro.
+- Con el filtro, ganadas y perdidas van a contar solo las batallas de ese torneo, y sin filtro todas (lo
+  eligió el integrante). Se calculan con `Batalla.GanadorId` cuando los fallos de B estén en develop.
+
+**Justificación:**
+- Aceptados y Eliminados son quienes compiten o compitieron en el torneo: el ranking muestra a todos los
+  participantes, también a los ya eliminados. Exigir batallas jugadas dejaría vacío el ranking de un
+  torneo Abierto.
+- El 404 del cancelado mantiene una sola regla de visibilidad para lo público.
+- Una consulta nueva evita un parámetro opcional, que Moq no admite en sus expresiones, y el orden
+  compartido garantiza el mismo desempate en los dos rankings.
+
+**Conceptos del curso:** REST (filtro en la query, 404 para un recurso referenciado inexistente),
+determinismo, TDD Outside-In, tests de repositorio con SQLite y DRY.
+
+**Evidencia:**
+- `ServicioRankingTests`: torneo inexistente, torneo cancelado y ranking de los participantes, cada uno con
+  su RED y su GREEN, más un REFACTOR del servicio.
+- `RepositorioRankingTests`: Aceptados y Eliminados por ELO, sin Cancelados, sin otros torneos, sin
+  inscriptos ni dados de baja. Además, un test que documenta el desempate por id con el índice por ELO de
+  D-61 (se comprobó que falla sin `ThenBy`) y la cantidad.
+- Postman, carpeta "Ranking": los cuatro aceptados del torneo de cupo 4, la cantidad, un torneo inexistente,
+  un torneo cancelado y `torneoId=abc`.
+
+**Pendiente:** `batallasGanadas` y `batallasPerdidas` (ver arriba).
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) propuso las opciones de quién entra y el conteo por torneo; el
+  integrante eligió las recomendadas. El 404 del torneo cancelado y el del `torneoId` no positivo los
+  propuso Claude Code siguiendo D-36 y la especificación; el integrante los aprobó antes del PR.
+- Para que el test del desempate no pasara por casualidad, Claude Code quitó `ThenBy` a propósito, vio
+  fallar los dos tests de desempate y restauró el código antes de commitear.
+
+---
+
 ### D-50 — Coordinación del alcance de Persona B
 
 **Problema:** A, B y C trabajan en paralelo sobre un modelo compartido. Numerar decisiones y mantener migraciones sin coordinación puede causar conflictos y respuestas distintas para la misma autorización por torneo.
@@ -1728,7 +1791,7 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
 - Calcular `batallasGanadas` y `batallasPerdidas` cuando se puedan fallar batallas. En ese momento hay
   que actualizar `ServicioRankingTests.Obtener_CantidadValida_DevuelveLosJugadoresConSuPosicion`, que hoy
   afirma que valen 0, y el test de Postman que comprueba lo mismo.
-- El filtro `torneoId`, con su 404: definir qué jugadores del torneo entran.
+- ~~El filtro `torneoId`, con su 404: definir qué jugadores del torneo entran.~~ Resuelto en D-45.
 - Agregar `ServicioRanking` al diagrama de clases. La especificación de esta parte está en
   `docs/api/ranking.md`.
 

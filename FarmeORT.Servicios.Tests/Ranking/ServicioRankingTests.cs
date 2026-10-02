@@ -1,5 +1,8 @@
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Ranking;
+using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Servicios.Ranking;
 using Moq;
@@ -9,16 +12,20 @@ namespace FarmeORT.Servicios.Tests.Ranking;
 [TestClass]
 public sealed class ServicioRankingTests
 {
+    private const int TorneoId = 4;
+
     private static readonly DateOnly FechaActual = new(2026, 10, 1);
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
+    private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private ServicioRanking _servicio = null!;
 
     [TestInitialize]
     public void Inicializar()
     {
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
-        _servicio = new ServicioRanking(_repositorioUsuarios.Object);
+        _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
+        _servicio = new ServicioRanking(_repositorioUsuarios.Object, _repositorioTorneos.Object);
     }
 
     [TestMethod]
@@ -63,6 +70,56 @@ public sealed class ServicioRankingTests
 
         Assert.IsEmpty(ranking);
         _repositorioUsuarios.Verify(r => r.ListarRanking(10), Times.Once);
+    }
+
+    [TestMethod]
+    public void Obtener_TorneoInexistente_LanzaTorneoNoEncontradoSinConsultarElRanking()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+        _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = 99 }));
+
+        _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Obtener_TorneoCancelado_LanzaTorneoNoEncontradoSinConsultarElRanking()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId }));
+
+        _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Obtener_TorneoExistente_DevuelveElRankingDeSusParticipantesConSuPosicion()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+        _repositorioUsuarios.Setup(r => r.ListarRanking(5)).Returns([CrearJugador(9, "otrotorneo")]);
+        _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 5)).Returns([CrearJugador(4, "aurafarmer"), CrearJugador(2, "sixseven")]);
+
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5, TorneoId = TorneoId });
+
+        CollectionAssert.AreEqual(new[] { "aurafarmer", "sixseven" }, ranking.Select(j => j.Nickname).ToArray());
+        CollectionAssert.AreEqual(new[] { 1, 2 }, ranking.Select(j => j.Posicion).ToArray());
+    }
+
+    private static Torneo CrearTorneo()
+    {
+        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
+        {
+            Id = 2,
+        };
+        return new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(30), 8, organizador, FechaActual)
+        {
+            Id = TorneoId,
+        };
     }
 
     private static Usuario CrearJugador(int id, string nickname)

@@ -13533,12 +13533,239 @@
                   }
                 }
               ]
+            },
+            {
+              "name": "Ranking - filtrado por torneo lista solo a sus participantes → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{torneoCupoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{torneoCupoId}}"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const ranking = pm.response.json();",
+                      "const inscriptos = [1, 2, 3, 4].map(n => pm.collectionVariables.get(\"inscCupo\" + n + \"Nickname\"));",
+                      "pm.test(\"Los cuatro aceptados del torneo y nadie más\", () => { pm.expect(ranking).to.have.lengthOf(4); pm.expect(ranking.map(j => j.nickname)).to.have.members(inscriptos); });",
+                      "pm.test(\"Posiciones consecutivas\", () => pm.expect(ranking.map(j => j.posicion)).to.eql([1, 2, 3, 4]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - filtrado por torneo respeta la cantidad → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{torneoCupoId}}&cantidad=2",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{torneoCupoId}}"
+                    },
+                    {
+                      "key": "cantidad",
+                      "value": "2"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Solo los dos primeros\", () => pm.expect(pm.response.json()).to.have.lengthOf(2));"
+                    ]
+                  }
+                }
+              ]
             }
           ]
         },
         {
           "name": "Ranking - Errores",
           "item": [
+            {
+              "name": "Ranking - torneo inexistente → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId=999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "999999"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"errorCode TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - torneo cancelado responde como inexistente → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{torneoMinId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{torneoMinId}}"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"errorCode TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - torneo no numérico → 400",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId=abc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "ranking"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "abc"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"errorCode VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
             {
               "name": "Ranking - cantidad no numérica → 400",
               "request": {
