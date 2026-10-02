@@ -1,3 +1,4 @@
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Rondas;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ namespace FarmeORT.WebAPI.Controllers;
 public sealed class RondasController(IServicioRondas servicioRondas) : ControllerBase
 {
     [HttpPost]
+    [Autorizacion(Roles.Organizador, Roles.Administrador)]
     public IActionResult Generar(int torneoId)
     {
         var sesion = HttpContext.ObtenerSesionAutenticada();
