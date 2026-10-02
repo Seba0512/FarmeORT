@@ -114,6 +114,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas."),
         [typeof(RondaNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "ROUND_NOT_FOUND", "El torneo no tiene una ronda con ese número."),
+        [typeof(RondaSinResolverException)] =
+            new(StatusCodes.Status409Conflict, "ROUND_NOT_RESOLVED", "La ronda anterior todavía tiene batallas sin resolver."),
     };
 
     public void OnException(ExceptionContext context)
