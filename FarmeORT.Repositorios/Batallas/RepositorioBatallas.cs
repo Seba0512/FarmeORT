@@ -1,5 +1,6 @@
 using System.Linq.Expressions;
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using Microsoft.EntityFrameworkCore;
@@ -134,6 +135,13 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             .OrderBy(b => b.NumeroRonda)
             .ThenBy(b => b.Id)
             .ToList();
+    }
+
+    public void GuardarRonda(Torneo torneo, IReadOnlyList<Batalla> batallas)
+    {
+        _ = torneo;
+        _ = batallas;
+        throw new NotImplementedException();
     }
 
     private static Dictionary<int, int> ContarPorJugador(IQueryable<Batalla> batallas, Expression<Func<Batalla, int>> jugador)

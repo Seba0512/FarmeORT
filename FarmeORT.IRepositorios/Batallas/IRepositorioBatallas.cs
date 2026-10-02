@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Torneos;
 
 namespace FarmeORT.IRepositorios.Batallas;
 
@@ -26,4 +27,7 @@ public interface IRepositorioBatallas
 
     // Persona C: las batallas del torneo con sus jugadores, ordenadas por ronda y por id, para armar las rondas.
     IReadOnlyList<Batalla> ListarDelTorneo(int torneoId);
+
+    // Persona C: guarda las batallas nuevas de la ronda y el estado del torneo en un solo SaveChanges (D-62).
+    void GuardarRonda(Torneo torneo, IReadOnlyList<Batalla> batallas);
 }
