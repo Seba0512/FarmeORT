@@ -1,6 +1,6 @@
 @startuml
 hide circle
-title Ranking: clases que participan (D-61, D-45)
+title Ranking: clases que participan (D-61, D-45, D-46)
 
 package FarmeORT.WebAPI {
   class RankingController {
@@ -31,6 +31,13 @@ package FarmeORT.IRepositorios {
   interface IRepositorioTorneos {
     + ObtenerPorId(id : int) : Torneo
   }
+  interface IRepositorioBatallas {
+    + ContarResultadosPorJugador(jugadorIds : IReadOnlyCollection<int>, torneoId : int?) : IReadOnlyDictionary<int, ResultadosDeBatallas>
+  }
+  class ResultadosDeBatallas <<record>> {
+    + Ganadas : int
+    + Perdidas : int
+  }
 }
 
 package FarmeORT.DTOs {
@@ -51,5 +58,7 @@ RankingController ..> IServicioRanking : <<use>>
 IServicioRanking <|.. ServicioRanking
 ServicioRanking ..> IRepositorioUsuarios : <<use>>
 ServicioRanking ..> IRepositorioTorneos : <<use>>
+ServicioRanking ..> IRepositorioBatallas : <<use>>
+IRepositorioBatallas ..> ResultadosDeBatallas : <<create>>
 ServicioRanking ..> JugadorRankingResponse : <<create>>
 @enduml

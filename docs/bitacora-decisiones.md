@@ -1600,7 +1600,7 @@ determinismo, TDD Outside-In, tests de repositorio con SQLite y DRY.
 - Postman, carpeta "Ranking": los cuatro aceptados del torneo de cupo 4, la cantidad, un torneo inexistente,
   un torneo cancelado y `torneoId=abc`.
 
-**Pendiente:** `batallasGanadas` y `batallasPerdidas` (ver arriba).
+**Pendiente:** ~~`batallasGanadas` y `batallasPerdidas` (ver arriba).~~ Resuelto en D-46.
 
 **Participación de IA:**
 - Claude Code (agente de la Persona A) propuso las opciones de quién entra y el conteo por torneo; el
@@ -1608,6 +1608,65 @@ determinismo, TDD Outside-In, tests de repositorio con SQLite y DRY.
   propuso Claude Code siguiendo D-36 y la especificación; el integrante los aprobó antes del PR.
 - Para que el test del desempate no pasara por casualidad, Claude Code quitó `ThenBy` a propósito, vio
   fallar los dos tests de desempate y restauró el código antes de commitear.
+
+---
+
+### D-46 — Batallas ganadas y perdidas del ranking en una sola consulta
+
+**Problema:** `batallasGanadas` y `batallasPerdidas` valían 0 desde D-61 porque la batalla no guardaba el
+ganador. Con los fallos de la Persona B en develop, `Batalla` tiene `GanadorId` y el estado `Finalizada`.
+D-45 dejó acordado que, con `torneoId`, se cuentan solo las batallas de ese torneo.
+
+**Alternativas consideradas:**
+- Contar por jugador con una consulta para cada uno (N+1, hasta 100 consultas por ranking) o con una sola
+  consulta agrupada para todos los jugadores de la página.
+- Dónde contar: en el servicio, trayendo las batallas Finalizadas, o en la base.
+- Cómo calcular las perdidas: agrupar por el perdedor calculado con un `CASE` (el jugador que no es el
+  ganador), o contar por separado las perdidas como jugador 1 y como jugador 2.
+
+**Decisión adoptada:**
+- `IRepositorioBatallas.ContarResultadosPorJugador(jugadorIds, torneoId?)`, al final de la interfaz de B,
+  devuelve un diccionario jugador → `ResultadosDeBatallas(Ganadas, Perdidas)`. Un jugador sin batallas
+  Finalizadas no figura y el servicio le muestra 0.
+- Solo cuentan las batallas `Finalizada` con ganador. Las Pendientes, EnArbitraje y Canceladas no son ni
+  ganadas ni perdidas.
+- Ganadas: se agrupa por `GanadorId`. Perdidas: se suman dos conteos, como jugador 1 y como jugador 2 cuando
+  el ganador es el otro. En total son tres consultas agrupadas por ranking, sin importar cuántos jugadores
+  muestre.
+- Con `torneoId` se filtran las batallas de ese torneo; sin filtro cuentan todas.
+- Si la lista de jugadores está vacía, el servicio no consulta las batallas.
+
+**Justificación:**
+- Una consulta agrupada evita N+1 y no trae batallas a memoria.
+- Contar las perdidas por cada lado es más simple de leer que un `CASE`. Además, la versión con `CASE`
+  devolvió un conteo incorrecto en el test con SQLite (3 perdidas en lugar de 2), aunque el SQL de la
+  proyección sola era correcto. Con dos agrupaciones el resultado coincide y no depende de esa
+  traducción.
+
+**Conceptos del curso:** consultas sin N+1, el repositorio consulta y no decide reglas (qué es una batalla
+resuelta lo define el estado de `Batalla`), TDD Outside-In y tests de repositorio con SQLite.
+
+**Evidencia:**
+- `ServicioRankingTests`: el test que afirmaba 0 (pendiente de D-61) ahora espera las ganadas y perdidas
+  que devuelve el repositorio, y 0 para un jugador sin batallas. El test con `torneoId` exige que se pida
+  el conteo de ese torneo (mock estricto con el valor exacto).
+- `RepositorioBatallasTests`: ganadas y perdidas solo de las Finalizadas y solo de los jugadores pedidos, y
+  con torneo solo las de ese torneo. Las batallas se fallan con `Batalla.Fallar` de B.
+- Postman: el test "Ganadas y perdidas en 0" pasó a comprobar que son enteros no negativos.
+
+**Pendiente:** en el Runner no hay batallas falladas hasta que C conecte Rondas con las carpetas de B
+(documentado por B en `docs/api/batallas-lanzamientos.md`). Cuando eso pase, agregar en Ranking un request
+con `torneoId={{bTorneoId}}` que verifique la ganada de `bJugador1Id` y la perdida de `bJugador2Id`.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) propuso la consulta agrupada y el tipo de resultado.
+- Problemas que aparecieron:
+  - La primera versión con `CASE` contó de más. Claude Code miró el SQL generado y cambió a dos
+    agrupaciones simples.
+  - Un REFACTOR que filtraba después de agrupar no se podía traducir a SQL y se descartó.
+  - El primer commit RED del filtro por torneo fallaba por un error de armado (dos organizadores con el
+    mismo id), no por el comportamiento. Como no se había publicado, se corrigió el arrange y se rehízo ese
+    commit (amend) para que la evidencia mostrara el fallo de la aserción.
 
 ---
 
@@ -1848,9 +1907,9 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
   colección completa contra SQL Server sin fallos.
 
 **Pendientes:**
-- Calcular `batallasGanadas` y `batallasPerdidas` cuando se puedan fallar batallas. En ese momento hay
+- ~~Calcular `batallasGanadas` y `batallasPerdidas` cuando se puedan fallar batallas. En ese momento hay
   que actualizar `ServicioRankingTests.Obtener_CantidadValida_DevuelveLosJugadoresConSuPosicion`, que hoy
-  afirma que valen 0, y el test de Postman que comprueba lo mismo.
+  afirma que valen 0, y el test de Postman que comprueba lo mismo.~~ Resuelto en D-46.
 - ~~El filtro `torneoId`, con su 404: definir qué jugadores del torneo entran.~~ Resuelto en D-45.
 - Agregar `ServicioRanking` al diagrama de clases. La especificación de esta parte está en
   `docs/api/ranking.md`.
