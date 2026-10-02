@@ -12,6 +12,8 @@ namespace FarmeORT.Servicios.Tests.Ranking;
 [TestClass]
 public sealed class ServicioRankingTests
 {
+    private const int TorneoId = 4;
+
     private static readonly DateOnly FechaActual = new(2026, 10, 1);
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
@@ -79,6 +81,32 @@ public sealed class ServicioRankingTests
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = 99 }));
 
         _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Obtener_TorneoCancelado_LanzaTorneoNoEncontradoSinConsultarElRanking()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId }));
+
+        _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
+    }
+
+    private static Torneo CrearTorneo()
+    {
+        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
+        {
+            Id = 2,
+        };
+        return new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(30), 8, organizador, FechaActual)
+        {
+            Id = TorneoId,
+        };
     }
 
     private static Usuario CrearJugador(int id, string nickname)
