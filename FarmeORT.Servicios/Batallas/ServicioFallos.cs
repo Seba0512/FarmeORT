@@ -14,6 +14,12 @@ internal sealed class ServicioFallos(
 {
     public BatallaDetalleResponse Fallar(int batallaId, int organizadorId, FalloRequest request)
     {
+        var ganadorId = DatosObligatorios.Obtener(request.GanadorId, "El ganador es obligatorio.");
+        if(ganadorId < 1)
+        {
+            throw new DatosInvalidosException("El id del ganador debe ser positivo.");
+        }
+
         var batalla = repositorioBatallas.ObtenerPorId(batallaId);
         if(batalla == null)
         {
