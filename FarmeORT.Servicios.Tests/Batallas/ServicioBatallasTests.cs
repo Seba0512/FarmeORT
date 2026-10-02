@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Batallas;
@@ -38,6 +39,52 @@ public sealed class ServicioBatallasTests
         var sorteo = new Mock<ISorteo>(MockBehavior.Strict);
         sorteo.Setup(s => s.ElegirEntre(jugador1, jugador2)).Returns(jugador1);
         _batalla = new Batalla(torneo, 1, jugador1, jugador2, sorteo.Object) { Id = 12 };
+    }
+
+    [TestMethod]
+    [DataRow(Roles.Jugador)]
+    [DataRow(Roles.Organizador)]
+    [DataRow(Roles.Administrador)]
+    public void Consultar_UsuarioAutorizado_DevuelveFalloEHistorialDelTorneo(string rol)
+    {
+        var usuarioId = rol == Roles.Organizador ? 2 : 9;
+        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
+        if(rol == Roles.Jugador)
+        {
+            _inscripciones.Setup(r => r.ExisteDelJugador(5, usuarioId)).Returns(true);
+        }
+
+        var skill = new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2) { Id = 3 };
+        _batalla.Jugador1.DeclararSkill(skill, 4, FechaActual);
+        _batalla.Jugador2.DeclararSkill(skill, 4, FechaActual);
+        var fecha = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
+        _batalla.Lanzar(_batalla.Jugador1, skill, fecha);
+        _batalla.Lanzar(_batalla.Jugador2, skill, fecha.AddMinutes(1));
+        _batalla.Fallar(8, "Victoria por abandono.", -16, 16);
+
+        var detalle = _servicio.ObtenerPorId(12, usuarioId, rol);
+        var historial = _servicio.ListarLanzamientos(12, usuarioId, rol);
+
+        Assert.AreEqual(12, detalle.Id);
+        Assert.AreEqual(5, detalle.TorneoId);
+        Assert.AreEqual(1, detalle.Ronda);
+        Assert.AreEqual(7, detalle.Jugador1.Id);
+        Assert.AreEqual(8, detalle.Jugador2.Id);
+        Assert.AreEqual("Finalizada", detalle.Estado);
+        Assert.AreEqual(8, detalle.GanadorId);
+        Assert.AreEqual("Victoria por abandono.", detalle.Comentario);
+        Assert.AreEqual(-16, detalle.CambioEloJugador1);
+        Assert.AreEqual(16, detalle.CambioEloJugador2);
+        Assert.IsNull(detalle.JugadorTurnoId);
+        CollectionAssert.AreEqual(new[] { 1, 2 }, historial.Select(l => l.Turno).ToArray());
+        CollectionAssert.AreEqual(new[] { 1, 2 }, detalle.Lanzamientos.Select(l => l.Turno).ToArray());
+        Assert.AreEqual(7, historial[0].JugadorId);
+        Assert.AreEqual("usuario7", historial[0].Nickname);
+        Assert.AreEqual(3, historial[0].SkillId);
+        Assert.AreEqual("Six-Seven", historial[0].Skill);
+        Assert.AreEqual(fecha, historial[0].Fecha);
+        Assert.AreEqual(fecha.AddMinutes(1), historial[1].Fecha);
+        _batallas.Verify(r => r.Guardar(), Times.Never);
     }
 
     [TestMethod]
