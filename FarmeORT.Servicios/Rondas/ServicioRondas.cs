@@ -52,7 +52,9 @@ internal sealed class ServicioRondas(
     // Una ronda son las batallas del torneo con el mismo número; el repositorio ya las trae ordenadas (D-62).
     public IReadOnlyList<RondaResponse> Listar(int torneoId, bool esAnonimo)
     {
-        if(repositorioTorneos.ObtenerPorId(torneoId) == null)
+        // Para el anónimo un torneo Cancelado no existe (D-36).
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null || (esAnonimo && !torneo.EsVisibleParaAnonimos))
         {
             throw new TorneoNoEncontradoException();
         }
