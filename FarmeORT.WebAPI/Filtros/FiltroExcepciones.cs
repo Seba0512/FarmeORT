@@ -53,6 +53,26 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         [typeof(SkillObligatoriaNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "MANDATORY_SKILL_NOT_FOUND", "La skill no es obligatoria en este torneo."),
 
+        // Inscripciones (D-41).
+        [typeof(SkillsObligatoriasFaltantesException)] =
+            new(StatusCodes.Status409Conflict, "MISSING_MANDATORY_SKILLS", "No tenés declaradas todas las skills obligatorias del torneo."),
+        [typeof(JugadoresSinSkillObligatoriaException)] =
+            new(StatusCodes.Status409Conflict, "PLAYERS_MISSING_MANDATORY_SKILL", "Hay jugadores inscriptos que no tienen declarada la skill."),
+        [typeof(InscripcionNoEncontradaException)] =
+            new(StatusCodes.Status404NotFound, "REGISTRATION_NOT_FOUND", "No existe una inscripción con ese id."),
+        [typeof(NoEsDuenoDeLaInscripcionException)] =
+            new(StatusCodes.Status403Forbidden, "NOT_REGISTRATION_OWNER", "La inscripción no es tuya."),
+        [typeof(TorneoNoAbiertoException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_OPEN", "El torneo no está abierto a inscripciones."),
+        [typeof(InscripcionYaExisteException)] =
+            new(StatusCodes.Status409Conflict, "ALREADY_REGISTERED", "Ya tenés una inscripción aceptada en este torneo."),
+        [typeof(TorneoCompletoException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_FULL", "El torneo ya alcanzó su cupo de inscripciones aceptadas."),
+        [typeof(InscripcionNoActivaException)] =
+            new(StatusCodes.Status409Conflict, "REGISTRATION_NOT_ACTIVE", "La inscripción ya no está aceptada."),
+        [typeof(SkillObligatoriaEnUsoException)] =
+            new(StatusCodes.Status409Conflict, "MANDATORY_SKILL_IN_USE", "No podés quitar la skill: es obligatoria en un torneo en el que estás inscripto."),
+
         // Persona B: batallas y lanzamientos.
         [typeof(BatallaNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "BATTLE_NOT_FOUND", "No existe una batalla con ese id."),
@@ -81,6 +101,7 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         {
             UserMessage = errorMapeado.UserMessage ?? context.Exception.Message,
             ErrorCode = errorMapeado.ErrorCode,
+            Detalles = (context.Exception as ExcepcionConDetalles)?.Detalles,
         };
         context.Result = new ObjectResult(error) { StatusCode = errorMapeado.Status };
     }

@@ -1228,7 +1228,7 @@ finalización (Personas B y C).
   `Torneo.EsVisibleParaAnonimos`, que también usa `ServicioTorneos`.
 - `GET /torneos?skillObligatoriaId=` ya filtra: devuelve los torneos que exigen esa skill.
 - La regla de la letra que rechaza asociar una skill si hay inscripciones Aceptadas de jugadores que no la
-  tienen declarada queda para `feature/inscripciones`: necesita la entidad `Inscripcion`.
+  tienen declarada queda para `feature/inscripciones`: necesita la entidad `Inscripcion` (resuelta en D-41).
 
 **Justificación:**
 - 403 es falta de permiso sobre ese recurso: el usuario está autenticado y tiene el rol correcto, pero el
@@ -1258,6 +1258,98 @@ relaciones muchos a muchos en EF Core.
     van al final de los públicos y no al final de la clase, sin reordenar código existente.
   - `CrearResponse` de skills queda repetido entre `ServicioSkills` y `ServicioSkillsObligatorias`. No se
     extrajo para no modificar el catálogo de skills fuera del alcance de esta rama.
+
+---
+
+### D-41 — Inscripciones a torneos, detalles en los errores y reglas que dependen de ellas
+
+**Problema:** el Jugador se inscribe a un torneo y puede cancelar su inscripción (letra 1.5 y 1.6). La
+inscripción es la entidad que esperaban tres reglas ya pendientes:
+- la cantidad de inscripciones Aceptadas del torneo (D-36 la devolvía en 0);
+- el rechazo de una skill obligatoria nueva si hay inscriptos que no la tienen, identificándolos (D-40);
+- el rechazo de quitar del repertorio una skill que es obligatoria de un torneo en curso del jugador (D-38).
+
+La identificación de los jugadores y de las skills que faltan no entraba en el cuerpo de error: el filtro
+global solo completaba `detalles` con las validaciones del modelo. `Inscripcion` es además contrato
+compartido: la Persona B la elimina al fallar una batalla y la Persona A la cancela al cancelar el torneo.
+
+**Alternativas consideradas:**
+- Las skills o jugadores que faltan: dentro del mensaje, en `detalles` o en un campo nuevo del error.
+- Inscripción ajena (jugador u organizador de otro torneo): 403 o 404.
+- Dónde vive "la skill es obligatoria en una inscripción vigente": en el repositorio (una consulta con la
+  regla) o en `Inscripcion`, con el repositorio solo trayendo las inscripciones Aceptadas del jugador.
+- Cantidad de Aceptadas en `GET /torneos`: contar por torneo (N+1 consultas) o una sola consulta agrupada.
+- Migración: solo las inscripciones, o también las batallas de B, que llegaron a develop sin migración.
+
+**Decisión adoptada:**
+- Contrato, en `InscripcionesController` (`/api/v1/inscripciones`):
+  - `POST` con `{ torneoId }`, solo Jugador → 201 con `Location: /api/v1/inscripciones/{id}`;
+  - `GET` con filtros `torneoId`, `estado`, `fechaDesde`, `fechaHasta`, `limit` y `offset` (D-35). El
+    jugador ve las suyas, el organizador las de sus torneos y el administrador todas;
+  - `GET /{id}` → 200, 403 si no es suya o no es su torneo, 404 si no existe;
+  - `POST /{id}/cancelaciones`, solo Jugador → 200 con la inscripción Cancelada.
+- Reglas de la inscripción, en este orden:
+  - torneo inexistente → 404 `TOURNAMENT_NOT_FOUND` (se reusa);
+  - ya tiene una Aceptada en el torneo → 409 `ALREADY_REGISTERED`;
+  - Aceptadas == Cupo → 409 `TOURNAMENT_FULL`;
+  - en el constructor de `Inscripcion`: torneo que no está Abierto → 409 `TOURNAMENT_NOT_OPEN`, y skills
+    obligatorias sin declarar → 409 `MISSING_MANDATORY_SKILLS`.
+- Cancelar: inexistente → 404 `REGISTRATION_NOT_FOUND`; ajena → 403 `NOT_REGISTRATION_OWNER`; torneo que no
+  está Abierto → 409 `TOURNAMENT_NOT_OPEN`; inscripción que ya no está Aceptada → 409
+  `REGISTRATION_NOT_ACTIVE`. `Inscripcion.Cancelar()` no mira el torneo, porque la cancelación del torneo
+  (fase 2) cancela inscripciones de torneos EnCurso. `Inscripcion.Eliminar()` es la que usa B.
+- **`detalles` lleva la lista.** `ExcepcionConDetalles` es la base de las excepciones que identifican
+  elementos: `MISSING_MANDATORY_SKILLS` lista los códigos de las skills que faltan y
+  `PLAYERS_MISSING_MANDATORY_SKILL` (409) los nicknames de los inscriptos. El cambio compartido es una línea
+  en `FiltroExcepciones.OnException`.
+- **Inscripción ajena → 403**, igual que el organizador no asignado (D-40). El organizador de otro torneo
+  recibe `NOT_TOURNAMENT_ORGANIZER`.
+- **La regla del repertorio vive en `Inscripcion.ExigeSkill(skillId)`**: Aceptada, torneo no Finalizado ni
+  Cancelado y la skill es obligatoria. El repositorio solo trae las Aceptadas del jugador con sus torneos.
+  Quitar una skill que se exige → 409 `MANDATORY_SKILL_IN_USE`.
+- `ContarAceptadasPorTorneo` cuenta en una sola consulta agrupada las Aceptadas de la página de torneos.
+- Tabla `Inscripciones` con índice (`TorneoId`, `JugadorId`), estado como texto y FKs `Restrict`: una
+  inscripción es historia del torneo y del jugador, no se borra en cascada.
+- La migración `AgregaInscripcionesYBatallas` crea también `Batallas` y `Lanzamientos`: el PR de B entró
+  sin migración y el snapshot de develop no tenía sus tablas. Una migración solo de inscripciones las
+  hubiera incluido igual, porque EF compara contra el modelo completo.
+
+**Justificación:**
+- `detalles` ya es parte del cuerpo de error del contrato; un campo nuevo cambiaría el formato para todos.
+  Separar los nicknames del mensaje deja al cliente usarlos sin parsear texto.
+- 403 sobre 404: el recurso existe y el usuario está autenticado; no hay datos que ocultar, porque el
+  organizador ve las inscripciones de su torneo y el jugador las suyas.
+- `ExigeSkill` usa solo datos de la inscripción y su torneo (Information Expert). Con la regla en el
+  repositorio, el repositorio decidiría (AGENTS §6).
+- La validación del torneo y de las skills está en el constructor: no puede existir una inscripción que
+  rompa esas reglas, la cree quien la cree.
+
+**Conceptos del curso:** Information Expert, Creator, SRP, contrato REST (403/404/409), formato de error
+uniforme, consultas sin N+1, Code First y migraciones.
+
+**Evidencia:**
+- `Inscripcion`, `EstadoInscripcion`, `Usuario.SkillsFaltantes` y sus tests de dominio.
+- `ServicioInscripciones`, `ServicioSkillsObligatorias`, `ServicioRepertorio` y `ServicioTorneos` con un
+  ciclo RED/GREEN por regla.
+- `InscripcionesController`, `FiltroExcepciones` y los tests de controller y filtro.
+- `RepositorioInscripciones` con SQLite en memoria, `FarmeORTContext.ConfigurarInscripciones` y la migración
+  `AgregaInscripcionesYBatallas`.
+- La carpeta "Inscripciones" de Postman, que incluye el cupo completo con un torneo de cupo 4.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) desarrolló los ciclos y planteó las alternativas con una
+  recomendación; el integrante aprobó los códigos, el 403 y la excepción con detalles, y pidió incluir
+  todas las tablas en la migración y avisar al equipo.
+- Problemas que aparecieron:
+  - Un test de repositorio armaba una inscripción después de agregar una obligatoria que el jugador no
+    tenía: el constructor la rechazó. Se reordenó el arrange para respetar la regla del dominio.
+  - Registrar `ServicioTorneos` con la dependencia nueva hizo fallar la validación del contenedor hasta
+    registrar el repositorio de inscripciones.
+  - `dotnet ef migrations remove` falló sin SQL Server y dejó una migración vacía duplicada. Se borraron los
+    archivos sin versionar, se restauró el snapshot y se regeneró.
+  - El merge de develop chocó con el código de B en el contexto, el registro de DI y el filtro de
+    excepciones. Se conservaron ambos bloques, cada uno en su método o sección.
+
 ---
 
 ### D-50 — Coordinación del alcance de Persona B
@@ -1407,20 +1499,21 @@ dependencias, TDD con "fake it" y triangulación con `DataRow`.
 - Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
   enrutamiento antes de los filtros. Igual con los errores de conversión de la query
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
-- Repertorio (D-38): quitar una skill tiene que rechazarse (409) si es obligatoria de un torneo donde el
-  jugador tiene una inscripción Aceptada y el torneo no está Finalizado ni Cancelado. Se agrega con las
-  skills obligatorias y las inscripciones. Diagrama de clases con `SkillDeclarada` y la colección
+- ~~Repertorio (D-38): quitar una skill tiene que rechazarse (409) si es obligatoria de un torneo donde el
+  jugador tiene una inscripción Aceptada y el torneo no está Finalizado ni Cancelado.~~ Resuelto en D-41.
+  Pendiente: diagrama de clases con `SkillDeclarada` y la colección
   `Repertorio` de `Usuario`.
 - Torneos (D-36, D-37), lo que espera a otras funcionalidades:
   - Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
     misma operación (atómica). Hoy solo cambia el estado.
   - ~~Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar`.~~ Resuelto en D-40.
-  - Calcular `InscripcionesAceptadas` (hoy vale 0).
+  - ~~Calcular `InscripcionesAceptadas` (hoy vale 0).~~ Resuelto en D-41.
   - Sumar al detalle las skills obligatorias, los jugadores aceptados y el cuadro (rondas y batallas).
-  - Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
-    que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).
+  - ~~Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
+    que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).~~ Resuelto en D-41.
   - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya
-    está en `Torneo.Cancelar`, pero esa rama todavía no se puede cubrir.
+    está en `Torneo.Cancelar`, pero esa rama todavía no se puede cubrir. Lo mismo con
+    `Inscripcion.ExigeSkill` para un torneo Finalizado (D-41).
   - ~~Postman: carpeta Torneos con los casos de alta, modificación, cancelación y consulta (anónimo y
     autenticado).~~ Resuelto en el PR de torneos. Diagrama de clases con `Torneo`, `EstadoTorneo`, `IRepositorioTorneos`,
     `FiltroTorneos` y las excepciones nuevas.

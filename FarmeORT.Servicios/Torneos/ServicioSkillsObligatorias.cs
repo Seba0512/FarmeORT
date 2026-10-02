@@ -3,6 +3,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IServicios.Torneos;
@@ -11,7 +12,8 @@ namespace FarmeORT.Servicios.Torneos;
 
 internal sealed class ServicioSkillsObligatorias(
     IRepositorioTorneos repositorioTorneos,
-    IRepositorioSkills repositorioSkills) : IServicioSkillsObligatorias
+    IRepositorioSkills repositorioSkills,
+    IRepositorioInscripciones repositorioInscripciones) : IServicioSkillsObligatorias
 {
     public IReadOnlyList<SkillResponse> Listar(int torneoId, bool esAnonimo)
     {
@@ -37,6 +39,7 @@ internal sealed class ServicioSkillsObligatorias(
             throw new SkillNoEncontradaException();
         }
 
+        ValidarQueLaTenganLosInscriptos(torneoId, skill);
         torneo.AsociarSkillObligatoria(skill);
         repositorioTorneos.Actualizar(torneo);
         return CrearResponse(skill);
@@ -47,6 +50,19 @@ internal sealed class ServicioSkillsObligatorias(
         var torneo = ObtenerTorneoDelOrganizador(torneoId, organizadorId);
         torneo.QuitarSkillObligatoria(skillId);
         repositorioTorneos.Actualizar(torneo);
+    }
+
+    // Letra 2.4: todos los inscriptos Aceptados tienen que poder cumplir la nueva obligatoria.
+    private void ValidarQueLaTenganLosInscriptos(int torneoId, Skill skill)
+    {
+        var sinLaSkill = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId)
+            .Where(i => i.Jugador.SkillsFaltantes([skill]).Count > 0)
+            .Select(i => i.Jugador.Nickname)
+            .ToList();
+        if(sinLaSkill.Count > 0)
+        {
+            throw new JugadoresSinSkillObligatoriaException(sinLaSkill);
+        }
     }
 
     private Torneo ObtenerTorneoExistente(int torneoId)

@@ -1,7 +1,9 @@
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Sesiones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
+using FarmeORT.Repositorios.Inscripciones;
 using FarmeORT.Repositorios.Sesiones;
 using FarmeORT.Repositorios.Skills;
 using FarmeORT.Repositorios.Torneos;
@@ -20,6 +22,7 @@ public sealed class RegistroRepositoriosTests
     [DataRow(typeof(IRepositorioSesiones), typeof(RepositorioSesiones))]
     [DataRow(typeof(IRepositorioSkills), typeof(RepositorioSkills))]
     [DataRow(typeof(IRepositorioTorneos), typeof(RepositorioTorneos))]
+    [DataRow(typeof(IRepositorioInscripciones), typeof(RepositorioInscripciones))]
     [DataRow(typeof(FarmeORTContext), typeof(FarmeORTContext))]
     public void AgregarRepositorios_TipoDeAccesoADatos_RegistraImplementacionScoped(Type tipo, Type implementacion)
     {

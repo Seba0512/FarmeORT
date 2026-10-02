@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Servicios.Torneos;
@@ -25,6 +26,7 @@ public sealed class ServicioTorneosTests
 
     private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
+    private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
     private Mock<TimeProvider> _reloj = null!;
     private Usuario _organizador = null!;
     private ServicioTorneos _servicio = null!;
@@ -34,9 +36,14 @@ public sealed class ServicioTorneosTests
     {
         _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
+        _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
         _organizador = CrearUsuario(OrganizadorId, Rol.Organizador);
-        _servicio = new ServicioTorneos(_repositorioTorneos.Object, _repositorioUsuarios.Object, _reloj.Object);
+
+        // Por defecto el torneo no tiene inscriptos; los tests que lo necesitan redefinen la cantidad.
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(0);
+        _repositorioInscripciones.Setup(r => r.ContarAceptadasPorTorneo(new[] { TorneoId })).Returns(new Dictionary<int, int>());
+        _servicio = new ServicioTorneos(_repositorioTorneos.Object, _repositorioUsuarios.Object, _repositorioInscripciones.Object, _reloj.Object);
     }
 
     [TestMethod]
@@ -355,6 +362,58 @@ public sealed class ServicioTorneosTests
 
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Cancelar(99));
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(3);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: false);
+
+        Assert.AreEqual(3, response.InscripcionesAceptadas);
+    }
+
+    [TestMethod]
+    public void Listar_TorneosConInscripciones_DevuelveLaCantidadDeAceptadasDeCadaUno()
+    {
+        var filtro = new FiltroTorneos(null, null, null, null, null, false, 20, 0);
+        _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([CrearTorneo()]);
+        _repositorioInscripciones.Setup(r => r.ContarAceptadasPorTorneo(new[] { TorneoId }))
+            .Returns(new Dictionary<int, int> { [TorneoId] = 2 });
+
+        var torneos = _servicio.Listar(new FiltroTorneosRequest(), esAnonimo: false);
+
+        Assert.AreEqual(2, torneos.Single().InscripcionesAceptadas);
+    }
+
+    [TestMethod]
+    public void Modificar_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    {
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(OrganizadorId)).Returns(_organizador);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(5);
+        ConfigurarFechaActual();
+
+        var response = _servicio.Modificar(TorneoId, CrearRequest());
+
+        Assert.AreEqual(5, response.InscripcionesAceptadas);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
+    {
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(2);
+
+        var response = _servicio.Cancelar(TorneoId);
+
+        Assert.AreEqual(2, response.InscripcionesAceptadas);
     }
 
     private void ConfigurarAltaValida()

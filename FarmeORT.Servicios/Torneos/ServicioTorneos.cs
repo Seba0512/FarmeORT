@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Torneos;
@@ -11,6 +12,7 @@ namespace FarmeORT.Servicios.Torneos;
 internal sealed class ServicioTorneos(
     IRepositorioTorneos repositorioTorneos,
     IRepositorioUsuarios repositorioUsuarios,
+    IRepositorioInscripciones repositorioInscripciones,
     TimeProvider reloj) : IServicioTorneos
 {
     public TorneoResponse Crear(TorneoRequest request)
@@ -28,7 +30,9 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Agregar(torneo);
-        return CrearResponse<TorneoResponse>(torneo);
+
+        // Un torneo recién creado todavía no tiene inscripciones.
+        return CrearResponse<TorneoResponse>(torneo, 0);
     }
 
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
@@ -41,7 +45,7 @@ internal sealed class ServicioTorneos(
             throw new TorneoNoEncontradoException();
         }
 
-        return CrearResponse<TorneoDetalleResponse>(torneo);
+        return CrearResponse<TorneoDetalleResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
@@ -49,7 +53,7 @@ internal sealed class ServicioTorneos(
         EstadoTorneo? estado = null;
         if(filtro.Estado != null)
         {
-            estado = BuscarEstado(filtro.Estado);
+            estado = ValoresPorNombre.Buscar<EstadoTorneo>(filtro.Estado);
         }
 
         var filtroRepositorio = new FiltroTorneos(
@@ -62,7 +66,13 @@ internal sealed class ServicioTorneos(
             Paginacion.AjustarLimite(filtro.Limit),
             Paginacion.AjustarDesplazamiento(filtro.Offset));
         var torneos = repositorioTorneos.Listar(filtroRepositorio);
-        return torneos.Select(CrearResponse<TorneoResponse>).ToList();
+        if(torneos.Count == 0)
+        {
+            return [];
+        }
+
+        var aceptadas = repositorioInscripciones.ContarAceptadasPorTorneo(torneos.Select(t => t.Id).ToList());
+        return torneos.Select(t => CrearResponse<TorneoResponse>(t, aceptadas.GetValueOrDefault(t.Id))).ToList();
     }
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
@@ -87,7 +97,7 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo);
+        return CrearResponse<TorneoResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }
 
     public TorneoResponse Cancelar(int id)
@@ -95,7 +105,7 @@ internal sealed class ServicioTorneos(
         var torneo = ObtenerTorneoExistente(id);
         torneo.Cancelar();
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo);
+        return CrearResponse<TorneoResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }
 
     private Torneo ObtenerTorneoExistente(int id)
@@ -128,20 +138,6 @@ internal sealed class ServicioTorneos(
         }
     }
 
-    // Se compara por nombre para que un número como "1" no se tome como estado; un estado que no existe no filtra (D-35).
-    private static EstadoTorneo? BuscarEstado(string estado)
-    {
-        foreach(var valor in Enum.GetValues<EstadoTorneo>())
-        {
-            if(valor.ToString() == estado)
-            {
-                return valor;
-            }
-        }
-
-        return null;
-    }
-
     private static DatosDelTorneo ObtenerDatosDelTorneo(TorneoRequest request)
     {
         return new DatosDelTorneo(
@@ -157,7 +153,7 @@ internal sealed class ServicioTorneos(
     }
 
     // El detalle repite los datos del resumen: el mismo mapeo sirve para los dos tipos de respuesta.
-    private static T CrearResponse<T>(Torneo torneo)
+    private static T CrearResponse<T>(Torneo torneo, int inscripcionesAceptadas)
         where T : TorneoResponse, new()
     {
         return new T
@@ -170,6 +166,7 @@ internal sealed class ServicioTorneos(
             FechaInicio = torneo.FechaInicio,
             FechaFin = torneo.FechaFin,
             Cupo = torneo.Cupo,
+            InscripcionesAceptadas = inscripcionesAceptadas,
             OrganizadorId = torneo.OrganizadorId,
             Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
         };
