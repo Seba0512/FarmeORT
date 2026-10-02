@@ -137,11 +137,12 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             .ToList();
     }
 
+    // Un solo SaveChanges: las batallas de la ronda y el torneo En curso se guardan juntos o no se guarda nada (D-62).
     public void GuardarRonda(Torneo torneo, IReadOnlyList<Batalla> batallas)
     {
-        _ = torneo;
-        _ = batallas;
-        throw new NotImplementedException();
+        contexto.Batallas.AddRange(batallas);
+        contexto.Torneos.Update(torneo);
+        contexto.SaveChanges();
     }
 
     private static Dictionary<int, int> ContarPorJugador(IQueryable<Batalla> batallas, Expression<Func<Batalla, int>> jugador)
