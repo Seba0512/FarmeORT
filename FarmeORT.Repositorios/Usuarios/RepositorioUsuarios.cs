@@ -107,24 +107,30 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Usuario> ListarRanking(int cantidad)
     {
-        return contexto.Usuarios
-            .Where(u => u.Rol == Rol.Jugador && !u.Eliminado)
+        return OrdenarParaRanking(JugadoresActivos(), cantidad);
+    }
+
+    public IReadOnlyList<Usuario> ListarRankingDelTorneo(int torneoId, int cantidad)
+    {
+        var participantes = JugadoresActivos()
+            .Where(u => contexto.Inscripciones.Any(i => i.JugadorId == u.Id && i.TorneoId == torneoId
+                && (i.Estado == EstadoInscripcion.Aceptada || i.Estado == EstadoInscripcion.Eliminada)));
+        return OrdenarParaRanking(participantes, cantidad);
+    }
+
+    // Los dos rankings ordenan igual: ELO de mayor a menor y, si empatan, id de menor a mayor (D-61).
+    private static IReadOnlyList<Usuario> OrdenarParaRanking(IQueryable<Usuario> jugadores, int cantidad)
+    {
+        return jugadores
             .OrderByDescending(u => u.Elo)
             .ThenBy(u => u.Id)
             .Take(cantidad)
             .ToList();
     }
 
-    public IReadOnlyList<Usuario> ListarRankingDelTorneo(int torneoId, int cantidad)
+    private IQueryable<Usuario> JugadoresActivos()
     {
-        return contexto.Usuarios
-            .Where(u => u.Rol == Rol.Jugador && !u.Eliminado)
-            .Where(u => contexto.Inscripciones.Any(i => i.JugadorId == u.Id && i.TorneoId == torneoId
-                && (i.Estado == EstadoInscripcion.Aceptada || i.Estado == EstadoInscripcion.Eliminada)))
-            .OrderByDescending(u => u.Elo)
-            .ThenBy(u => u.Id)
-            .Take(cantidad)
-            .ToList();
+        return contexto.Usuarios.Where(u => u.Rol == Rol.Jugador && !u.Eliminado);
     }
 
     private bool EstaGuardada(SkillDeclarada declarada)
