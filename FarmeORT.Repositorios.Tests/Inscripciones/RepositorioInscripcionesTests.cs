@@ -209,6 +209,19 @@ public sealed class RepositorioInscripcionesTests
         CollectionAssert.AreEqual(new[] { delJugador, deOtroJugador }, delOrganizadorListadas.Select(i => i.Id).ToArray());
     }
 
+    [TestMethod]
+    public void Actualizar_InscripcionCancelada_GuardaElEstado()
+    {
+        var id = GuardarInscripcion(GuardarTorneo("COPAAURA"), GuardarUsuario("anaperez", Rol.Jugador));
+        var inscripcion = _baseDeDatos.Contexto.Inscripciones.Include(i => i.Torneo).Include(i => i.Jugador).Single(i => i.Id == id);
+        inscripcion.Cancelar();
+
+        _repositorio.Actualizar(inscripcion);
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.AreEqual(EstadoInscripcion.Cancelada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == id).Estado);
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroInscripciones Filtro(
         int? torneoId = null,
