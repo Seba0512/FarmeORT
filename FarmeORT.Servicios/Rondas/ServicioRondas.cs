@@ -23,12 +23,21 @@ internal sealed class ServicioRondas(
     {
         var torneo = ObtenerTorneoDelOrganizador(torneoId, usuarioId, rol);
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
-        torneo.Iniciar(jugadores.Count);
-        var batallas = CrearBatallas(torneo, 1, estrategiaEmparejamiento.Emparejar(jugadores));
+        var numero = 1;
+        if(torneo.Estado == EstadoTorneo.EnCurso)
+        {
+            numero = repositorioBatallas.ListarDelTorneo(torneoId).Max(b => b.NumeroRonda) + 1;
+        }
+        else
+        {
+            torneo.Iniciar(jugadores.Count);
+        }
+
+        var batallas = CrearBatallas(torneo, numero, estrategiaEmparejamiento.Emparejar(jugadores));
 
         // Un solo guardado: las batallas nuevas y el cambio de estado del torneo quedan juntos o no queda nada.
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse(1, batallas);
+        return CrearResponse(numero, batallas);
     }
 
     // Una ronda son las batallas del torneo con el mismo número; el repositorio ya las trae ordenadas (D-62).
