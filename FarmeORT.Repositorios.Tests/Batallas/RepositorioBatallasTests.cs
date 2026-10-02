@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
@@ -28,6 +29,32 @@ public sealed class RepositorioBatallasTests
     public void Limpiar()
     {
         _baseDeDatos.Dispose();
+    }
+
+    [TestMethod]
+    public void Guardar_EloConcurrente_RechazaFalloSinGuardarEfectosParciales()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var inscripcion = new Inscripcion(batalla.Torneo, batalla.Jugador2, FechaActual.ToDateTime(TimeOnly.MinValue));
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        _baseDeDatos.Contexto.SaveChanges();
+        batalla.Jugador1.ActualizarElo(1216);
+        batalla.Jugador2.ActualizarElo(1184);
+        batalla.Fallar(7, "Victoria por abandono.", 16, -16);
+        inscripcion.Eliminar();
+        using var otroContexto = CrearOtroContexto();
+        var jugador = otroContexto.Usuarios.Single(u => u.Id == 7);
+        jugador.ActualizarElo(1400);
+        otroContexto.SaveChanges();
+
+        Assert.ThrowsExactly<BatallaModificadaException>(_repositorio.Guardar);
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual(EstadoBatalla.Pendiente, _baseDeDatos.Contexto.Batallas.Single(b => b.Id == 12).Estado);
+        Assert.IsNull(_baseDeDatos.Contexto.Batallas.Single(b => b.Id == 12).GanadorId);
+        Assert.AreEqual(1400, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 7).Elo);
+        Assert.AreEqual(1200, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 8).Elo);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
     }
 
     [TestMethod]
