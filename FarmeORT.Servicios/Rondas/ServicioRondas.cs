@@ -1,8 +1,6 @@
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Rondas;
 using FarmeORT.Dominio.Torneos;
-using FarmeORT.Dominio.Usuarios;
-using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Rondas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
@@ -10,6 +8,7 @@ using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IServicios.Rondas;
+using FarmeORT.Servicios.Batallas;
 
 namespace FarmeORT.Servicios.Rondas;
 
@@ -138,24 +137,7 @@ internal sealed class ServicioRondas(
         return new RondaResponse
         {
             Numero = numero,
-            Batallas = batallas.Select(CrearResponse).ToList(),
+            Batallas = batallas.Select(RespuestasBatallas.Resumen).ToList(),
         };
-    }
-
-    private static BatallaResponse CrearResponse(Batalla batalla)
-    {
-        return new BatallaResponse
-        {
-            Id = batalla.Id,
-            Estado = batalla.Estado.ToString(),
-            Jugador1 = CrearResponse(batalla.Jugador1),
-            Jugador2 = CrearResponse(batalla.Jugador2),
-            GanadorId = batalla.GanadorId,
-        };
-    }
-
-    private static JugadorBatallaResponse CrearResponse(Usuario jugador)
-    {
-        return new JugadorBatallaResponse { Id = jugador.Id, Nickname = jugador.Nickname, Elo = jugador.Elo };
     }
 }
