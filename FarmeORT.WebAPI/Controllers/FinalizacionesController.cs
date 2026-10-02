@@ -1,4 +1,5 @@
 using FarmeORT.IServicios.Finalizaciones;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -10,8 +11,7 @@ public sealed class FinalizacionesController(IServicioFinalizaciones servicioFin
     [HttpPost]
     public IActionResult Finalizar(int torneoId)
     {
-        _ = servicioFinalizaciones;
-        _ = torneoId;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        return Ok(servicioFinalizaciones.Finalizar(torneoId, sesion.UsuarioId, sesion.Rol));
     }
 }
