@@ -18,13 +18,13 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         ValidarCodigoDisponible(request.Codigo);
         var skill = new Skill(request.Codigo, request.Nombre, request.Descripcion, categoria, dificultad);
         repositorioSkills.Agregar(skill);
-        return CrearResponse(skill);
+        return RespuestasSkills.Crear(skill);
     }
 
     public SkillResponse ObtenerPorId(int id)
     {
         var skill = ObtenerSkillExistente(id);
-        return CrearResponse(skill);
+        return RespuestasSkills.Crear(skill);
     }
 
     public IReadOnlyList<SkillResponse> Listar(FiltroSkillsRequest filtro)
@@ -46,7 +46,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
         var filtroRepositorio = new FiltroSkills(categoria, dificultad, filtro.Activa, filtro.Nombre, limite, desplazamiento);
         var skills = repositorioSkills.Listar(filtroRepositorio);
-        return skills.Select(CrearResponse).ToList();
+        return skills.Select(RespuestasSkills.Crear).ToList();
     }
 
     public SkillResponse Modificar(int id, SkillRequest request)
@@ -63,7 +63,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
         skill.Modificar(request.Codigo, request.Nombre, request.Descripcion, categoria, dificultad);
         repositorioSkills.Actualizar(skill);
-        return CrearResponse(skill);
+        return RespuestasSkills.Crear(skill);
     }
 
     public SkillResponse CambiarEstado(int id, SkillEstadoRequest request)
@@ -84,7 +84,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         }
 
         repositorioSkills.Actualizar(skill);
-        return CrearResponse(skill);
+        return RespuestasSkills.Crear(skill);
     }
 
     private Skill ObtenerSkillExistente(int id)
@@ -139,19 +139,5 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
         }
 
         return request.Dificultad.Value;
-    }
-
-    private static SkillResponse CrearResponse(Skill skill)
-    {
-        return new SkillResponse
-        {
-            Id = skill.Id,
-            Codigo = skill.Codigo,
-            Nombre = skill.Nombre,
-            Descripcion = skill.Descripcion,
-            Categoria = skill.Categoria.ToString(),
-            Dificultad = skill.Dificultad,
-            Activa = skill.Activa,
-        };
     }
 }

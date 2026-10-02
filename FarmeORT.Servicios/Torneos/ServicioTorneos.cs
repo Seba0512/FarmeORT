@@ -1,7 +1,5 @@
-using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
-using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
@@ -9,6 +7,7 @@ using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Torneos;
+using FarmeORT.Servicios.Skills;
 
 namespace FarmeORT.Servicios.Torneos;
 
@@ -50,7 +49,7 @@ internal sealed class ServicioTorneos(
         }
 
         var detalle = CrearResponse<TorneoDetalleResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
-        detalle.SkillsObligatorias = torneo.SkillsObligatorias.Select(CrearSkillResponse).ToList();
+        detalle.SkillsObligatorias = torneo.SkillsObligatorias.Select(RespuestasSkills.Crear).ToList();
         detalle.JugadoresAceptados = repositorioInscripciones.ListarAceptadasDelTorneo(torneo.Id)
             .Select(i => new JugadorAceptadoResponse { JugadorId = i.JugadorId, Nickname = i.Jugador.Nickname, Elo = i.Jugador.Elo })
             .ToList();
@@ -192,20 +191,6 @@ internal sealed class ServicioTorneos(
             InscripcionesAceptadas = inscripcionesAceptadas,
             OrganizadorId = torneo.OrganizadorId,
             Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
-        };
-    }
-
-    private static SkillResponse CrearSkillResponse(Skill skill)
-    {
-        return new SkillResponse
-        {
-            Id = skill.Id,
-            Codigo = skill.Codigo,
-            Nombre = skill.Nombre,
-            Descripcion = skill.Descripcion,
-            Categoria = skill.Categoria.ToString(),
-            Dificultad = skill.Dificultad,
-            Activa = skill.Activa,
         };
     }
 
