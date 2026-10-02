@@ -49,11 +49,13 @@ internal sealed class ServicioBatallas(
 
     public BatallaDetalleResponse ObtenerPorId(int id, int usuarioId, string rol)
     {
+        _ = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
         throw new NotImplementedException();
     }
 
     public IReadOnlyList<LanzamientoResponse> ListarLanzamientos(int id, int usuarioId, string rol)
     {
+        _ = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
         throw new NotImplementedException();
     }
 }
