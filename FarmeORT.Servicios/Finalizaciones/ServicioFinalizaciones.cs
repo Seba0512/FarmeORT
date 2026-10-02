@@ -22,6 +22,11 @@ internal sealed class ServicioFinalizaciones(
             throw new TorneoNoEncontradoException();
         }
 
+        if(torneo.OrganizadorId != usuarioId)
+        {
+            throw new NoEsOrganizadorDelTorneoException();
+        }
+
         var campeon = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Single().Jugador;
         torneo.Finalizar(campeon);
         repositorioTorneos.Actualizar(torneo);
