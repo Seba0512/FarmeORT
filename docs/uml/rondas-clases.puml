@@ -1,0 +1,103 @@
+@startuml
+hide circle
+title Rondas: clases que participan (D-62, D-63)
+
+package FarmeORT.WebAPI {
+  class RondasController {
+    + Generar(torneoId : int) : IActionResult
+    + Listar(torneoId : int) : IActionResult
+    + ObtenerPorNumero(torneoId : int, numero : int) : IActionResult
+  }
+}
+
+package FarmeORT.IServicios {
+  interface IServicioRondas {
+    + Generar(torneoId : int, usuarioId : int, rol : string) : RondaResponse
+    + Listar(torneoId : int, esAnonimo : bool) : IReadOnlyList<RondaResponse>
+    + ObtenerPorNumero(torneoId : int, numero : int, esAnonimo : bool) : RondaResponse
+  }
+}
+
+package FarmeORT.Servicios {
+  class ServicioRondas {
+    - PrepararRonda(torneo : Torneo, jugadoresQueSiguen : int) : int
+    - CrearBatallas(torneo : Torneo, numeroRonda : int, pares : IReadOnlyList<ParDeJugadores>) : List<Batalla>
+  }
+}
+
+package FarmeORT.Dominio {
+  package Rondas {
+    interface IEstrategiaEmparejamiento {
+      + Emparejar(jugadores : IReadOnlyList<Usuario>) : IReadOnlyList<ParDeJugadores>
+    }
+    class EmparejamientoPorElo
+    class ParDeJugadores <<record>> {
+      + Jugador1 : Usuario
+      + Jugador2 : Usuario
+    }
+  }
+  package Torneos {
+    class Torneo {
+      + Estado : EstadoTorneo
+      + Cupo : int
+      + Iniciar(inscripcionesAceptadas : int) : void
+    }
+  }
+  package Batallas {
+    class Batalla {
+      + NumeroRonda : int
+      + Estado : EstadoBatalla
+      + GanadorId : int?
+    }
+    interface ISorteo
+  }
+}
+
+package FarmeORT.IRepositorios {
+  interface IRepositorioBatallas {
+    + Agregar(batalla : Batalla) : void
+    + ListarDelTorneo(torneoId : int) : IReadOnlyList<Batalla>
+  }
+  interface IRepositorioInscripciones {
+    + ListarAceptadasDelTorneo(torneoId : int) : IReadOnlyList<Inscripcion>
+  }
+  interface IRepositorioTorneos {
+    + ObtenerPorId(id : int) : Torneo
+    + Actualizar(torneo : Torneo) : void
+  }
+}
+
+package FarmeORT.DTOs {
+  class RondaResponse {
+    + Numero : int
+    + Batallas : IReadOnlyList<BatallaDeRondaResponse>
+  }
+  class BatallaDeRondaResponse {
+    + Id : int
+    + Estado : string
+    + Jugador1 : JugadorEnBatallaResponse
+    + Jugador2 : JugadorEnBatallaResponse
+    + GanadorId : int?
+  }
+  class JugadorEnBatallaResponse {
+    + Id : int
+    + Nickname : string
+    + Elo : int
+  }
+}
+
+RondasController ..> IServicioRondas : <<use>>
+IServicioRondas <|.. ServicioRondas
+IEstrategiaEmparejamiento <|.. EmparejamientoPorElo
+ServicioRondas --> IEstrategiaEmparejamiento : estrategia
+ServicioRondas --> ISorteo : sorteo
+ServicioRondas ..> IRepositorioTorneos : <<use>>
+ServicioRondas ..> IRepositorioInscripciones : <<use>>
+ServicioRondas ..> IRepositorioBatallas : <<use>>
+ServicioRondas ..> Batalla : <<create>>
+ServicioRondas ..> RondaResponse : <<create>>
+EmparejamientoPorElo ..> ParDeJugadores : <<create>>
+Batalla "*" --> "1" Torneo
+RondaResponse "1" *-- "*" BatallaDeRondaResponse
+BatallaDeRondaResponse "1" *-- "2" JugadorEnBatallaResponse
+@enduml
