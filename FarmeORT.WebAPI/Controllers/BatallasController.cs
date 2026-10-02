@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.IServicios.Batallas;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -11,8 +12,8 @@ public sealed class BatallasController(IServicioBatallas servicioBatallas) : Con
     [HttpGet]
     public IActionResult Listar([FromQuery] FiltroBatallasRequest filtro)
     {
-        _ = servicioBatallas;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        return Ok(servicioBatallas.Listar(filtro, sesion.UsuarioId, sesion.Rol));
     }
 
     [HttpGet("{id:int}")]
