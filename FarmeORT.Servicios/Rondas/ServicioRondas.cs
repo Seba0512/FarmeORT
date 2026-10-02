@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Rondas;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Rondas;
 using FarmeORT.DTOs.Usuarios;
@@ -20,29 +21,10 @@ internal sealed class ServicioRondas(
 {
     public RondaResponse Generar(int torneoId, int usuarioId, string rol)
     {
-        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
-        if(torneo == null)
-        {
-            throw new TorneoNoEncontradoException();
-        }
-
-        // El filtro solo sabe el rol: si un Organizador es el asignado a este torneo lo decide el servicio (D-40).
-        // Un Administrador puede generarla aunque no lo sea (D-63).
-        if(rol != Roles.Administrador && torneo.OrganizadorId != usuarioId)
-        {
-            throw new NoEsOrganizadorDelTorneoException();
-        }
-
+        var torneo = ObtenerTorneoDelOrganizador(torneoId, usuarioId, rol);
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
         torneo.Iniciar(jugadores.Count);
-        var pares = estrategiaEmparejamiento.Emparejar(jugadores);
-        List<Batalla> batallas = [];
-        foreach(var par in pares)
-        {
-            var batalla = new Batalla(torneo, 1, par.Jugador1, par.Jugador2, sorteo);
-            repositorioBatallas.Agregar(batalla);
-            batallas.Add(batalla);
-        }
+        var batallas = CrearBatallas(torneo, 1, estrategiaEmparejamiento.Emparejar(jugadores));
 
         // Un solo guardado: las batallas nuevas y el cambio de estado del torneo quedan juntos o no queda nada.
         repositorioTorneos.Actualizar(torneo);
@@ -52,13 +34,7 @@ internal sealed class ServicioRondas(
     // Una ronda son las batallas del torneo con el mismo número; el repositorio ya las trae ordenadas (D-62).
     public IReadOnlyList<RondaResponse> Listar(int torneoId, bool esAnonimo)
     {
-        // Para el anónimo un torneo Cancelado no existe (D-36).
-        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
-        if(torneo == null || (esAnonimo && !torneo.EsVisibleParaAnonimos))
-        {
-            throw new TorneoNoEncontradoException();
-        }
-
+        ValidarTorneoVisible(torneoId, esAnonimo);
         var batallas = repositorioBatallas.ListarDelTorneo(torneoId);
         return batallas
             .GroupBy(b => b.NumeroRonda)
@@ -75,6 +51,54 @@ internal sealed class ServicioRondas(
         }
 
         return ronda;
+    }
+
+    private Torneo ObtenerTorneoExistente(int torneoId)
+    {
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
+        return torneo;
+    }
+
+    // El filtro solo sabe el rol: si un Organizador es el asignado a este torneo lo decide el servicio (D-40).
+    // Un Administrador puede generar rondas aunque no lo sea (D-63).
+    private Torneo ObtenerTorneoDelOrganizador(int torneoId, int usuarioId, string rol)
+    {
+        var torneo = ObtenerTorneoExistente(torneoId);
+        if(rol != Roles.Administrador && torneo.OrganizadorId != usuarioId)
+        {
+            throw new NoEsOrganizadorDelTorneoException();
+        }
+
+        return torneo;
+    }
+
+    // Para el anónimo un torneo Cancelado no existe (D-36).
+    private void ValidarTorneoVisible(int torneoId, bool esAnonimo)
+    {
+        var torneo = ObtenerTorneoExistente(torneoId);
+        if(esAnonimo && !torneo.EsVisibleParaAnonimos)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+    }
+
+    // Crea una batalla Pendiente por par y la deja lista para guardarse junto con el torneo.
+    private List<Batalla> CrearBatallas(Torneo torneo, int numeroRonda, IReadOnlyList<ParDeJugadores> pares)
+    {
+        List<Batalla> batallas = [];
+        foreach(var par in pares)
+        {
+            var batalla = new Batalla(torneo, numeroRonda, par.Jugador1, par.Jugador2, sorteo);
+            repositorioBatallas.Agregar(batalla);
+            batallas.Add(batalla);
+        }
+
+        return batallas;
     }
 
     private static RondaResponse CrearResponse(int numero, IReadOnlyList<Batalla> batallas)
