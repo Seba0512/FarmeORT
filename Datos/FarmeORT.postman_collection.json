@@ -290,6 +290,50 @@
     {
       "key": "rankingCantidadPorDefecto",
       "value": ""
+    },
+    {
+      "key": "usrOrganizadorEmail",
+      "value": ""
+    },
+    {
+      "key": "usrOrganizadorNickname",
+      "value": ""
+    },
+    {
+      "key": "usrOrganizadorId",
+      "value": ""
+    },
+    {
+      "key": "usrTorneoFechaInicio",
+      "value": ""
+    },
+    {
+      "key": "usrTorneoFechaFin",
+      "value": ""
+    },
+    {
+      "key": "usrTorneoCodigo",
+      "value": ""
+    },
+    {
+      "key": "usrTorneoId",
+      "value": ""
+    },
+    {
+      "key": "usrJugadorEmail",
+      "value": ""
+    },
+    {
+      "key": "usrJugadorNickname",
+      "value": ""
+    },
+    {
+      "key": "usrJugadorId",
+      "value": ""
+    },
+    {
+      "key": "usrJugadorToken",
+      "value": ""
     }
   ],
   "item": [
@@ -2803,6 +2847,540 @@
                 "exec": [
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "pm.test(\"Devuelve como mucho 100\", () => pm.expect(pm.response.json().length).to.be.at.most(100));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - alta de un organizador con torneo → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Organizador\",\n  \"apellido\": \"Vigente\",\n  \"email\": \"{{usrOrganizadorEmail}}\",\n  \"nickname\": \"{{usrOrganizadorNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"1990-05-20\",\n  \"rol\": \"Organizador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                  "pm.collectionVariables.set(\"usrOrganizadorEmail\", \"usrorg.\" + guid + \"@farmeort.test\");",
+                  "pm.collectionVariables.set(\"usrOrganizadorNickname\", \"uorg\" + guid);",
+                  "// Fechas locales: la API compara con la fecha actual del servidor, que corre en la misma máquina.",
+                  "const hoy = new Date();",
+                  "const fecha = dias => new Date(Date.UTC(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + dias)).toISOString().slice(0, 10);",
+                  "pm.collectionVariables.set(\"usrTorneoFechaInicio\", fecha(30));",
+                  "pm.collectionVariables.set(\"usrTorneoFechaFin\", fecha(60));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"usrOrganizadorId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - alta de un torneo del organizador → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"codigo\": \"{{usrTorneoCodigo}}\",\n  \"nombre\": \"Copa Vigente\",\n  \"descripcion\": \"Torneo que impide dar de baja a su organizador.\",\n  \"fechaInicio\": \"{{usrTorneoFechaInicio}}\",\n  \"fechaFin\": \"{{usrTorneoFechaFin}}\",\n  \"cupo\": 4,\n  \"organizadorId\": {{usrOrganizadorId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"usrTorneoCodigo\", (\"TUSR\" + Date.now().toString(36).toUpperCase()).slice(0, 20));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"usrTorneoId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - no se elimina al organizador de un torneo vigente → 409",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios/{{usrOrganizadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{usrOrganizadorId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode USER_ORGANIZES_ACTIVE_TOURNAMENT\", () => pm.expect(pm.response.json().errorCode).to.eql(\"USER_ORGANIZES_ACTIVE_TOURNAMENT\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - no se cambia el rol del organizador de un torneo vigente → 409",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios/{{usrOrganizadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{usrOrganizadorId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Organizador\",\n  \"apellido\": \"Vigente\",\n  \"email\": \"{{usrOrganizadorEmail}}\",\n  \"nickname\": \"{{usrOrganizadorNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"1990-05-20\",\n  \"rol\": \"Jugador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode USER_ORGANIZES_ACTIVE_TOURNAMENT\", () => pm.expect(pm.response.json().errorCode).to.eql(\"USER_ORGANIZES_ACTIVE_TOURNAMENT\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - el organizador de un torneo vigente se modifica sin cambiar el rol → 200",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios/{{usrOrganizadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{usrOrganizadorId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Organizador\",\n  \"apellido\": \"Corregido\",\n  \"email\": \"{{usrOrganizadorEmail}}\",\n  \"nickname\": \"{{usrOrganizadorNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"1990-05-20\",\n  \"rol\": \"Organizador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "pm.test(\"Sigue siendo Organizador con los datos nuevos\", () => { pm.expect(pm.response.json().rol).to.eql(\"Organizador\"); pm.expect(pm.response.json().apellido).to.eql(\"Corregido\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - registro de un jugador para inscribir → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/jugadores",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "jugadores"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Inscripto\",\n  \"email\": \"{{usrJugadorEmail}}\",\n  \"nickname\": \"{{usrJugadorNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                  "pm.collectionVariables.set(\"usrJugadorEmail\", \"usrjug.\" + guid + \"@farmeort.test\");",
+                  "pm.collectionVariables.set(\"usrJugadorNickname\", \"ujug\" + guid);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"usrJugadorId\", pm.response.json().id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - login del jugador para inscribir → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{usrJugadorEmail}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.collectionVariables.set(\"usrJugadorToken\", pm.response.json().token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - el jugador se inscribe en el torneo vigente → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/inscripciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "inscripciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{usrJugadorToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"torneoId\": {{usrTorneoId}}\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - no se cambia el rol de un jugador inscripto en un torneo vigente → 409",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios/{{usrJugadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{usrJugadorId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Inscripto\",\n  \"email\": \"{{usrJugadorEmail}}\",\n  \"nickname\": \"{{usrJugadorNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Organizador\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode USER_HAS_ACTIVE_REGISTRATION\", () => pm.expect(pm.response.json().errorCode).to.eql(\"USER_HAS_ACTIVE_REGISTRATION\"));"
                 ]
               }
             }
