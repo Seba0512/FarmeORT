@@ -15,7 +15,7 @@ public sealed class FiltroExcepcionesFinalizacionTests
     [TestMethod]
     public void OnException_TorneoNoEnCurso_Devuelve409ConTOURNAMENT_NOT_IN_PROGRESS()
     {
-        VerificarMapa(new TorneoNoEnCursoException(), 409, "TOURNAMENT_NOT_IN_PROGRESS", "El torneo no est· en curso.");
+        VerificarMapa(new TorneoNoEnCursoException(), 409, "TOURNAMENT_NOT_IN_PROGRESS", "El torneo no est√° en curso.");
     }
 
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
