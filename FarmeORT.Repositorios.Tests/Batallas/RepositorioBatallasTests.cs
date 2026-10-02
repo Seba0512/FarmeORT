@@ -60,7 +60,8 @@ public sealed class RepositorioBatallasTests
         var otroJugador = CrearUsuario(9, Rol.Jugador);
         var otros = new Batalla(torneo, 2, otroJugador, CrearUsuario(10, Rol.Jugador), new SorteoInicial(otroJugador)) { Id = 16 };
         var otroTorneo = new Torneo("COPAFUEGO", "Copa Fuego", "Otro torneo eliminatorio de batallas.",
-            FechaActual.AddDays(1), FechaActual.AddDays(2), 4, torneo.Organizador, FechaActual) { Id = 6 };
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 4, torneo.Organizador, FechaActual)
+        { Id = 6 };
         var ajena = new Batalla(otroTorneo, 1, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 17 };
         _baseDeDatos.Contexto.Batallas.AddRange(primera, cancelada, finalizada, otros, ajena);
         _baseDeDatos.Contexto.Entry(otros).Property(b => b.Estado).CurrentValue = EstadoBatalla.EnArbitraje;

@@ -43,14 +43,14 @@ internal static class RespuestasBatallas
     public static IReadOnlyList<LanzamientoResponse> Lanzamientos(Batalla batalla)
     {
         return batalla.Lanzamientos.OrderBy(l => l.Turno).Select(l => new LanzamientoResponse
-            {
-                Turno = l.Turno,
-                JugadorId = l.JugadorId,
-                Nickname = l.Jugador.Nickname,
-                SkillId = l.SkillId,
-                Skill = l.Skill.Nombre,
-                Fecha = l.Fecha,
-            }).ToList();
+        {
+            Turno = l.Turno,
+            JugadorId = l.JugadorId,
+            Nickname = l.Jugador.Nickname,
+            SkillId = l.SkillId,
+            Skill = l.Skill.Nombre,
+            Fecha = l.Fecha,
+        }).ToList();
     }
 
     private static JugadorBatallaResponse Jugador(Usuario jugador)
