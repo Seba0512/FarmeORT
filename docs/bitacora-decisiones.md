@@ -1709,6 +1709,26 @@ El ELO de Usuario se configura como token de concurrencia, además del estado de
 
 ---
 
+### D-55 — Visibilidad histórica por torneo y consultas filtradas antes de paginar
+
+**Problema:** la letra 1.7 restringe las consultas por torneo, no por la pareja de una batalla. El fallo elimina la inscripción del perdedor; restringir a Aceptadas haría desaparecer inmediatamente su historial. El filtro jugadorId proviene del cliente y no puede usarse como identidad para autorizar.
+
+**Alternativas consideradas:** limitar a las batallas donde juega el usuario; exigir una inscripción Aceptada; admitir cualquier inscripción en el torneo y separar autorización de filtros. Para el listado: filtrar/paginar en memoria o realizar ambas operaciones en SQL con orden explícito.
+
+**Decisión adoptada:** los tres GET autorizan al Jugador mediante `ExisteDelJugador(torneoId, usuarioId)` sin filtrar estado de inscripción; al Organizador mediante la asignación de D-40; al Administrador para cualquier torneo. La identidad y el rol vienen de la sesión autenticada. La consulta histórica conserva acceso para Aceptada, Eliminada o Cancelada, conforme al prompt «tiene inscripción». El jugador sin inscripción recibe 403 `PLAYER_NOT_IN_TOURNAMENT`. Primero se comprueba existencia del recurso; después se autoriza; al final se aplican filtros y se crean DTOs.
+
+`FiltroBatallas` transporta filtros normalizados al repositorio. `Listar` aplica torneo, estado, ronda y cualquiera de los dos jugadores, ordena por NumeroRonda e Id y recién entonces usa Skip/Take en SQL. Reutiliza Paginacion y ValoresPorNombre (D-35); la consulta del listado usa AsNoTracking. Las consultas nuevas se agregan al final de las interfaces, conservando las de A. El detalle reutiliza el fallo y el historial de D-53; mapeo y carga autorizada están compartidos entre los GET.
+
+**Justificación:** el ámbito de visibilidad es estable después del fallo y el cliente no puede ampliar permisos modificando filtros. La paginación tiene resultados deterministas y limita lo leído de la base. Las consultas no guardan ni mutan entidades. `HistorialLanzamientosController` protege el GET con los tres roles; el controller de POST conserva exclusivamente Jugador sin que su atributo restrinja las consultas.
+
+**Conceptos del curso:** alta cohesión, bajo acoplamiento, SRP, DI, autorización a nivel de recurso, REST, separación de responsabilidades y TDD Outside-In con Moq/SQLite.
+
+**Evidencia:** `BatallasControllerTests`, `HistorialLanzamientosControllerTests`, `ServicioBatallasTests`, tests SQLite de ambas consultas, filtro de excepciones y registro Scoped. Los tests cubren un jugador inscripto que no pertenece a la pareja, jugadores ajenos, organizadores ajenos, administrador, estados de inscripción y filtrado/orden/paginación. PR #18–#21 de A incorporados conservando cancelación, restricciones, detalle y filtro del ranking; B no implementa los conteos del ranking ni las rondas.
+
+**Participación de IA:** Codex contrastó el prompt, letra, contrato API, AGENTS y skills con los cambios integrados de A. Propuso separar el permiso por torneo del filtro jugadorId, retener acceso histórico y reutilizar los normalizadores existentes. Se descartaron permisos basados en una batalla o solo en Aceptadas porque contradicen el ámbito solicitado y eliminan el historial del perdedor. RED/GREEN guiaron controllers, servicio, consultas, errores y DI; un refactor real extrajo carga autorizada y mapeo. El integrante conserva la autoría Git exclusiva. C aún no dispone de rondas en develop: la ejecución integrada de Postman requiere sus fixtures y no se declara verificada. Las carpetas B se validaron por separado con Newman sobre la API real y SQLite con batallas manuales: 82 requests, 174 assertions, sin fallos. Se conservan todos los saltos ajenos y se documentan las variables que debe producir Rondas.
+
+---
+
 ### D-60 — El cálculo de ELO es un punto de variación (Strategy): `ICalculadorElo` ← `CalculadorEloBase`
 
 **Problema:** al fallar una batalla hay que calcular el nuevo ELO de los dos jugadores (letra: K = 32,
