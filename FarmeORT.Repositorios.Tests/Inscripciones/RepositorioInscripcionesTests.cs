@@ -109,6 +109,36 @@ public sealed class RepositorioInscripcionesTests
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Agregar_DosJugadoresLeenLaUltimaPlaza_SoloUnoLaOcupa(bool invertir)
+    {
+        var torneoId = GuardarTorneo("COPAAURA", cupo: 4);
+        foreach(var nickname in new[] { "anaperez", "brunolopez", "carlagomez" })
+        {
+            GuardarInscripcion(torneoId, GuardarUsuario(nickname, Rol.Jugador));
+        }
+
+        var jugador1 = GuardarUsuario("diegoruiz", Rol.Jugador);
+        var jugador2 = GuardarUsuario("evasosa", Rol.Jugador);
+        using var primero = _baseDeDatos.CrearContexto();
+        using var segundo = _baseDeDatos.CrearContexto();
+        var primera = new Inscripcion(primero.Torneos.Single(t => t.Id == torneoId), primero.Usuarios.Single(u => u.Id == (invertir ? jugador2 : jugador1)), Ahora);
+        var segunda = new Inscripcion(segundo.Torneos.Single(t => t.Id == torneoId), segundo.Usuarios.Single(u => u.Id == (invertir ? jugador1 : jugador2)), Ahora);
+        var primerRepositorio = new RepositorioInscripciones(primero);
+        var segundoRepositorio = new RepositorioInscripciones(segundo);
+        Assert.AreEqual(3, primerRepositorio.ContarAceptadas(torneoId));
+        Assert.AreEqual(3, segundoRepositorio.ContarAceptadas(torneoId));
+        primerRepositorio.Agregar(primera);
+
+        Assert.ThrowsExactly<TorneoCompletoException>(() => segundoRepositorio.Agregar(segunda));
+
+        Assert.AreEqual(4, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.IsFalse(_baseDeDatos.Contexto.Inscripciones.Any(i => i.TorneoId == torneoId && i.JugadorId == segunda.JugadorId));
+        Assert.IsEmpty(segundo.ChangeTracker.Entries().ToList());
+    }
+
+    [TestMethod]
     public void Agregar_InscripcionNueva_QuedaGuardadaConSuId()
     {
         var torneoId = GuardarTorneo("COPAAURA");
@@ -331,10 +361,10 @@ public sealed class RepositorioInscripcionesTests
         return new Inscripcion(torneo, jugador, Ahora);
     }
 
-    private int GuardarTorneo(string codigo, int? organizadorId = null)
+    private int GuardarTorneo(string codigo, int? organizadorId = null, int cupo = 8)
     {
         var organizador = _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == (organizadorId ?? _organizadorId));
-        var torneo = new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.", new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 30), 8, organizador, FechaActual);
+        var torneo = new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.", new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 30), cupo, organizador, FechaActual);
         _baseDeDatos.Contexto.Torneos.Add(torneo);
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
