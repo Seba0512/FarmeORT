@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
@@ -91,6 +92,20 @@ public sealed class ServicioFinalizacionesTests
         var finalizacion = _servicio.Finalizar(TorneoId, 1, Roles.Administrador);
 
         Assert.AreEqual("Finalizado", finalizacion.Estado);
+    }
+
+    [TestMethod]
+    public void Finalizar_TorneoConBatallasSinResolver_LanzaTorneoConBatallasSinResolver()
+    {
+        PrepararTorneoListoParaFinalizar();
+        var rival = CrearUsuario(8, Rol.Jugador);
+        var sorteo = new Mock<ISorteo>(MockBehavior.Strict);
+        sorteo.Setup(s => s.ElegirEntre(_campeon, rival)).Returns(_campeon);
+        _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([new Batalla(_torneo, 2, _campeon, rival, sorteo.Object)]);
+
+        Assert.ThrowsExactly<TorneoConBatallasSinResolverException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
+        Assert.AreEqual(EstadoTorneo.EnCurso, _torneo.Estado);
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.
