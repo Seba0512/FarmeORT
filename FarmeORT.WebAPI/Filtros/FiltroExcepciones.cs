@@ -104,6 +104,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         // Persona C: rondas (D-62).
         [typeof(TorneoIncompletoException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas."),
+        [typeof(RondaNoEncontradaException)] =
+            new(StatusCodes.Status404NotFound, "ROUND_NOT_FOUND", "El torneo no tiene una ronda con ese número."),
     };
 
     public void OnException(ExceptionContext context)
