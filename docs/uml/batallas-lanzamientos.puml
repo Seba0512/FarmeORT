@@ -1,6 +1,6 @@
 @startuml
 hide circle
-title Persona B — fase 1 implementada y fallo futuro
+title Persona B — batallas, lanzamientos y fallo
 class Batalla {
   + Id : int
   + TorneoId : int
@@ -10,9 +10,15 @@ class Batalla {
   + Estado : EstadoBatalla
   + JugadorInicialId : int
   + JugadorTurnoId : int?
+  + GanadorId : int?
+  + Comentario : string?
+  + CambioEloJugador1 : int?
+  + CambioEloJugador2 : int?
   + Batalla(torneo : Torneo, numeroRonda : int, jugador1 : Usuario, jugador2 : Usuario, sorteo : ISorteo)
   + Lanzar(jugador : Usuario, skill : Skill, fecha : DateTimeOffset) : Lanzamiento
   + Cancelar() : void
+  + ValidarFallo(ganadorId : int, comentario : string?) : void
+  + Fallar(ganadorId : int, comentario : string?, cambioEloJugador1 : int, cambioEloJugador2 : int) : void
 }
 enum EstadoBatalla {
   Pendiente
@@ -34,20 +40,23 @@ interface ISorteo {
 }
 class SorteoAleatorio
 class Torneo
-class Usuario
+class Usuario {
+  + Elo : int
+  + ActualizarElo(elo : int) : void
+}
 class Skill
-class "Fallo (fase 2 pendiente)" as Fallo
 Batalla "0..*" --> "1" Torneo
 Batalla "0..*" --> "1" Usuario : jugador1
 Batalla "0..*" --> "1" Usuario : jugador2
 Batalla "1" *-- "0..8" Lanzamiento
-Batalla "1" *-- "0..1" Fallo
+Batalla "0..*" --> "0..1" Usuario : ganador
 Lanzamiento "0..*" --> "1" Usuario : jugador
 Lanzamiento "0..*" --> "1" Skill
 Batalla ..> ISorteo : constructor, solo empate
 SorteoAleatorio ..|> ISorteo
-note right of Fallo
-  Diseño futuro, no implementado en fase 1.
-  Requiere Inscripcion e ICalculadorElo en develop.
+note right of Batalla
+  Fallo opcional embebido como propiedades (D-53).
+  Finalizada tiene ganador, comentario y cambios ELO.
+  Los cambios ELO preservan el resultado histórico.
 end note
 @enduml
