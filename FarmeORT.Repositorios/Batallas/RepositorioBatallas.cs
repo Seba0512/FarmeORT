@@ -53,4 +53,10 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             throw;
         }
     }
+
+    public IReadOnlyList<Batalla> ListarSinResolverDelTorneo(int torneoId)
+    {
+        _ = torneoId;
+        throw new NotImplementedException();
+    }
 }

@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
@@ -13,6 +14,7 @@ internal sealed class ServicioTorneos(
     IRepositorioTorneos repositorioTorneos,
     IRepositorioUsuarios repositorioUsuarios,
     IRepositorioInscripciones repositorioInscripciones,
+    IRepositorioBatallas repositorioBatallas,
     TimeProvider reloj) : IServicioTorneos
 {
     public TorneoResponse Crear(TorneoRequest request)
@@ -102,6 +104,7 @@ internal sealed class ServicioTorneos(
 
     public TorneoResponse Cancelar(int id)
     {
+        _ = repositorioBatallas;
         var torneo = ObtenerTorneoExistente(id);
         torneo.Cancelar();
         repositorioTorneos.Actualizar(torneo);
