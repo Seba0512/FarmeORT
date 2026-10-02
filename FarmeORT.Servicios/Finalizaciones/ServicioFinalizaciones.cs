@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Finalizaciones;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -15,7 +16,12 @@ internal sealed class ServicioFinalizaciones(
     public FinalizacionResponse Finalizar(int torneoId, int usuarioId, string rol)
     {
         _ = repositorioBatallas;
-        var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
         var campeon = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Single().Jugador;
         torneo.Finalizar(campeon);
         repositorioTorneos.Actualizar(torneo);
