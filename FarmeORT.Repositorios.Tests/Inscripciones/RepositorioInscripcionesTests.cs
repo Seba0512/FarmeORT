@@ -33,6 +33,28 @@ public sealed class RepositorioInscripcionesTests
     }
 
     [TestMethod]
+    public void ObtenerAceptada_FiltraTorneoJugadorYEstadoYDevuelveEntidadRastreada()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var otroTorneoId = GuardarTorneo("COPAFUEGO");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        var eliminadoId = GuardarUsuario("brunolopez", Rol.Jugador);
+        GuardarInscripcion(torneoId, jugadorId, i => i.Cancelar());
+        var aceptadaId = GuardarInscripcion(torneoId, jugadorId);
+        GuardarInscripcion(otroTorneoId, jugadorId);
+        GuardarInscripcion(torneoId, eliminadoId, i => i.Eliminar());
+
+        var resultado = _repositorio.ObtenerAceptada(torneoId, jugadorId);
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(aceptadaId, resultado.Id);
+        Assert.AreEqual(EntityState.Unchanged, _baseDeDatos.Contexto.Entry(resultado).State);
+        Assert.IsNull(_repositorio.ObtenerAceptada(torneoId, eliminadoId));
+        Assert.IsNull(_repositorio.ObtenerAceptada(99, jugadorId));
+        Assert.IsNull(_repositorio.ObtenerAceptada(torneoId, 99));
+    }
+
+    [TestMethod]
     public void Agregar_InscripcionNueva_QuedaGuardadaConSuId()
     {
         var torneoId = GuardarTorneo("COPAAURA");
