@@ -19,6 +19,7 @@ public sealed class BatallasController(IServicioBatallas servicioBatallas) : Con
     [HttpGet("{id:int}")]
     public IActionResult ObtenerPorId(int id)
     {
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        return Ok(servicioBatallas.ObtenerPorId(id, sesion.UsuarioId, sesion.Rol));
     }
 }
