@@ -1,0 +1,56 @@
+using FarmeORT.Dominio.Batallas;
+using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
+using Microsoft.EntityFrameworkCore;
+
+namespace FarmeORT.Repositorios.Batallas;
+
+internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositorioBatallas
+{
+    public Batalla? ObtenerPorId(int id)
+    {
+        return contexto.Batallas
+            .Include(b => b.Torneo).ThenInclude(t => t.Organizador)
+            .Include(b => b.Torneo).ThenInclude(t => t.SkillsObligatorias)
+            .Include(b => b.Jugador1)
+            .Include(b => b.Jugador2)
+            .Include(b => b.Lanzamientos.OrderBy(l => l.Turno)).ThenInclude(l => l.Skill)
+            .SingleOrDefault(b => b.Id == id);
+    }
+
+    public void Guardar()
+    {
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateConcurrencyException)
+        {
+            contexto.ChangeTracker.Clear();
+            throw new BatallaModificadaException();
+        }
+        catch(DbUpdateException)
+        {
+            var nuevos = contexto.ChangeTracker.Entries<Lanzamiento>()
+                .Where(e => e.State == EntityState.Added)
+                .Select(e => e.Entity)
+                .ToList();
+            if(nuevos.Any(l => contexto.Lanzamientos.AsNoTracking()
+                .Any(guardado => guardado.BatallaId == l.BatallaId && guardado.Turno == l.Turno)))
+            {
+                contexto.ChangeTracker.Clear();
+                throw new TurnoIncorrectoException();
+            }
+
+            if(nuevos.Any(l => contexto.Lanzamientos.AsNoTracking()
+                .Any(guardado => guardado.BatallaId == l.BatallaId
+                    && guardado.JugadorId == l.JugadorId && guardado.SkillId == l.SkillId)))
+            {
+                contexto.ChangeTracker.Clear();
+                throw new SkillYaLanzadaException();
+            }
+
+            throw;
+        }
+    }
+}

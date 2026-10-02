@@ -1228,7 +1228,7 @@ finalización (Personas B y C).
   `Torneo.EsVisibleParaAnonimos`, que también usa `ServicioTorneos`.
 - `GET /torneos?skillObligatoriaId=` ya filtra: devuelve los torneos que exigen esa skill.
 - La regla de la letra que rechaza asociar una skill si hay inscripciones Aceptadas de jugadores que no la
-  tienen declarada queda para `feature/inscripciones`: necesita la entidad `Inscripcion`.
+  tienen declarada queda para `feature/inscripciones`: necesita la entidad `Inscripcion` (resuelta en D-41).
 
 **Justificación:**
 - 403 es falta de permiso sobre ese recurso: el usuario está autenticado y tiene el rol correcto, pero el
@@ -1261,6 +1261,216 @@ relaciones muchos a muchos en EF Core.
 
 ---
 
+### D-41 — Inscripciones a torneos, detalles en los errores y reglas que dependen de ellas
+
+**Problema:** el Jugador se inscribe a un torneo y puede cancelar su inscripción (letra 1.5 y 1.6). La
+inscripción es la entidad que esperaban tres reglas ya pendientes:
+- la cantidad de inscripciones Aceptadas del torneo (D-36 la devolvía en 0);
+- el rechazo de una skill obligatoria nueva si hay inscriptos que no la tienen, identificándolos (D-40);
+- el rechazo de quitar del repertorio una skill que es obligatoria de un torneo en curso del jugador (D-38).
+
+La identificación de los jugadores y de las skills que faltan no entraba en el cuerpo de error: el filtro
+global solo completaba `detalles` con las validaciones del modelo. `Inscripcion` es además contrato
+compartido: la Persona B la elimina al fallar una batalla y la Persona A la cancela al cancelar el torneo.
+
+**Alternativas consideradas:**
+- Las skills o jugadores que faltan: dentro del mensaje, en `detalles` o en un campo nuevo del error.
+- Inscripción ajena (jugador u organizador de otro torneo): 403 o 404.
+- Dónde vive "la skill es obligatoria en una inscripción vigente": en el repositorio (una consulta con la
+  regla) o en `Inscripcion`, con el repositorio solo trayendo las inscripciones Aceptadas del jugador.
+- Cantidad de Aceptadas en `GET /torneos`: contar por torneo (N+1 consultas) o una sola consulta agrupada.
+- Migración: solo las inscripciones, o también las batallas de B, que llegaron a develop sin migración.
+
+**Decisión adoptada:**
+- Contrato, en `InscripcionesController` (`/api/v1/inscripciones`):
+  - `POST` con `{ torneoId }`, solo Jugador → 201 con `Location: /api/v1/inscripciones/{id}`;
+  - `GET` con filtros `torneoId`, `estado`, `fechaDesde`, `fechaHasta`, `limit` y `offset` (D-35). El
+    jugador ve las suyas, el organizador las de sus torneos y el administrador todas;
+  - `GET /{id}` → 200, 403 si no es suya o no es su torneo, 404 si no existe;
+  - `POST /{id}/cancelaciones`, solo Jugador → 200 con la inscripción Cancelada.
+- Reglas de la inscripción, en este orden:
+  - torneo inexistente → 404 `TOURNAMENT_NOT_FOUND` (se reusa);
+  - ya tiene una Aceptada en el torneo → 409 `ALREADY_REGISTERED`;
+  - Aceptadas == Cupo → 409 `TOURNAMENT_FULL`;
+  - en el constructor de `Inscripcion`: torneo que no está Abierto → 409 `TOURNAMENT_NOT_OPEN`, y skills
+    obligatorias sin declarar → 409 `MISSING_MANDATORY_SKILLS`.
+- Cancelar: inexistente → 404 `REGISTRATION_NOT_FOUND`; ajena → 403 `NOT_REGISTRATION_OWNER`; torneo que no
+  está Abierto → 409 `TOURNAMENT_NOT_OPEN`; inscripción que ya no está Aceptada → 409
+  `REGISTRATION_NOT_ACTIVE`. `Inscripcion.Cancelar()` no mira el torneo, porque la cancelación del torneo
+  (fase 2) cancela inscripciones de torneos EnCurso. `Inscripcion.Eliminar()` es la que usa B.
+- **`detalles` lleva la lista.** `ExcepcionConDetalles` es la base de las excepciones que identifican
+  elementos: `MISSING_MANDATORY_SKILLS` lista los códigos de las skills que faltan y
+  `PLAYERS_MISSING_MANDATORY_SKILL` (409) los nicknames de los inscriptos. El cambio compartido es una línea
+  en `FiltroExcepciones.OnException`.
+- **Inscripción ajena → 403**, igual que el organizador no asignado (D-40). El organizador de otro torneo
+  recibe `NOT_TOURNAMENT_ORGANIZER`.
+- **La regla del repertorio vive en `Inscripcion.ExigeSkill(skillId)`**: Aceptada, torneo no Finalizado ni
+  Cancelado y la skill es obligatoria. El repositorio solo trae las Aceptadas del jugador con sus torneos.
+  Quitar una skill que se exige → 409 `MANDATORY_SKILL_IN_USE`.
+- `ContarAceptadasPorTorneo` cuenta en una sola consulta agrupada las Aceptadas de la página de torneos.
+- Tabla `Inscripciones` con índice (`TorneoId`, `JugadorId`), estado como texto y FKs `Restrict`: una
+  inscripción es historia del torneo y del jugador, no se borra en cascada.
+- La migración `AgregaInscripcionesYBatallas` crea también `Batallas` y `Lanzamientos`: el PR de B entró
+  sin migración y el snapshot de develop no tenía sus tablas. Una migración solo de inscripciones las
+  hubiera incluido igual, porque EF compara contra el modelo completo.
+
+**Justificación:**
+- `detalles` ya es parte del cuerpo de error del contrato; un campo nuevo cambiaría el formato para todos.
+  Separar los nicknames del mensaje deja al cliente usarlos sin parsear texto.
+- 403 sobre 404: el recurso existe y el usuario está autenticado; no hay datos que ocultar, porque el
+  organizador ve las inscripciones de su torneo y el jugador las suyas.
+- `ExigeSkill` usa solo datos de la inscripción y su torneo (Information Expert). Con la regla en el
+  repositorio, el repositorio decidiría (AGENTS §6).
+- La validación del torneo y de las skills está en el constructor: no puede existir una inscripción que
+  rompa esas reglas, la cree quien la cree.
+
+**Conceptos del curso:** Information Expert, Creator, SRP, contrato REST (403/404/409), formato de error
+uniforme, consultas sin N+1, Code First y migraciones.
+
+**Evidencia:**
+- `Inscripcion`, `EstadoInscripcion`, `Usuario.SkillsFaltantes` y sus tests de dominio.
+- `ServicioInscripciones`, `ServicioSkillsObligatorias`, `ServicioRepertorio` y `ServicioTorneos` con un
+  ciclo RED/GREEN por regla.
+- `InscripcionesController`, `FiltroExcepciones` y los tests de controller y filtro.
+- `RepositorioInscripciones` con SQLite en memoria, `FarmeORTContext.ConfigurarInscripciones` y la migración
+  `AgregaInscripcionesYBatallas`.
+- La carpeta "Inscripciones" de Postman, que incluye el cupo completo con un torneo de cupo 4.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) desarrolló los ciclos y planteó las alternativas con una
+  recomendación; el integrante aprobó los códigos, el 403 y la excepción con detalles, y pidió incluir
+  todas las tablas en la migración y avisar al equipo.
+- Problemas que aparecieron:
+  - Un test de repositorio armaba una inscripción después de agregar una obligatoria que el jugador no
+    tenía: el constructor la rechazó. Se reordenó el arrange para respetar la regla del dominio.
+  - Registrar `ServicioTorneos` con la dependencia nueva hizo fallar la validación del contenedor hasta
+    registrar el repositorio de inscripciones.
+  - `dotnet ef migrations remove` falló sin SQL Server y dejó una migración vacía duplicada. Se borraron los
+    archivos sin versionar, se restauró el snapshot y se regeneró.
+  - El merge de develop chocó con el código de B en el contexto, el registro de DI y el filtro de
+    excepciones. Se conservaron ambos bloques, cada uno en su método o sección.
+
+---
+
+### D-50 — Coordinación del alcance de Persona B
+
+**Problema:** A, B y C trabajan en paralelo sobre un modelo compartido. Numerar decisiones y mantener migraciones sin coordinación puede causar conflictos y respuestas distintas para la misma autorización por torneo.
+
+**Alternativas consideradas:** numeración consecutiva compartida o rangos por persona; resolver a mano el snapshot o regenerar únicamente la migración propia todavía no integrada. Para el organizador no asignado se consideraron 403 y 409; el acuerdo HTTP ya está registrado en D-40 y no se redefine aquí.
+
+**Decisión adoptada:** el usuario confirmó D-50 a D-59 para B y permite quitar/regenerar solo una migración propia que nunca llegó a develop. Se genera una por PR al final, con develop incorporado; las integradas se preservan. B reutilizará D-40: 403 `NOT_TOURNAMENT_ORGANIZER` mediante la excepción existente cuando el organizador no sea el asignado, sin volver a registrar esa decisión común. Los filtros siguen comprobando autenticación y rol.
+
+**Justificación:** los rangos evitan colisiones; regenerar la migración no integrada evita duplicar cambios del snapshot recibido. Referenciar D-40 mantiene una sola definición de la autorización compartida.
+
+**Conceptos del curso:** trabajo concurrente en GitFlow, Code First, trazabilidad y autorización por recurso.
+
+**Evidencia:** confirmación explícita del usuario en el chat de Persona B e incorporación de develop `d2a5bd1` (PR #13). No se generó una migración de B ni se empezó fallos: espera `Inscripcion` e `ICalculadorElo` en develop.
+
+**Participación de IA:** Codex comprobó las fuentes y consultó los acuerdos pendientes; el usuario confirmó los tres. Al recibir D-40 se reemplazó la definición duplicada de autorización por su referencia. La autoría Git corresponde exclusivamente al integrante; esta declaración académica queda separada.
+
+---
+
+### D-51 — Batalla como experto de turnos y sorteo inyectable
+
+**Problema:** C crea las batallas al generar rondas, A las cancela al cancelar el torneo y B registra lanzamientos. Las reglas de turnos y estados tienen que ser consistentes para todos esos consumidores, con pruebas deterministas del empate.
+
+**Alternativas consideradas:** reglas y azar directamente en el servicio; entidad que conozca una implementación aleatoria; entidad que valide sus datos y reciba `ISorteo` solo en la creación.
+
+**Decisión adoptada:** `Batalla(Torneo, int, Usuario, Usuario, ISorteo)` conserva torneo, ronda y dos jugadores distintos de rol Jugador. Guarda `JugadorInicialId` según los ELO de creación; solo en empate llama al sorteo. `ISorteo` vive en Dominio/Batallas y `SorteoAleatorio` en Servicios/Batallas, registrado Scoped. No se modifica `Torneo`, no se crean rondas ni se implementa una fórmula ELO desde B.
+
+La entidad registra sus lanzamientos y aplica estado Pendiente, participación, turno, repertorio y repetición por **jugador y skill**. El rival puede lanzar la misma skill: prohibirlo globalmente impediría que ambos cumplan las obligatorias. Una skill desactivada después de declararla sigue siendo válida. El lanzamiento ocho deja cuatro por jugador y pasa a EnArbitraje; `Cancelar()` acepta Pendiente/EnArbitraje y no cambia estados finales. El servicio carga las dependencias, usa `TimeProvider.GetUtcNow()` y pide un guardado después de validar. Al recibir el modelo de A en `d2a5bd1`, B usa `Torneo.SkillsObligatorias` sin modificar Torneo: cuando las pendientes de ese jugador igualan sus turnos restantes, solo admite una de esas pendientes. El repositorio carga la asociación aunque la skill se haya desactivado.
+
+**Justificación:** las reglas que usan datos de la batalla quedan con el experto; las dependencias de acceso a datos y reloj permanecen fuera del dominio. El azar se reemplaza por un mock o doble preparado en tests. No hace falta una jerarquía State para estos cuatro estados.
+
+**Conceptos del curso:** Information Expert, Creator, Protected Variations, DIP, SRP, encapsulación, DI Scoped y TDD Outside-In.
+
+**Evidencia:** `BatallaTests`, `ServicioLanzamientosTests`, `SorteoAleatorioTests` y `RegistroBatallasTests`, ciclos RED/GREEN separados. Clases de fase 1 y secuencia de lanzamiento en `docs/uml/`, contrastadas con el código; render pendiente. El fallo se identifica como diseño futuro, sin implementación. Contrato y estado real en `docs/api/batallas-lanzamientos.md`.
+
+**Participación de IA:** Codex desarrolló los ciclos y propuso mantener las reglas en Batalla siguiendo el contrato explícito del usuario. Se aceptaron el sorteo inyectable, la no retroactividad y las excepciones existentes para datos/recursos inexistentes. No se aceptó implementar inscripciones, el modelo de obligatorias de A o la fórmula ELO de C. No existe una excepción genérica de negocio reutilizable en el código actual: se agregan tipos para distinguir los conflictos de lanzamiento y mapear sus códigos sin alterar errores de otros recursos.
+
+---
+
+### D-52 — Guardado atómico y conflictos concurrentes de lanzamientos
+
+**Problema:** validar el turno en memoria no evita que dos pedidos acepten simultáneamente el mismo turno, ni que una cancelación llegue entre la lectura y el guardado. Un error debe revertir el lanzamiento y los cambios de la batalla, sin responder éxito ni ocultar errores distintos.
+
+**Alternativas consideradas:** validación solo en memoria; bloqueo manual o versión adicional; restricciones de unicidad y concurrencia optimista de EF Core sobre el estado, aprovechando un único contexto Scoped.
+
+**Decisión adoptada:** el repositorio recupera una batalla rastreada con torneo, organizador, obligatorias, jugadores e historial ordenado. ServicioLanzamientos realiza un solo `Guardar()` y el repositorio un `SaveChanges()` para todos sus cambios. El estado es token de concurrencia; `(BatallaId, Turno)` y `(BatallaId, JugadorId, SkillId)` son únicos y el turno se restringe a 1..8. No se introduce Unit of Work ni un segundo contexto en el caso de uso.
+
+Un `DbUpdateConcurrencyException` se traduce a `BatallaModificadaException` (409 `BATTLE_CHANGED`). Ante `DbUpdateException`, se consulta si hay un turno o una skill de ese jugador ya persistidos y se traduce al conflicto correspondiente, siguiendo D-23; si no, se propaga el error original. Antes de devolver un conflicto traducido se limpia el tracking para no conservar cambios rechazados.
+
+**Justificación:** el índice único impide dos lanzamientos de un turno; el token de estado impide guardar contra una cancelación o resolución concurrente. `SaveChanges` revierte todos sus cambios cuando falla. Las consultas de traducción evitan acoplarse a códigos de SQL Server y funcionan también en los tests SQLite. Las restricciones de B se configuraron en un método privado propio al final del contexto, conservando la configuración y migración integradas de A. La migración de B queda para el cierre de la rama.
+
+**Conceptos del curso:** Code First, atomicidad, concurrencia optimista, Information Expert, persistencia separada del dominio, DI Scoped y pruebas de integración con un fake SQLite.
+
+**Evidencia:** `RepositorioBatallasTests`: guardado conjunto, duplicados por turno/skill, turnos fuera de rango, cancelación desde otro contexto, rollback y propagación de un error no traducible. `ServicioLanzamientosTests`: guardado una vez, rechazo sin guardar y conflicto propagado sin respuesta exitosa. Los códigos tienen pruebas independientes en `FiltroExcepcionesBatallasTests`.
+
+**Participación de IA:** Codex propuso las restricciones y el token de estado y verificó cada cambio mediante ciclos RED/GREEN. Se aceptó la protección concurrente dentro de las entidades de B y se descartaron bloqueos manuales, fórmulas ELO y cambios al modelo de A. La revisión humana y las Actions quedan pendientes; no se sustituyen por estas validaciones locales.
+
+---
+
+### D-60 — El cálculo de ELO es un punto de variación (Strategy): `ICalculadorElo` ← `CalculadorEloBase`
+
+**Problema:** al fallar una batalla hay que calcular el nuevo ELO de los dos jugadores (letra: K = 32,
+`Ea = 1 / (1 + 10^((Rb − Ra) / 400))`, `Ra' = Ra + K·(S − Ea)`, piso 100). El diseño del equipo
+(`AGENTS.md` y el diagrama de clases) lo marca como punto de variación: tiene que poder agregarse otra
+forma de calcularlo sin modificar el código que finaliza la batalla. Fallar batalla lo implementa otra
+persona del equipo, que necesita el cálculo antes de que exista la batalla.
+
+**Alternativas consideradas:**
+- Un método privado en el servicio de batallas: es lo más simple, pero cambiar la política obliga a
+  modificar ese servicio.
+- Template Method: una clase base abstracta en la que las subclases redefinen un paso (por ejemplo, el
+  K). Alcanza si solo cambia un paso, pero acopla por herencia y no sirve para una política con otra
+  fórmula.
+- Strategy: una interfaz con una implementación por política, inyectada por DI.
+
+**Decisión adoptada:**
+- Strategy. `ICalculadorElo.Calcular(eloGanador, eloPerdedor)` devuelve
+  `ResultadoElo(NuevoEloGanador, NuevoEloPerdedor)`. Como los dos valores nuevos salen juntos, quien lo
+  usa no puede calcular uno con el valor ya actualizado del otro (el error clásico).
+- `CalculadorEloBase` implementa la política de la letra: K = 32, S = 1 para el ganador y 0 para el
+  perdedor, los dos con los valores previos, redondeo al entero más cercano y piso de 100. Con ELO
+  iguales el cambio es exactamente 16; en los demás casos `Ea` no deja un ,5 exacto, así que el
+  criterio de desempate del redondeo no influye.
+- La interfaz, el resultado y la implementación viven en `FarmeORT.Dominio/Elo/`: es una regla del
+  dominio y no depende de infraestructura.
+- `CalculadorEloBase` es `public sealed`. Es público porque lo registra `RegistroServicios`, que está en
+  otro assembly, igual que las entidades del dominio. Es sellado porque una política nueva implementa
+  `ICalculadorElo` en lugar de heredar. "Base" quiere decir "la política base de la letra", no una
+  clase base.
+- Se registra Scoped en `RegistroServicios`, en un bloque propio, como el resto de los servicios.
+- Para agregar una política: una clase nueva que implemente `ICalculadorElo` y cambiar la línea del
+  registro. El servicio de batallas no se toca.
+
+**Justificación:** OCP y Protected Variations: la política de ELO puede cambiar y queda aislada detrás
+de una interfaz. DIP: fallar batalla depende de la abstracción, y en sus tests se reemplaza por un
+mock. El cálculo se prueba aparte, con valores conocidos.
+
+**Conceptos del curso:** Strategy, OCP, DIP, Protected Variations y Polymorphism (GRASP), inyección de
+dependencias, TDD con "fake it" y triangulación con `DataRow`.
+
+**Evidencia:**
+- `FarmeORT.Dominio/Elo/`: `ICalculadorElo`, `ResultadoElo` y `CalculadorEloBase`.
+- `CalculadorEloBaseTests`, con un ciclo por comportamiento: ELO iguales, ELO distintos con los valores
+  previos y redondeo, y piso de 100. Los valores esperados de los ELO distintos (1408/1192 y 1224/1376)
+  fallan si se trunca en lugar de redondear o si el perdedor se calcula con el ELO nuevo del ganador
+  (daría 1193 y 1377).
+- `RegistroServicios` y `RegistroServiciosTests`.
+- Pendiente: agregar `ICalculadorElo`, `ResultadoElo` y `CalculadorEloBase` al diagrama de clases.
+
+**Participación de IA:**
+- La firma de `ICalculadorElo` y `ResultadoElo` la acordó el equipo como contrato compartido entre las
+  tres personas; Claude Code la implementó tal cual.
+- Claude Code propuso el plan de ciclos, el "fake it" del primer GREEN para que cada test agregue un
+  comportamiento y la ubicación en Dominio como `public sealed`. El integrante revisó el primer RED y
+  el plan, y aprobó el resto de las etapas en bloque.
+- Claude Code calculó los valores esperados con un script y eligió casos que distinguen redondear de
+  truncar y que detectan el error clásico de usar el ELO ya actualizado del ganador.
+
+---
+
 ### D-61 — Ranking: solo jugadores sin baja, ELO de mayor a menor con desempate por id
 
 **Problema:** la letra pide un ranking público con `cantidad` (10 por defecto) y `torneo` opcional,
@@ -1281,7 +1491,7 @@ devolver en ganadas y perdidas mientras no existan las batallas, que otra person
     `batallasGanadas` y `batallasPerdidas`.
   - Una `cantidad` que no es un número (`cantidad=abc`) responde 400 `VALIDATION_ERROR`. No hay 401,
     403, 404 ni 409.
-  - El filtro `torneo` se agrega cuando existan las inscripciones.
+  - El filtro `torneo` va en un PR aparte, junto con las rondas, porque necesita las inscripciones.
 - Entran solo los usuarios con rol Jugador y sin baja lógica (D-27): organizadores y administradores no
   juegan batallas.
 - Orden: ELO de mayor a menor y, si empatan, id de menor a mayor. La posición es el lugar en la lista
@@ -1316,7 +1526,7 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
 
 **Pendientes:**
 - Calcular `batallasGanadas` y `batallasPerdidas` cuando exista Batalla.
-- El filtro `torneo`, cuando existan las inscripciones: definir qué jugadores del torneo entran.
+- El filtro `torneo`: definir qué jugadores del torneo entran.
 - Agregar el endpoint a la especificación de la API y `ServicioRanking` al diagrama de clases.
 
 **Participación de IA:**
@@ -1326,7 +1536,7 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
   detectó antes de commitear; `PRAGMA reverse_unordered_selects` no sirvió porque no aplica a consultas
   con `ORDER BY`, y lo resolvió con el índice por ELO en el test.
 - Para correr la carpeta en la colección completa se cambió el salto (`setNextRequest`) del último
-  request de Skills obligatorias, que ahora pasa por Ranking antes del logout.
+  request de Inscripciones, que ahora pasa por Ranking antes del logout.
 
 ---
 
@@ -1358,20 +1568,21 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
 - Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
   enrutamiento antes de los filtros. Igual con los errores de conversión de la query
   (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
-- Repertorio (D-38): quitar una skill tiene que rechazarse (409) si es obligatoria de un torneo donde el
-  jugador tiene una inscripción Aceptada y el torneo no está Finalizado ni Cancelado. Se agrega con las
-  skills obligatorias y las inscripciones. Diagrama de clases con `SkillDeclarada` y la colección
+- ~~Repertorio (D-38): quitar una skill tiene que rechazarse (409) si es obligatoria de un torneo donde el
+  jugador tiene una inscripción Aceptada y el torneo no está Finalizado ni Cancelado.~~ Resuelto en D-41.
+  Pendiente: diagrama de clases con `SkillDeclarada` y la colección
   `Repertorio` de `Usuario`.
 - Torneos (D-36, D-37), lo que espera a otras funcionalidades:
   - Cancelar un torneo tiene que cancelar sus batallas no finalizadas y sus inscripciones Aceptadas en la
     misma operación (atómica). Hoy solo cambia el estado.
   - ~~Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar`.~~ Resuelto en D-40.
-  - Calcular `InscripcionesAceptadas` (hoy vale 0).
+  - ~~Calcular `InscripcionesAceptadas` (hoy vale 0).~~ Resuelto en D-41.
   - Sumar al detalle las skills obligatorias, los jugadores aceptados y el cuadro (rondas y batallas).
-  - Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
-    que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).
+  - ~~Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
+    que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).~~ Resuelto en D-41.
   - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya
-    está en `Torneo.Cancelar`, pero esa rama todavía no se puede cubrir.
+    está en `Torneo.Cancelar`, pero esa rama todavía no se puede cubrir. Lo mismo con
+    `Inscripcion.ExigeSkill` para un torneo Finalizado (D-41).
   - ~~Postman: carpeta Torneos con los casos de alta, modificación, cancelación y consulta (anónimo y
     autenticado).~~ Resuelto en el PR de torneos. Diagrama de clases con `Torneo`, `EstadoTorneo`, `IRepositorioTorneos`,
     `FiltroTorneos` y las excepciones nuevas.

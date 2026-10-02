@@ -1,0 +1,51 @@
+@startuml
+title Diseño propuesto — fallar batalla (fase 2 no implementada)
+actor Organizador
+participant "Controller de fallos (pendiente)" as C
+participant "Servicio de fallos (pendiente)" as S
+participant ":IRepositorioBatallas" as BRepo
+participant ":IRepositorioInscripciones (pendiente)" as IRepo
+participant ":ICalculadorElo (pendiente)" as E
+participant ":Usuario ganador" as G
+participant ":Usuario perdedor" as P
+participant ":Batalla" as B
+participant ":Inscripcion del perdedor (pendiente)" as I
+
+Organizador -> C : POST /api/v1/batallas/{id}/fallos\nAuthorization + { ganadorId, comentario }
+note over C : Token válido y rol Organizador; comentario de 10 a 500 caracteres.
+C -> S : fallar con identidad autenticada
+S -> BRepo : ObtenerPorId(id)
+BRepo --> S : batalla y jugadores
+note over S
+  Validar antes de modificar:
+  Pendiente o EnArbitraje, organizador asignado,
+  ganador participante y comentario válido.
+  Organizador ajeno: 403 (D-40).
+end note
+S -> IRepo : consultar inscripción del perdedor en el torneo
+IRepo --> S : inscripción
+S -> E : Calcular(eloGanadorPrevio, eloPerdedorPrevio)
+E --> S : ResultadoElo(nuevoGanador, nuevoPerdedor)
+group cambios en el mismo contexto scoped
+  S -> G : ActualizarElo(nuevoGanador)
+  S -> P : ActualizarElo(nuevoPerdedor)
+  S -> B : registrar ganador y comentario; Finalizada\n(método de dominio por implementar)
+  S -> I : Eliminar()
+  S -> BRepo : Guardar()
+  note over BRepo : Un SaveChanges o una transacción para todos los efectos.
+end
+alt guardado correcto
+  BRepo --> S : confirmado
+  S --> C : BatallaDetalleResponse
+  C --> Organizador : 201 + Location
+else error de persistencia
+  BRepo --> S : excepción; rollback completo
+  S --> C : excepción
+  C --> Organizador : error del filtro global
+end
+note over S
+  Secuencia propuesta según el contrato del usuario.
+  Espera Inscripcion e ICalculadorElo en develop.
+  No implementa la fórmula ELO ni rondas.
+end note
+@enduml

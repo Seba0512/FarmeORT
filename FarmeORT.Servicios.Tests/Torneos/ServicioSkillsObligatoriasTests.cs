@@ -1,9 +1,11 @@
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Skills;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.Servicios.Torneos;
@@ -22,6 +24,7 @@ public sealed class ServicioSkillsObligatoriasTests
 
     private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private Mock<IRepositorioSkills> _repositorioSkills = null!;
+    private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
     private Torneo _torneo = null!;
     private Skill _skill = null!;
     private ServicioSkillsObligatorias _servicio = null!;
@@ -31,6 +34,7 @@ public sealed class ServicioSkillsObligatoriasTests
     {
         _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
         _repositorioSkills = new Mock<IRepositorioSkills>(MockBehavior.Strict);
+        _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
         {
             Id = OrganizadorId,
@@ -43,7 +47,7 @@ public sealed class ServicioSkillsObligatoriasTests
         {
             Id = SkillId,
         };
-        _servicio = new ServicioSkillsObligatorias(_repositorioTorneos.Object, _repositorioSkills.Object);
+        _servicio = new ServicioSkillsObligatorias(_repositorioTorneos.Object, _repositorioSkills.Object, _repositorioInscripciones.Object);
     }
 
     [TestMethod]
@@ -51,6 +55,7 @@ public sealed class ServicioSkillsObligatoriasTests
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
         _repositorioSkills.Setup(r => r.ObtenerPorId(SkillId)).Returns(_skill);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([]);
         _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
 
         var response = _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId);
@@ -164,6 +169,25 @@ public sealed class ServicioSkillsObligatoriasTests
     }
 
     [TestMethod]
+    public void Asociar_InscriptosAceptadosSinLaSkill_LanzaJugadoresSinSkillObligatoriaConSusNicknamesSinGuardar()
+    {
+        var conLaSkill = CrearJugador(7, "anaperez");
+        conLaSkill.DeclararSkill(_skill, 4, FechaActual);
+        var sinLaSkill = CrearJugador(8, "brunolopez");
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioSkills.Setup(r => r.ObtenerPorId(SkillId)).Returns(_skill);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId))
+            .Returns([new Inscripcion(_torneo, conLaSkill, new DateTime(2026, 10, 1)), new Inscripcion(_torneo, sinLaSkill, new DateTime(2026, 10, 1))]);
+
+        var excepcion = Assert.ThrowsExactly<JugadoresSinSkillObligatoriaException>(
+            () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId));
+
+        CollectionAssert.AreEqual(new[] { "brunolopez" }, excepcion.Detalles.ToArray());
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+        Assert.IsEmpty(_torneo.SkillsObligatorias);
+    }
+
+    [TestMethod]
     public void Asociar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneoSinGuardar()
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
@@ -171,5 +195,13 @@ public sealed class ServicioSkillsObligatoriasTests
         Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(
             () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, 99));
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    private static Usuario CrearJugador(int id, string nickname)
+    {
+        return new Usuario("Jugador", "Inscripto", nickname + "@farmeort.com", nickname, new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
+        {
+            Id = id,
+        };
     }
 }

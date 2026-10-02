@@ -110,6 +110,14 @@ public sealed partial class Usuario
         _repertorio.Remove(declarada);
     }
 
+    // Las skills pedidas que el jugador no tiene en su repertorio, en el mismo orden en que se pidieron.
+    public IReadOnlyList<Skill> SkillsFaltantes(IEnumerable<Skill> requeridas)
+    {
+        return requeridas
+            .Where(skill => !_repertorio.Any(d => d.SkillId == skill.Id))
+            .ToList();
+    }
+
     // Baja lógica: se conservan los datos para el historial de batallas y torneos.
     public void Eliminar()
     {
