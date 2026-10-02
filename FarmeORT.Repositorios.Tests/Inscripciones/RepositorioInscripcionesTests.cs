@@ -170,6 +170,33 @@ public sealed class RepositorioInscripcionesTests
     }
 
     [TestMethod]
+    [DataRow(EstadoInscripcion.Cancelada)]
+    [DataRow(EstadoInscripcion.Eliminada)]
+    public void Agregar_InscripcionHistorica_PermiteReinscripcionSinPerderElEstadoAnterior(EstadoInscripcion estado)
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        var historicaId = GuardarInscripcion(torneoId, jugadorId, i =>
+        {
+            if(estado == EstadoInscripcion.Cancelada)
+            {
+                i.Cancelar();
+            }
+            else
+            {
+                i.Eliminar();
+            }
+        });
+        var nueva = CrearInscripcion(torneoId, jugadorId);
+
+        _repositorio.Agregar(nueva);
+
+        Assert.AreEqual(estado, _baseDeDatos.Contexto.Inscripciones.AsNoTracking().Single(i => i.Id == historicaId).Estado);
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId));
+    }
+
+    [TestMethod]
     public void Agregar_InscripcionNueva_QuedaGuardadaConSuId()
     {
         var torneoId = GuardarTorneo("COPAAURA");

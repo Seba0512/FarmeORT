@@ -77,6 +77,27 @@ public sealed class RepositorioRondasTests
     }
 
     [TestMethod]
+    public void GuardarRonda_TorneoCanceladoPorOtroPedido_NoDejaBatallasNiCambiaLaCancelacion()
+    {
+        var jugadores = Enumerable.Range(7, 4).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
+        var torneo = CrearTorneo();
+        _baseDeDatos.Contexto.AddRange(jugadores);
+        _baseDeDatos.Contexto.Add(torneo);
+        _baseDeDatos.Contexto.SaveChanges();
+        torneo.Iniciar(4);
+        var ronda = CrearBatallas(torneo, 1, jugadores);
+        using var otro = _baseDeDatos.CrearContexto();
+        otro.Torneos.Single(t => t.Id == torneo.Id).Cancelar();
+        otro.SaveChanges();
+
+        Assert.ThrowsExactly<TorneoModificadoException>(() => _repositorio.GuardarRonda(torneo, ronda));
+
+        Assert.AreEqual(0, _baseDeDatos.Contexto.Batallas.Count(b => b.TorneoId == torneo.Id));
+        Assert.AreEqual(EstadoTorneo.Cancelado, _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Estado);
+        Assert.IsEmpty(_baseDeDatos.Contexto.ChangeTracker.Entries().ToList());
+    }
+
+    [TestMethod]
     public void GuardarRonda_RondaNueva_GuardaLasBatallasYElEstadoDelTorneoJuntos()
     {
         var jugadores = Enumerable.Range(7, 4).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
