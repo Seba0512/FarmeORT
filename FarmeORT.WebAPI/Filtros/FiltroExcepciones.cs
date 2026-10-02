@@ -122,6 +122,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_IN_PROGRESS", "El torneo no está en curso."),
         [typeof(TorneoConBatallasSinResolverException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_HAS_UNRESOLVED_BATTLES", "El torneo todavía tiene batallas sin resolver."),
+        [typeof(TorneoSinCampeonException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_WITHOUT_CHAMPION", "Para finalizar el torneo tiene que quedar un solo jugador sin eliminar."),
     };
 
     public void OnException(ExceptionContext context)
