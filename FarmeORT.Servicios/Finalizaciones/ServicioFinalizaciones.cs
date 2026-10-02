@@ -16,7 +16,6 @@ internal sealed class ServicioFinalizaciones(
 {
     public FinalizacionResponse Finalizar(int torneoId, int usuarioId, string rol)
     {
-        _ = repositorioBatallas;
         var torneo = repositorioTorneos.ObtenerPorId(torneoId);
         if(torneo == null)
         {
@@ -27,6 +26,11 @@ internal sealed class ServicioFinalizaciones(
         if(rol != Roles.Administrador && torneo.OrganizadorId != usuarioId)
         {
             throw new NoEsOrganizadorDelTorneoException();
+        }
+
+        if(repositorioBatallas.ListarSinResolverDelTorneo(torneoId).Count > 0)
+        {
+            throw new TorneoConBatallasSinResolverException();
         }
 
         var campeon = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Single().Jugador;
