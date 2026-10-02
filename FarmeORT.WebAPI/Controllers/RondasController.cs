@@ -19,6 +19,7 @@ public sealed class RondasController(IServicioRondas servicioRondas) : Controlle
     }
 
     [HttpGet]
+    [AutenticacionOpcional]
     public IActionResult Listar(int torneoId)
     {
         var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
@@ -26,6 +27,7 @@ public sealed class RondasController(IServicioRondas servicioRondas) : Controlle
     }
 
     [HttpGet("{numero:int}")]
+    [AutenticacionOpcional]
     public IActionResult ObtenerPorNumero(int torneoId, int numero)
     {
         var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
