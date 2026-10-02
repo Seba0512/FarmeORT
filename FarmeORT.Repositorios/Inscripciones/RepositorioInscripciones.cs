@@ -112,6 +112,12 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
                 throw new InscripcionYaExisteException();
             }
 
+            var cupo = contexto.Torneos.Where(t => t.Id == inscripcion.TorneoId).Select(t => t.Cupo).Single();
+            if(ContarAceptadas(inscripcion.TorneoId) >= cupo)
+            {
+                throw new TorneoCompletoException();
+            }
+
             throw;
         }
     }
