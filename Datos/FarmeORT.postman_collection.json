@@ -3411,6 +3411,52 @@
           ]
         },
         {
+          "name": "Usuarios - no se elimina a un jugador inscripto en un torneo vigente → 409",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios/{{usrJugadorId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios",
+                "{{usrJugadorId}}"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode USER_HAS_ACTIVE_REGISTRATION\", () => pm.expect(pm.response.json().errorCode).to.eql(\"USER_HAS_ACTIVE_REGISTRATION\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Usuarios - Location mantiene autenticación → 401",
           "request": {
             "method": "GET",
