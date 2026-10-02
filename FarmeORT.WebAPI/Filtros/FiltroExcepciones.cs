@@ -101,6 +101,14 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         [typeof(UsuarioConInscripcionVigenteException)] =
             new(StatusCodes.Status409Conflict, "USER_HAS_ACTIVE_REGISTRATION", "El usuario está inscripto en un torneo que no está Finalizado ni Cancelado."),
 
+        // Persona B: fallo de batalla (D-53).
+        [typeof(BatallaNoFallableException)] =
+            new(StatusCodes.Status409Conflict, "BATTLE_NOT_JUDGEABLE", "Solo se puede fallar una batalla Pendiente o En arbitraje."),
+
+        // Persona B: visibilidad de consultas de batallas (D-55).
+        [typeof(JugadorNoInscriptoEnTorneoException)] =
+            new(StatusCodes.Status403Forbidden, "PLAYER_NOT_IN_TOURNAMENT", "No tenés una inscripción en este torneo."),
+
         // Persona C: rondas (D-62).
         [typeof(TorneoIncompletoException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas."),

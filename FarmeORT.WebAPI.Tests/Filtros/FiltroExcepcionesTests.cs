@@ -21,6 +21,22 @@ public sealed class FiltroExcepcionesTests
     }
 
     [TestMethod]
+    public void OnException_JugadorSinInscripcion_Devuelve403ConCodigoPropio()
+    {
+        var contexto = CrearContexto(new JugadorNoInscriptoEnTorneoException());
+
+        _filtro.OnException(contexto);
+
+        var resultado = contexto.Result as ObjectResult;
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status403Forbidden, resultado.StatusCode);
+        var error = resultado.Value as ErrorResponse;
+        Assert.IsNotNull(error);
+        Assert.AreEqual("PLAYER_NOT_IN_TOURNAMENT", error.ErrorCode);
+        Assert.AreEqual("No tenés una inscripción en este torneo.", error.UserMessage);
+    }
+
+    [TestMethod]
     public void OnException_CredencialesInvalidas_Devuelve401ConErrorInvalidCredentials()
     {
         var contexto = CrearContexto(new CredencialesInvalidasException());
@@ -90,6 +106,7 @@ public sealed class FiltroExcepcionesTests
     [DataRow(typeof(UsuarioOrganizaTorneoVigenteException), StatusCodes.Status409Conflict, "USER_ORGANIZES_ACTIVE_TOURNAMENT", "El usuario organiza un torneo que no está Finalizado ni Cancelado.")]
     [DataRow(typeof(UsuarioConBatallasSinResolverException), StatusCodes.Status409Conflict, "USER_HAS_UNRESOLVED_BATTLES", "El usuario tiene batallas Pendientes o En arbitraje.")]
     [DataRow(typeof(UsuarioConInscripcionVigenteException), StatusCodes.Status409Conflict, "USER_HAS_ACTIVE_REGISTRATION", "El usuario está inscripto en un torneo que no está Finalizado ni Cancelado.")]
+    [DataRow(typeof(BatallaNoFallableException), StatusCodes.Status409Conflict, "BATTLE_NOT_JUDGEABLE", "Solo se puede fallar una batalla Pendiente o En arbitraje.")]
     public void OnException_ErrorMapeado_DevuelveSuStatusYCodigo(Type tipo, int status, string codigo, string mensaje)
     {
         var contexto = CrearContexto((Exception)Activator.CreateInstance(tipo)!);

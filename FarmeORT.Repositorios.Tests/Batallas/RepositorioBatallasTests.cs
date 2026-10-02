@@ -1,8 +1,10 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.Repositorios.Batallas;
 using Microsoft.EntityFrameworkCore;
 
@@ -28,6 +30,146 @@ public sealed class RepositorioBatallasTests
     public void Limpiar()
     {
         _baseDeDatos.Dispose();
+    }
+
+    [TestMethod]
+    [DataRow(null, null, null, 20, 0, "14,11,12,16,15")]
+    [DataRow(EstadoBatalla.Pendiente, null, null, 20, 0, "14,12")]
+    [DataRow(EstadoBatalla.Cancelada, null, null, 20, 0, "11")]
+    [DataRow(EstadoBatalla.Finalizada, null, null, 20, 0, "15")]
+    [DataRow(EstadoBatalla.EnArbitraje, null, null, 20, 0, "16")]
+    [DataRow(null, 2, null, 20, 0, "11,12,16")]
+    [DataRow(null, null, 7, 20, 0, "14,11,12,15")]
+    [DataRow(null, null, 8, 20, 0, "14,11,12,15")]
+    [DataRow(null, null, 9, 20, 0, "16")]
+    [DataRow(EstadoBatalla.Pendiente, 2, 8, 20, 0, "12")]
+    [DataRow(null, null, null, 2, 1, "11,12")]
+    [DataRow(null, 99, null, 20, 0, "")]
+    public void Listar_FiltrosYPagina_OrdenaPorRondaEIdEnLaConsulta(
+        EstadoBatalla? estado, int? ronda, int? jugadorId, int limite, int desplazamiento, string idsEsperados)
+    {
+        var original = GuardarBatallaConHistorial();
+        var torneo = original.Torneo;
+        var jugador1 = original.Jugador1;
+        var jugador2 = original.Jugador2;
+        var primera = new Batalla(torneo, 1, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 14 };
+        var cancelada = new Batalla(torneo, 2, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 11 };
+        cancelada.Cancelar();
+        var finalizada = new Batalla(torneo, 3, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 15 };
+        finalizada.Fallar(8, "Victoria por abandono.", -16, 16);
+        var otroJugador = CrearUsuario(9, Rol.Jugador);
+        var otros = new Batalla(torneo, 2, otroJugador, CrearUsuario(10, Rol.Jugador), new SorteoInicial(otroJugador)) { Id = 16 };
+        var otroTorneo = new Torneo("COPAFUEGO", "Copa Fuego", "Otro torneo eliminatorio de batallas.",
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 4, torneo.Organizador, FechaActual)
+        { Id = 6 };
+        var ajena = new Batalla(otroTorneo, 1, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 17 };
+        _baseDeDatos.Contexto.Batallas.AddRange(primera, cancelada, finalizada, otros, ajena);
+        _baseDeDatos.Contexto.Entry(otros).Property(b => b.Estado).CurrentValue = EstadoBatalla.EnArbitraje;
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroBatallas(5, estado, ronda, jugadorId, limite, desplazamiento));
+
+        var esperados = idsEsperados.Length == 0 ? Array.Empty<int>() : idsEsperados.Split(',').Select(int.Parse).ToArray();
+        CollectionAssert.AreEqual(esperados, resultado.Select(b => b.Id).ToArray());
+        Assert.IsTrue(resultado.All(b => b.Jugador1.Nickname == $"usuario{b.Jugador1Id}" && b.Jugador2.Nickname == $"usuario{b.Jugador2Id}"));
+        Assert.IsTrue(resultado.All(b => b.TorneoId == 5));
+        Assert.AreEqual(0, _baseDeDatos.Contexto.ChangeTracker.Entries().Count());
+    }
+
+    [TestMethod]
+    public void Guardar_Fallo_PersisteGanadorComentarioEloYEliminacionJuntos()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var inscripcion = new Inscripcion(batalla.Torneo, batalla.Jugador2, FechaActual.ToDateTime(TimeOnly.MinValue));
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        _baseDeDatos.Contexto.SaveChanges();
+        batalla.Jugador1.ActualizarElo(1216);
+        batalla.Jugador2.ActualizarElo(1184);
+        batalla.Fallar(7, "Victoria por abandono.", 16, -16);
+        inscripcion.Eliminar();
+
+        _repositorio.Guardar();
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var guardada = _baseDeDatos.Contexto.Batallas.Include(b => b.Ganador).Single(b => b.Id == 12);
+        Assert.AreEqual(EstadoBatalla.Finalizada, guardada.Estado);
+        Assert.AreEqual(7, guardada.GanadorId);
+        Assert.AreEqual(7, guardada.Ganador!.Id);
+        Assert.AreEqual("Victoria por abandono.", guardada.Comentario);
+        Assert.AreEqual(16, guardada.CambioEloJugador1);
+        Assert.AreEqual(-16, guardada.CambioEloJugador2);
+        Assert.IsNull(guardada.JugadorTurnoId);
+        Assert.AreEqual(1216, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 7).Elo);
+        Assert.AreEqual(1184, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 8).Elo);
+        Assert.AreEqual(EstadoInscripcion.Eliminada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
+    }
+
+    [TestMethod]
+    public void Guardar_CancelacionConcurrente_RevierteTodosLosEfectosDelFallo()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var inscripcion = new Inscripcion(batalla.Torneo, batalla.Jugador2, FechaActual.ToDateTime(TimeOnly.MinValue));
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        _baseDeDatos.Contexto.SaveChanges();
+        batalla.Jugador1.ActualizarElo(1216);
+        batalla.Jugador2.ActualizarElo(1184);
+        batalla.Fallar(7, "Victoria por abandono.", 16, -16);
+        inscripcion.Eliminar();
+        using var otroContexto = CrearOtroContexto();
+        var cancelada = otroContexto.Batallas.Single(b => b.Id == 12);
+        cancelada.Cancelar();
+        otroContexto.SaveChanges();
+
+        Assert.ThrowsExactly<BatallaModificadaException>(_repositorio.Guardar);
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var guardada = _baseDeDatos.Contexto.Batallas.Single(b => b.Id == 12);
+        Assert.AreEqual(EstadoBatalla.Cancelada, guardada.Estado);
+        Assert.IsNull(guardada.GanadorId);
+        Assert.IsNull(guardada.Comentario);
+        Assert.AreEqual(1200, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 7).Elo);
+        Assert.AreEqual(1200, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 8).Elo);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
+    }
+
+    [TestMethod]
+    public void Guardar_EloConcurrente_RechazaFalloSinGuardarEfectosParciales()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var inscripcion = new Inscripcion(batalla.Torneo, batalla.Jugador2, FechaActual.ToDateTime(TimeOnly.MinValue));
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        _baseDeDatos.Contexto.SaveChanges();
+        batalla.Jugador1.ActualizarElo(1216);
+        batalla.Jugador2.ActualizarElo(1184);
+        batalla.Fallar(7, "Victoria por abandono.", 16, -16);
+        inscripcion.Eliminar();
+        using var otroContexto = CrearOtroContexto();
+        var jugador = otroContexto.Usuarios.Single(u => u.Id == 7);
+        jugador.ActualizarElo(1400);
+        otroContexto.SaveChanges();
+
+        Assert.ThrowsExactly<BatallaModificadaException>(_repositorio.Guardar);
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        Assert.AreEqual(EstadoBatalla.Pendiente, _baseDeDatos.Contexto.Batallas.Single(b => b.Id == 12).Estado);
+        Assert.IsNull(_baseDeDatos.Contexto.Batallas.Single(b => b.Id == 12).GanadorId);
+        Assert.AreEqual(1400, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 7).Elo);
+        Assert.AreEqual(1200, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 8).Elo);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
+    }
+
+    [TestMethod]
+    public void Persistencia_Fallo_ConfiguraGanadorOpcionalYComentarioAcotado()
+    {
+        var entidad = _baseDeDatos.Contexto.Model.FindEntityType(typeof(Batalla))!;
+
+        var ganador = entidad.FindNavigation(nameof(Batalla.Ganador))!;
+
+        Assert.AreEqual(500, entidad.FindProperty(nameof(Batalla.Comentario))!.GetMaxLength());
+        Assert.IsTrue(entidad.FindProperty(nameof(Batalla.GanadorId))!.IsNullable);
+        Assert.AreEqual(nameof(Batalla.GanadorId), ganador.ForeignKey.Properties.Single().Name);
+        Assert.AreEqual(DeleteBehavior.Restrict, ganador.ForeignKey.DeleteBehavior);
     }
 
     [TestMethod]

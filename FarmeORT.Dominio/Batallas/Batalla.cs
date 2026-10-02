@@ -78,6 +78,47 @@ public sealed class Batalla
 
     public IReadOnlyCollection<Lanzamiento> Lanzamientos => _lanzamientos.AsReadOnly();
 
+    public int? GanadorId { get; private set; }
+
+    public Usuario? Ganador { get; private set; }
+
+    public string? Comentario { get; private set; }
+
+    public int? CambioEloJugador1 { get; private set; }
+
+    public int? CambioEloJugador2 { get; private set; }
+
+    public void Fallar(int ganadorId, string? comentario, int cambioEloJugador1, int cambioEloJugador2)
+    {
+        ValidarFallo(ganadorId, comentario);
+
+        Ganador = ganadorId == Jugador1Id ? Jugador1 : Jugador2;
+        GanadorId = ganadorId;
+        Comentario = comentario;
+        CambioEloJugador1 = cambioEloJugador1;
+        CambioEloJugador2 = cambioEloJugador2;
+        Estado = EstadoBatalla.Finalizada;
+        JugadorTurnoId = null;
+    }
+
+    public void ValidarFallo(int ganadorId, string? comentario)
+    {
+        if(Estado != EstadoBatalla.Pendiente && Estado != EstadoBatalla.EnArbitraje)
+        {
+            throw new BatallaNoFallableException();
+        }
+
+        if(ganadorId != Jugador1Id && ganadorId != Jugador2Id)
+        {
+            throw new JugadorNoParticipaEnBatallaException();
+        }
+
+        if(string.IsNullOrWhiteSpace(comentario) || comentario.Length is < 10 or > 500)
+        {
+            throw new DatosInvalidosException("El comentario debe tener entre 10 y 500 caracteres y no puede estar vacío.");
+        }
+    }
+
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
     {
         ValidarLanzamiento(jugador, skill);

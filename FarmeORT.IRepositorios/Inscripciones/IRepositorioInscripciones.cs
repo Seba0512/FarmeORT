@@ -24,4 +24,10 @@ public interface IRepositorioInscripciones
     void Agregar(Inscripcion inscripcion);
 
     void Actualizar(Inscripcion inscripcion);
+
+    // Persona B: inscripción rastreada del perdedor para el único guardado del fallo.
+    Inscripcion? ObtenerAceptada(int torneoId, int jugadorId);
+
+    // Persona B: la inscripción histórica permite consultar batallas aun después de ser eliminado.
+    bool ExisteDelJugador(int torneoId, int jugadorId);
 }

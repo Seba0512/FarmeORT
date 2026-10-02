@@ -1669,6 +1669,66 @@ Un `DbUpdateConcurrencyException` se traduce a `BatallaModificadaException` (409
 
 ---
 
+### D-53 — Fallo opcional embebido e historial de ELO por batalla
+
+**Problema:** A y C necesitan consultar `GanadorId` y `Estado`; el detalle debe conservar comentario y ELO ganado/perdido aunque cambie el ELO actual en rondas posteriores. La letra permite resolver una batalla Pendiente por abandono o EnArbitraje por decisión del organizador.
+
+**Alternativas consideradas:** entidad `Fallo` 0..1 con tabla y repositorio propios; propiedades opcionales en `Batalla`; calcular el cambio histórico restando el ELO actual al inicial. La última alternativa pierde el resultado cuando hay otras batallas y confunde ELO al crear con ELO al fallar.
+
+**Decisión adoptada:** el fallo se representa con `GanadorId: int?`, `Ganador: Usuario?`, `Comentario: string?` y los cambios firmados `CambioEloJugador1/2: int?` dentro de `Batalla`. `Fallar` fija esos datos, pasa a Finalizada y elimina el turno. No se introduce una entidad/recurso consultable adicional. Los cambios se calculan a partir de los ELO previos al fallo y se persisten; el ELO de cada jugador en la respuesta sigue siendo el actual.
+
+`Batalla.ValidarFallo` controla estado, participación y comentario de 10 a 500 caracteres no blanco. El servicio lo invoca antes de los efectos; `Fallar` lo vuelve a invocar para proteger llamadas directas al dominio. El request valida presencia, id positivo y longitud en el borde. El organizador ajeno reutiliza D-40. `BATTLE_NOT_JUDGEABLE` distingue el estado no fallable del estado no lanzable. El mapeo queda en `RespuestasBatallas`, dentro de Servicios, como en los otros casos de uso (D-12).
+
+**Justificación:** hay como máximo un fallo por batalla y no tiene ciclo de vida ni consultas propias; las propiedades reducen tablas y dependencias sin perder historial. La FK del ganador es opcional, explícita y Restrict; el comentario tiene máximo 500 en EF. Information Expert concentra las reglas en Batalla, y la representación HTTP permanece en DTOs.
+
+**Conceptos del curso:** Information Expert, alta cohesión, bajo acoplamiento, SRP, validación en borde/dominio, REST y trazabilidad de un resultado histórico.
+
+**Evidencia:** `ServicioFallosTests` cubre ambos ganadores y estados válidos, el orden de efectos, ELO previos, historial y rechazos; `BatallaTests` comprueba límites y llamadas directas; `RepositorioBatallasTests` recarga el fallo y su FK; especificación y diagramas en `docs/api/batallas-lanzamientos.md`, `docs/uml/fallar-batalla.puml` y `docs/uml/batallas-lanzamientos.puml`.
+
+**Participación de IA:** Codex contrastó letra, tabla API, AGENTS y skills da2 con el código integrado. Se eligieron las propiedades opcionales dentro de la alternativa que autorizó el usuario y se descartó introducir una entidad Fallo con repositorio. Se agregó el historial de cambios porque la letra pide ELO ganado/perdido y el ELO actual no lo conserva. Los tests guiaron cada implementación y el refactor separó el mapeo sin cambiar comportamiento. El primer arreglo de un test de datos inválidos no configuraba el repositorio y se corrigió antes de guardar la evidencia RED. Autor y committer Git son exclusivamente el integrante; esta declaración académica no atribuye autoría Git a la herramienta.
+
+---
+
+### D-54 — Un guardado para fallo, ELO y eliminación, con concurrencia optimista
+
+**Problema:** guardar los ELO, el resultado y la eliminación por separado puede dejar una batalla Finalizada con ELO incorrecto o un perdedor que sigue aceptado. Un ELO leído puede cambiar antes del guardado, incluso sin cambiar el estado de esa batalla.
+
+**Alternativas consideradas:** varios guardados con transacción explícita y una nueva abstracción; un único `SaveChanges` del contexto Scoped compartido; actualizaciones directas en SQL. Para concurrencia: solo el token existente de `Batalla.Estado`, bloqueo pesimista o sumar el ELO como token.
+
+**Decisión adoptada:** reutilizar el único guardado de D-52/D-42. `ObtenerAceptada(torneoId, jugadorId)`, al final de la interfaz de Inscripciones, obtiene rastreada la inscripción del perdedor sin guardar. Todas las precondiciones se verifican antes de mutar. El calculador inyectado recibe los dos ELO previos en una única llamada; luego `Usuario.ActualizarElo` actualiza ambos, `Batalla.Fallar` registra resultado y Finalizada, `Inscripcion.Eliminar` aplica la derrota y `IRepositorioBatallas.Guardar` ejecuta el único `SaveChanges`. No se llama a `IRepositorioInscripciones.Actualizar`, que guardaría por separado.
+
+El ELO de Usuario se configura como token de concurrencia, además del estado de Batalla existente. Un conflicto revierte el guardado completo, limpia el seguimiento y se traduce a `BATTLE_CHANGED`. El cliente debe consultar otra vez; no se reintenta automáticamente con valores antiguos. `ActualizarElo` rechaza valores menores a 100; el calculador base de C conserva sus reglas y no se modifica. El perdedor sin inscripción Aceptada produce `REGISTRATION_NOT_ACTIVE` antes del cálculo.
+
+**Justificación:** EF Core ya ofrece atomicidad para un `SaveChanges`; no hace falta Unit of Work ni una transacción nueva. La atomicidad depende del contexto Scoped común registrado por la fábrica. El token ELO evita una actualización perdida entre batallas; el estado impide aplicar un segundo fallo o fallar una batalla cancelada concurrentemente. No modifica el proceso de rondas de C ni las restricciones de usuarios de A.
+
+**Conceptos del curso:** transacciones, concurrencia optimista, DI Scoped, DIP/OCP mediante `ICalculadorElo` (D-60), Information Expert y TDD Outside-In con SQLite.
+
+**Evidencia:** el test del servicio inspecciona todos los efectos en el momento del único guardado y usa un mock estricto de `ICalculadorElo` con ELO previos distintos. Los tests SQLite prueban persistencia conjunta y rollback ante cancelación y ELO concurrentes, preservando la modificación ajena. PR #19 se incorporó antes de la migración y se conserva `ExisteSinResolverDelJugador`, la consulta de A.
+
+**Participación de IA:** Codex aplicó la atomicidad aprobada en el prompt y contrastó el patrón con D-42/D-52. Un RED demostró que solo el estado no evitaba sobrescribir un ELO concurrente; se agregó el token mínimo y se reutilizó la traducción de conflicto existente. Se descartaron transacciones con abstracciones nuevas y SQL que omitiera las reglas del dominio. Se conservó la migración integrada `AgregaInscripcionesYBatallas`; la migración nueva agrega únicamente el fallo y el modelo de concurrencia de ELO.
+
+---
+
+### D-55 — Visibilidad histórica por torneo y consultas filtradas antes de paginar
+
+**Problema:** la letra 1.7 restringe las consultas por torneo, no por la pareja de una batalla. El fallo elimina la inscripción del perdedor; restringir a Aceptadas haría desaparecer inmediatamente su historial. El filtro jugadorId proviene del cliente y no puede usarse como identidad para autorizar.
+
+**Alternativas consideradas:** limitar a las batallas donde juega el usuario; exigir una inscripción Aceptada; admitir cualquier inscripción en el torneo y separar autorización de filtros. Para el listado: filtrar/paginar en memoria o realizar ambas operaciones en SQL con orden explícito.
+
+**Decisión adoptada:** los tres GET autorizan al Jugador mediante `ExisteDelJugador(torneoId, usuarioId)` sin filtrar estado de inscripción; al Organizador mediante la asignación de D-40; al Administrador para cualquier torneo. La identidad y el rol vienen de la sesión autenticada. La consulta histórica conserva acceso para Aceptada, Eliminada o Cancelada, conforme al prompt «tiene inscripción». El jugador sin inscripción recibe 403 `PLAYER_NOT_IN_TOURNAMENT`. Primero se comprueba existencia del recurso; después se autoriza; al final se aplican filtros y se crean DTOs.
+
+`FiltroBatallas` transporta filtros normalizados al repositorio. `Listar` aplica torneo, estado, ronda y cualquiera de los dos jugadores, ordena por NumeroRonda e Id y recién entonces usa Skip/Take en SQL. Reutiliza Paginacion y ValoresPorNombre (D-35); la consulta del listado usa AsNoTracking. Las consultas nuevas se agregan al final de las interfaces, conservando las de A. El detalle reutiliza el fallo y el historial de D-53; mapeo y carga autorizada están compartidos entre los GET.
+
+**Justificación:** el ámbito de visibilidad es estable después del fallo y el cliente no puede ampliar permisos modificando filtros. La paginación tiene resultados deterministas y limita lo leído de la base. Las consultas no guardan ni mutan entidades. `HistorialLanzamientosController` protege el GET con los tres roles; el controller de POST conserva exclusivamente Jugador sin que su atributo restrinja las consultas.
+
+**Conceptos del curso:** alta cohesión, bajo acoplamiento, SRP, DI, autorización a nivel de recurso, REST, separación de responsabilidades y TDD Outside-In con Moq/SQLite.
+
+**Evidencia:** `BatallasControllerTests`, `HistorialLanzamientosControllerTests`, `ServicioBatallasTests`, tests SQLite de ambas consultas, filtro de excepciones y registro Scoped. Los tests cubren un jugador inscripto que no pertenece a la pareja, jugadores ajenos, organizadores ajenos, administrador, estados de inscripción y filtrado/orden/paginación. PR #18–#21 de A incorporados conservando cancelación, restricciones, detalle y filtro del ranking; B no implementa los conteos del ranking ni las rondas.
+
+**Participación de IA:** Codex contrastó el prompt, letra, contrato API, AGENTS y skills con los cambios integrados de A. Propuso separar el permiso por torneo del filtro jugadorId, retener acceso histórico y reutilizar los normalizadores existentes. Se descartaron permisos basados en una batalla o solo en Aceptadas porque contradicen el ámbito solicitado y eliminan el historial del perdedor. RED/GREEN guiaron controllers, servicio, consultas, errores y DI; un refactor real extrajo carga autorizada y mapeo. El integrante conserva la autoría Git exclusiva. C aún no dispone de rondas en develop: la ejecución integrada de Postman requiere sus fixtures y no se declara verificada. Las carpetas B se validaron por separado con Newman sobre la API real y SQLite con batallas manuales: 82 requests, 174 assertions, sin fallos. Se conservan todos los saltos ajenos y se documentan las variables que debe producir Rondas.
+
+---
+
 ### D-60 — El cálculo de ELO es un punto de variación (Strategy): `ICalculadorElo` ← `CalculadorEloBase`
 
 **Problema:** al fallar una batalla hay que calcular el nuevo ELO de los dos jugadores (letra: K = 32,

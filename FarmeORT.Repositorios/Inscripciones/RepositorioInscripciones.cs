@@ -102,6 +102,17 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
         contexto.SaveChanges();
     }
 
+    public Inscripcion? ObtenerAceptada(int torneoId, int jugadorId)
+    {
+        return contexto.Inscripciones.SingleOrDefault(i =>
+            i.TorneoId == torneoId && i.JugadorId == jugadorId && i.Estado == EstadoInscripcion.Aceptada);
+    }
+
+    public bool ExisteDelJugador(int torneoId, int jugadorId)
+    {
+        return contexto.Inscripciones.Any(i => i.TorneoId == torneoId && i.JugadorId == jugadorId);
+    }
+
     public void Actualizar(Inscripcion inscripcion)
     {
         contexto.Inscripciones.Update(inscripcion);

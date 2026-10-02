@@ -47,6 +47,12 @@ public static class RegistroServicios
 
         servicios.AddScoped<IServicioRanking, ServicioRanking>();
 
+        // Persona B: fallos de batallas.
+        servicios.AddScoped<IServicioFallos, ServicioFallos>();
+
+        // Persona B: consultas de batallas.
+        servicios.AddScoped<IServicioBatallas, ServicioBatallas>();
+
         // Persona C: rondas y su estrategia de emparejamiento (D-62).
         servicios.AddScoped<IEstrategiaEmparejamiento, EmparejamientoPorElo>();
         servicios.AddScoped<IServicioRondas, ServicioRondas>();
