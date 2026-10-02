@@ -4,6 +4,7 @@ using FarmeORT.Dominio.Rondas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -74,6 +75,15 @@ public sealed class ServicioRondasTests
 
         Assert.AreEqual(EstadoTorneo.EnCurso, _torneo.Estado);
         _repositorioTorneos.Verify(r => r.Actualizar(_torneo), Times.Once);
+    }
+
+    [TestMethod]
+    public void Generar_TorneoInexistente_LanzaTorneoNoEncontrado()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
+        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
     }
 
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
