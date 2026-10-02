@@ -2,7 +2,7 @@
   "info": {
     "name": "FarmeORT",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "Colección del proyecto con registro público, sesiones, mantenimiento de usuarios (alta, modificación y baja lógica), catálogo de skills, gestión de torneos, repertorio del jugador y skills obligatorias de los torneos. Configurar baseUrl y adminContrasena en un environment local; adminEmail corresponde al administrador precargado. Ejecutar completa con Collection Runner o Newman. El login administrativo salta a Usuarios; el último caso de Usuarios salta a Skills, el último de Skills a Torneos, el último de Torneos a Repertorio, el último de Repertorio a Skills obligatorias y el último de Skills obligatorias vuelve al logout administrativo, que termina la ejecución. Los ids, emails, nicknames y tokens se generan durante el run. No exportar credenciales ni tokens reales."
+    "description": "Colección del proyecto con registro público, sesiones, mantenimiento de usuarios (alta, modificación y baja lógica), catálogo de skills, gestión de torneos, repertorio del jugador, skills obligatorias de los torneos e inscripciones. Configurar baseUrl y adminContrasena en un environment local; adminEmail corresponde al administrador precargado. Ejecutar completa con Collection Runner o Newman. El login administrativo salta a Usuarios; el último caso de Usuarios salta a Skills, el último de Skills a Torneos, el último de Torneos a Repertorio, el último de Repertorio a Skills obligatorias, el último de Skills obligatorias a Inscripciones y el último de Inscripciones vuelve al logout administrativo, que termina la ejecución. Los ids, emails, nicknames y tokens se generan durante el run. No exportar credenciales ni tokens reales."
   },
   "variable": [
     {
@@ -209,6 +209,82 @@
     },
     {
       "key": "skillTerceraId",
+      "value": ""
+    },
+    {
+      "key": "inscripcionId",
+      "value": ""
+    },
+    {
+      "key": "inscripcionActivaId",
+      "value": ""
+    },
+    {
+      "key": "inscSinSkillsEmail",
+      "value": ""
+    },
+    {
+      "key": "inscSinSkillsNickname",
+      "value": ""
+    },
+    {
+      "key": "inscSinSkillsToken",
+      "value": ""
+    },
+    {
+      "key": "torneoCupoCodigo",
+      "value": ""
+    },
+    {
+      "key": "torneoCupoId",
+      "value": ""
+    },
+    {
+      "key": "inscCupo1Email",
+      "value": ""
+    },
+    {
+      "key": "inscCupo1Nickname",
+      "value": ""
+    },
+    {
+      "key": "inscCupo1Token",
+      "value": ""
+    },
+    {
+      "key": "inscCupo2Email",
+      "value": ""
+    },
+    {
+      "key": "inscCupo2Nickname",
+      "value": ""
+    },
+    {
+      "key": "inscCupo2Token",
+      "value": ""
+    },
+    {
+      "key": "inscCupo3Email",
+      "value": ""
+    },
+    {
+      "key": "inscCupo3Nickname",
+      "value": ""
+    },
+    {
+      "key": "inscCupo3Token",
+      "value": ""
+    },
+    {
+      "key": "inscCupo4Email",
+      "value": ""
+    },
+    {
+      "key": "inscCupo4Nickname",
+      "value": ""
+    },
+    {
+      "key": "inscCupo4Token",
       "value": ""
     }
   ],
@@ -10132,6 +10208,2065 @@
                     "exec": [
                       "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
                       "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));",
+                      "pm.execution.setNextRequest(\"Inscripciones - jugador se inscribe en el torneo → 201\");"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Inscripciones",
+      "item": [
+        {
+          "name": "Inscripciones - Éxito",
+          "item": [
+            {
+              "name": "Inscripciones - jugador se inscribe en el torneo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const inscripcion = pm.response.json();",
+                      "pm.test(\"Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/inscripciones/\" + inscripcion.id));",
+                      "pm.test(\"Aceptada con nickname y ELO\", () => { pm.expect(inscripcion.estado).to.eql(\"Aceptada\"); pm.expect(inscripcion.nickname).to.eql(pm.collectionVariables.get(\"skillsJugadorNickname\")); pm.expect(inscripcion.elo).to.eql(1200); });",
+                      "pm.collectionVariables.set(\"inscripcionId\", inscripcion.id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - jugador consulta su inscripción → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Es la suya\", () => pm.expect(pm.response.json().id).to.eql(pm.collectionVariables.get(\"inscripcionId\")));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - jugador lista las suyas filtrando por torneo y estado → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones?torneoId={{torneoId}}&estado=Aceptada",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{torneoId}}"
+                    },
+                    {
+                      "key": "estado",
+                      "value": "Aceptada"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Solo la suya\", () => pm.expect(pm.response.json().map(i => i.id)).to.eql([pm.collectionVariables.get(\"inscripcionId\")]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - organizador lista las de su torneo → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones?torneoId={{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{torneoId}}"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{torneoOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Incluye la inscripción\", () => pm.expect(pm.response.json().map(i => i.id)).to.include(pm.collectionVariables.get(\"inscripcionId\")));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - administrador consulta cualquier inscripción → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - el torneo muestra la cantidad de aceptadas → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Una aceptada\", () => pm.expect(pm.response.json().inscripcionesAceptadas).to.eql(1));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - jugador cancela su inscripción → 200",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Queda Cancelada\", () => pm.expect(pm.response.json().estado).to.eql(\"Cancelada\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - jugador vuelve a inscribirse → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"inscripcionActivaId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Inscripciones - Errores",
+          "item": [
+            {
+              "name": "Inscripciones - ya tiene una inscripción aceptada → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error ALREADY_REGISTERED\", () => pm.expect(pm.response.json().errorCode).to.eql(\"ALREADY_REGISTERED\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - cancelar una inscripción ya cancelada → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error REGISTRATION_NOT_ACTIVE\", () => pm.expect(pm.response.json().errorCode).to.eql(\"REGISTRATION_NOT_ACTIVE\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - quitar del repertorio una obligatoria en uso → 409",
+              "request": {
+                "method": "DELETE",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio/{{skillId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio",
+                    "{{skillId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error MANDATORY_SKILL_IN_USE\", () => pm.expect(pm.response.json().errorCode).to.eql(\"MANDATORY_SKILL_IN_USE\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - obligatoria nueva que el inscripto no tiene → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}/skills-obligatorias",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}",
+                    "skills-obligatorias"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{torneoOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{skillSegundaId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error PLAYERS_MISSING_MANDATORY_SKILL\", () => pm.expect(pm.response.json().errorCode).to.eql(\"PLAYERS_MISSING_MANDATORY_SKILL\"));",
+                      "pm.test(\"Identifica al jugador\", () => pm.expect(pm.response.json().detalles).to.include(pm.collectionVariables.get(\"skillsJugadorNickname\")));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - registro de un jugador sin skills → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Inscripto\",\n  \"email\": \"{{inscSinSkillsEmail}}\",\n  \"nickname\": \"{{inscSinSkillsNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                      "pm.collectionVariables.set(\"inscSinSkillsEmail\", \"insc.\" + guid + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"inscSinSkillsNickname\", \"ins\" + guid);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - login del jugador sin skills → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{inscSinSkillsEmail}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"inscSinSkillsToken\", pm.response.json().token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - le faltan skills obligatorias → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error MISSING_MANDATORY_SKILLS\", () => pm.expect(pm.response.json().errorCode).to.eql(\"MISSING_MANDATORY_SKILLS\"));",
+                      "pm.test(\"Indica la skill que falta\", () => pm.expect(pm.response.json().detalles.map(d => d.toUpperCase())).to.eql([pm.collectionVariables.get(\"skillCodigo\").toUpperCase()]));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - torneo cancelado → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoMinId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_OPEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_OPEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - torneo inexistente → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": 999999\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - body vacío {} → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - consultar una inscripción ajena → 403",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionActivaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionActivaId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error NOT_REGISTRATION_OWNER\", () => pm.expect(pm.response.json().errorCode).to.eql(\"NOT_REGISTRATION_OWNER\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - cancelar una inscripción ajena → 403",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionActivaId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionActivaId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error NOT_REGISTRATION_OWNER\", () => pm.expect(pm.response.json().errorCode).to.eql(\"NOT_REGISTRATION_OWNER\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - organizador de otro torneo no la consulta → 403",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionActivaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionActivaId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{otroOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error NOT_TOURNAMENT_ORGANIZER\", () => pm.expect(pm.response.json().errorCode).to.eql(\"NOT_TOURNAMENT_ORGANIZER\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - inscripción inexistente → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/999999",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "999999"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error REGISTRATION_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"REGISTRATION_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - organizador no puede inscribirse → 403",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{torneoOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"Código de error FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - consulta sin token → 401",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - alta de un torneo de cupo 4 → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCupoCodigo}}\",\n  \"nombre\": \"Copa Cupo\",\n  \"descripcion\": \"Torneo para completar el cupo de inscripciones.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 4,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"torneoCupoCodigo\", (\"TCUPO\" + Date.now().toString(36).toUpperCase()).slice(0, 20));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"torneoCupoId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - registro del jugador 1 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Inscripto\",\n  \"email\": \"{{inscCupo1Email}}\",\n  \"nickname\": \"{{inscCupo1Nickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                      "pm.collectionVariables.set(\"inscCupo1Email\", \"insc.\" + guid + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"inscCupo1Nickname\", \"ins\" + guid);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - login del jugador 1 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{inscCupo1Email}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"inscCupo1Token\", pm.response.json().token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - inscribe al jugador 1 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscCupo1Token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoCupoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - registro del jugador 2 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Inscripto\",\n  \"email\": \"{{inscCupo2Email}}\",\n  \"nickname\": \"{{inscCupo2Nickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                      "pm.collectionVariables.set(\"inscCupo2Email\", \"insc.\" + guid + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"inscCupo2Nickname\", \"ins\" + guid);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - login del jugador 2 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{inscCupo2Email}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"inscCupo2Token\", pm.response.json().token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - inscribe al jugador 2 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscCupo2Token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoCupoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - registro del jugador 3 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Inscripto\",\n  \"email\": \"{{inscCupo3Email}}\",\n  \"nickname\": \"{{inscCupo3Nickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                      "pm.collectionVariables.set(\"inscCupo3Email\", \"insc.\" + guid + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"inscCupo3Nickname\", \"ins\" + guid);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - login del jugador 3 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{inscCupo3Email}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"inscCupo3Token\", pm.response.json().token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - inscribe al jugador 3 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscCupo3Token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoCupoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - registro del jugador 4 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Inscripto\",\n  \"email\": \"{{inscCupo4Email}}\",\n  \"nickname\": \"{{inscCupo4Nickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const guid = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 12);",
+                      "pm.collectionVariables.set(\"inscCupo4Email\", \"insc.\" + guid + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"inscCupo4Nickname\", \"ins\" + guid);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - login del jugador 4 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{inscCupo4Email}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"inscCupo4Token\", pm.response.json().token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - inscribe al jugador 4 del cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscCupo4Token}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoCupoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - cupo de aceptadas completo → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoCupoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_FULL\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_FULL\"));",
                       "pm.execution.setNextRequest(\"Sesiones - logout administrador → 204\");"
                     ]
                   }
