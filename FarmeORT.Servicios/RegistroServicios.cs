@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Elo;
 using FarmeORT.IServicios.Batallas;
 using FarmeORT.IServicios.Inscripciones;
 using FarmeORT.IServicios.Repertorio;
@@ -32,6 +33,8 @@ public static class RegistroServicios
         servicios.AddScoped<IServicioRepertorio, ServicioRepertorio>();
         servicios.AddScoped<IServicioSkillsObligatorias, ServicioSkillsObligatorias>();
         servicios.AddScoped<IServicioInscripciones, ServicioInscripciones>();
+
+        servicios.AddScoped<ICalculadorElo, CalculadorEloBase>();
 
         // Persona B: batallas y lanzamientos.
         servicios.AddScoped<ISorteo, SorteoAleatorio>();

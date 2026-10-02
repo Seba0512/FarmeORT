@@ -1410,6 +1410,67 @@ Un `DbUpdateConcurrencyException` se traduce a `BatallaModificadaException` (409
 
 ---
 
+### D-60 — El cálculo de ELO es un punto de variación (Strategy): `ICalculadorElo` ← `CalculadorEloBase`
+
+**Problema:** al fallar una batalla hay que calcular el nuevo ELO de los dos jugadores (letra: K = 32,
+`Ea = 1 / (1 + 10^((Rb − Ra) / 400))`, `Ra' = Ra + K·(S − Ea)`, piso 100). El diseño del equipo
+(`AGENTS.md` y el diagrama de clases) lo marca como punto de variación: tiene que poder agregarse otra
+forma de calcularlo sin modificar el código que finaliza la batalla. Fallar batalla lo implementa otra
+persona del equipo, que necesita el cálculo antes de que exista la batalla.
+
+**Alternativas consideradas:**
+- Un método privado en el servicio de batallas: es lo más simple, pero cambiar la política obliga a
+  modificar ese servicio.
+- Template Method: una clase base abstracta en la que las subclases redefinen un paso (por ejemplo, el
+  K). Alcanza si solo cambia un paso, pero acopla por herencia y no sirve para una política con otra
+  fórmula.
+- Strategy: una interfaz con una implementación por política, inyectada por DI.
+
+**Decisión adoptada:**
+- Strategy. `ICalculadorElo.Calcular(eloGanador, eloPerdedor)` devuelve
+  `ResultadoElo(NuevoEloGanador, NuevoEloPerdedor)`. Como los dos valores nuevos salen juntos, quien lo
+  usa no puede calcular uno con el valor ya actualizado del otro (el error clásico).
+- `CalculadorEloBase` implementa la política de la letra: K = 32, S = 1 para el ganador y 0 para el
+  perdedor, los dos con los valores previos, redondeo al entero más cercano y piso de 100. Con ELO
+  iguales el cambio es exactamente 16; en los demás casos `Ea` no deja un ,5 exacto, así que el
+  criterio de desempate del redondeo no influye.
+- La interfaz, el resultado y la implementación viven en `FarmeORT.Dominio/Elo/`: es una regla del
+  dominio y no depende de infraestructura.
+- `CalculadorEloBase` es `public sealed`. Es público porque lo registra `RegistroServicios`, que está en
+  otro assembly, igual que las entidades del dominio. Es sellado porque una política nueva implementa
+  `ICalculadorElo` en lugar de heredar. "Base" quiere decir "la política base de la letra", no una
+  clase base.
+- Se registra Scoped en `RegistroServicios`, en un bloque propio, como el resto de los servicios.
+- Para agregar una política: una clase nueva que implemente `ICalculadorElo` y cambiar la línea del
+  registro. El servicio de batallas no se toca.
+
+**Justificación:** OCP y Protected Variations: la política de ELO puede cambiar y queda aislada detrás
+de una interfaz. DIP: fallar batalla depende de la abstracción, y en sus tests se reemplaza por un
+mock. El cálculo se prueba aparte, con valores conocidos.
+
+**Conceptos del curso:** Strategy, OCP, DIP, Protected Variations y Polymorphism (GRASP), inyección de
+dependencias, TDD con "fake it" y triangulación con `DataRow`.
+
+**Evidencia:**
+- `FarmeORT.Dominio/Elo/`: `ICalculadorElo`, `ResultadoElo` y `CalculadorEloBase`.
+- `CalculadorEloBaseTests`, con un ciclo por comportamiento: ELO iguales, ELO distintos con los valores
+  previos y redondeo, y piso de 100. Los valores esperados de los ELO distintos (1408/1192 y 1224/1376)
+  fallan si se trunca en lugar de redondear o si el perdedor se calcula con el ELO nuevo del ganador
+  (daría 1193 y 1377).
+- `RegistroServicios` y `RegistroServiciosTests`.
+- Pendiente: agregar `ICalculadorElo`, `ResultadoElo` y `CalculadorEloBase` al diagrama de clases.
+
+**Participación de IA:**
+- La firma de `ICalculadorElo` y `ResultadoElo` la acordó el equipo como contrato compartido entre las
+  tres personas; Claude Code la implementó tal cual.
+- Claude Code propuso el plan de ciclos, el "fake it" del primer GREEN para que cada test agregue un
+  comportamiento y la ubicación en Dominio como `public sealed`. El integrante revisó el primer RED y
+  el plan, y aprobó el resto de las etapas en bloque.
+- Claude Code calculó los valores esperados con un script y eligió casos que distinguen redondear de
+  truncar y que detectan el error clásico de usar el ELO ya actualizado del ganador.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
