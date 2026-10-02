@@ -33,4 +33,36 @@ public sealed class TorneoFinalizacionTests
         Assert.AreEqual(EstadoTorneo.Abierto, _torneo.Estado);
         Assert.IsNull(_torneo.CampeonId);
     }
+
+    [TestMethod]
+    public void Finalizar_TorneoEnCurso_QuedaFinalizadoConSuCampeon()
+    {
+        _torneo.Iniciar(4);
+
+        _torneo.Finalizar(_campeon);
+
+        Assert.AreEqual(EstadoTorneo.Finalizado, _torneo.Estado);
+        Assert.AreSame(_campeon, _torneo.Campeon);
+        Assert.AreEqual(7, _torneo.CampeonId);
+    }
+
+    [TestMethod]
+    public void Finalizar_TorneoYaFinalizado_LanzaTorneoNoEnCurso()
+    {
+        _torneo.Iniciar(4);
+        _torneo.Finalizar(_campeon);
+
+        Assert.ThrowsExactly<TorneoNoEnCursoException>(() => _torneo.Finalizar(_campeon));
+    }
+
+    // Pendiente de D-36/D-37: la regla ya estaba en Torneo.Cancelar, pero no había forma de tener un torneo Finalizado.
+    [TestMethod]
+    public void Cancelar_TorneoFinalizado_LanzaTorneoNoCancelable()
+    {
+        _torneo.Iniciar(4);
+        _torneo.Finalizar(_campeon);
+
+        Assert.ThrowsExactly<TorneoNoCancelableException>(_torneo.Cancelar);
+        Assert.AreEqual(EstadoTorneo.Finalizado, _torneo.Estado);
+    }
 }
