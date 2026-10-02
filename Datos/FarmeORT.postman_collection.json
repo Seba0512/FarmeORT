@@ -17375,7 +17375,7 @@
                       "pm.test(\"Posiciones consecutivas desde 1\", () => ranking.forEach((jugador, i) => pm.expect(jugador.posicion).to.eql(i + 1)));",
                       "pm.test(\"ELO de mayor a menor\", () => ranking.forEach((jugador, i) => { if (i > 0) { pm.expect(ranking[i - 1].elo).to.be.at.least(jugador.elo); } }));",
                       "pm.test(\"Cada jugador trae nickname, ELO, ganadas y perdidas\", () => ranking.forEach(jugador => { pm.expect(jugador.nickname).to.be.a(\"string\"); pm.expect(jugador.elo).to.be.a(\"number\"); pm.expect(jugador.batallasGanadas).to.be.a(\"number\"); pm.expect(jugador.batallasPerdidas).to.be.a(\"number\"); }));",
-                      "pm.test(\"Ganadas y perdidas en 0 hasta que se puedan fallar batallas (D-61)\", () => ranking.forEach(jugador => { pm.expect(jugador.batallasGanadas).to.eql(0); pm.expect(jugador.batallasPerdidas).to.eql(0); }));",
+                      "pm.test(\"Ganadas y perdidas son enteros no negativos\", () => ranking.forEach(jugador => { pm.expect(jugador.batallasGanadas).to.be.at.least(0); pm.expect(jugador.batallasPerdidas).to.be.at.least(0); }));",
                       "pm.collectionVariables.set(\"rankingCantidadPorDefecto\", ranking.length);"
                     ]
                   }
