@@ -145,6 +145,15 @@ public sealed class ServicioRondasTests
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Listar(TorneoId, esAnonimo));
     }
 
+    [TestMethod]
+    public void Listar_AnonimoConTorneoCancelado_LanzaTorneoNoEncontrado()
+    {
+        _torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Listar(TorneoId, true));
+    }
+
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
     // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar. Todo se guarda con el torneo.
     private void PrepararPrimeraRondaCompleta()
