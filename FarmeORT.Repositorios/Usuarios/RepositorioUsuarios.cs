@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
@@ -116,9 +117,14 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Usuario> ListarRankingDelTorneo(int torneoId, int cantidad)
     {
-        _ = torneoId;
-        _ = cantidad;
-        throw new NotImplementedException();
+        return contexto.Usuarios
+            .Where(u => u.Rol == Rol.Jugador && !u.Eliminado)
+            .Where(u => contexto.Inscripciones.Any(i => i.JugadorId == u.Id && i.TorneoId == torneoId
+                && (i.Estado == EstadoInscripcion.Aceptada || i.Estado == EstadoInscripcion.Eliminada)))
+            .OrderByDescending(u => u.Elo)
+            .ThenBy(u => u.Id)
+            .Take(cantidad)
+            .ToList();
     }
 
     private bool EstaGuardada(SkillDeclarada declarada)
