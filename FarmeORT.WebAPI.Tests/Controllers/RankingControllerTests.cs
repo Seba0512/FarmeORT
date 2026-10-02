@@ -39,13 +39,12 @@ public sealed class RankingControllerTests
     public void Obtener_ContratoPublico_ExponeGetRankingSinAutenticacion()
     {
         var tipo = typeof(RankingController);
-        var metodo = tipo.GetMethod(nameof(RankingController.Obtener));
-        Assert.IsNotNull(metodo);
-        var ruta = tipo.GetCustomAttributes(typeof(RouteAttribute), true).Cast<RouteAttribute>().Single();
 
-        Assert.AreEqual("api/v1/ranking", ruta.Template);
-        Assert.HasCount(1, metodo.GetCustomAttributes(typeof(HttpGetAttribute), true));
-        Assert.IsFalse(tipo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
-        Assert.IsFalse(metodo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
+        var atributos = tipo.GetMethod(nameof(RankingController.Obtener))?.GetCustomAttributes(true).Concat(tipo.GetCustomAttributes(true)).ToList();
+
+        Assert.IsNotNull(atributos);
+        Assert.AreEqual("api/v1/ranking", atributos.OfType<RouteAttribute>().Single().Template);
+        Assert.HasCount(1, atributos.OfType<HttpGetAttribute>());
+        Assert.IsFalse(atributos.OfType<IAuthorizationFilter>().Any());
     }
 }
