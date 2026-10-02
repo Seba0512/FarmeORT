@@ -88,8 +88,12 @@ internal sealed class ServicioUsuarios(
             throw new OperacionSobreSiMismoException();
         }
 
-        _ = repositorioTorneos;
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        if(repositorioTorneos.ExisteVigenteDelOrganizador(usuario.Id))
+        {
+            throw new UsuarioOrganizaTorneoVigenteException();
+        }
+
         usuario.Eliminar();
         repositorioUsuarios.Eliminar(usuario);
     }
