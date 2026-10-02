@@ -103,8 +103,9 @@ internal sealed class ServicioUsuarios(
         repositorioUsuarios.Eliminar(usuario);
     }
 
-    // Letra (usuarios): no se elimina a quien organiza un torneo vigente o tiene batallas sin resolver.
-    private void ValidarSinTorneosNiBatallasPendientes(Usuario usuario)
+    // Eliminar y cambiar el rol tienen las mismas restricciones (D-43): las dos primeras son de la letra y la
+    // inscripción vigente evita que las rondas emparejen a alguien dado de baja o que ya no es Jugador.
+    private void ValidarSinParticipacionVigente(Usuario usuario)
     {
         if(repositorioTorneos.ExisteVigenteDelOrganizador(usuario.Id))
         {
@@ -115,12 +116,7 @@ internal sealed class ServicioUsuarios(
         {
             throw new UsuarioConBatallasSinResolverException();
         }
-    }
 
-    // Cambiar el rol tiene las restricciones de eliminar y, además, la de una inscripción vigente (D-43).
-    private void ValidarSinParticipacionVigente(Usuario usuario)
-    {
-        ValidarSinTorneosNiBatallasPendientes(usuario);
         if(repositorioInscripciones.ListarAceptadasDelJugador(usuario.Id).Any(i => i.EstaVigente))
         {
             throw new UsuarioConInscripcionVigenteException();
