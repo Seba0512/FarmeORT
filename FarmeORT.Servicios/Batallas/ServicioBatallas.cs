@@ -24,12 +24,16 @@ internal sealed class ServicioBatallas(
         var torneo = repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value) ?? throw new TorneoNoEncontradoException();
         ValidarVisibilidad(torneo, usuarioId, rol);
         _ = repositorioBatallas;
-        _ = repositorioInscripciones;
         throw new NotImplementedException();
     }
 
-    private static void ValidarVisibilidad(Torneo torneo, int usuarioId, string rol)
+    private void ValidarVisibilidad(Torneo torneo, int usuarioId, string rol)
     {
+        if(rol == Roles.Jugador && !repositorioInscripciones.ExisteDelJugador(torneo.Id, usuarioId))
+        {
+            throw new JugadorNoInscriptoEnTorneoException();
+        }
+
         if(rol == Roles.Organizador && torneo.OrganizadorId != usuarioId)
         {
             throw new NoEsOrganizadorDelTorneoException();
