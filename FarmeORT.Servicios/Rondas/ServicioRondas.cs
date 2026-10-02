@@ -56,6 +56,14 @@ internal sealed class ServicioRondas(
         throw new NotImplementedException();
     }
 
+    public RondaResponse ObtenerPorNumero(int torneoId, int numero, bool esAnonimo)
+    {
+        _ = torneoId;
+        _ = numero;
+        _ = esAnonimo;
+        throw new NotImplementedException();
+    }
+
     private static RondaResponse CrearResponse(int numero, IReadOnlyList<Batalla> batallas)
     {
         return new RondaResponse
