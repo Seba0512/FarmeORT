@@ -46,6 +46,9 @@ public static class RegistroServicios
 
         // Persona B: fallos de batallas.
         servicios.AddScoped<IServicioFallos, ServicioFallos>();
+
+        // Persona B: consultas de batallas.
+        servicios.AddScoped<IServicioBatallas, ServicioBatallas>();
         return servicios;
     }
 }
