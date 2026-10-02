@@ -83,6 +83,16 @@ public sealed class ServicioFinalizacionesTests
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Finalizar_AdministradorQueNoEsElOrganizador_FinalizaElTorneo()
+    {
+        PrepararTorneoListoParaFinalizar();
+
+        var finalizacion = _servicio.Finalizar(TorneoId, 1, Roles.Administrador);
+
+        Assert.AreEqual("Finalizado", finalizacion.Estado);
+    }
+
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.
     private void PrepararTorneoListoParaFinalizar()
     {
