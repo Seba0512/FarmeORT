@@ -15,7 +15,7 @@ Rol: el Organizador asignado al torneo o un Administrador (D-63). Otro rol recib
 Precondiciones, en este orden:
 1. El torneo existe.
 2. Quien llama es el organizador asignado o un Administrador.
-3. El torneo está En curso.
+3. El torneo está En curso: un torneo Abierto, Finalizado o Cancelado responde que no está en curso, tenga o no jugadores.
 4. No tiene batallas sin resolver (Pendientes o En arbitraje).
 5. Queda exactamente un jugador sin eliminar (con inscripción Aceptada): es el campeón.
 

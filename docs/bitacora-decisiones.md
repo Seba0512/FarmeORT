@@ -2018,12 +2018,13 @@ reglas y cómo se guarda el campeón.
 - **Reglas, en este orden:**
   1. El torneo existe (404).
   2. Quien llama es el organizador asignado o un Administrador (403).
-  3. No hay batallas sin resolver: 409 `TOURNAMENT_HAS_UNRESOLVED_BATTLES`.
-  4. Queda exactamente un jugador con inscripción Aceptada: 409 `TOURNAMENT_WITHOUT_CHAMPION`.
-  5. El torneo está En curso: 409 `TOURNAMENT_NOT_IN_PROGRESS`.
-  - El estado lo controla `Torneo.Finalizar(campeon)` (Information Expert). Las batallas y las inscripciones las
-    controla el servicio con consultas que ya existían (`ListarSinResolverDelTorneo` y
-    `ListarAceptadasDelTorneo`), sin agregar métodos a los repositorios de otros.
+  3. El torneo está En curso: 409 `TOURNAMENT_NOT_IN_PROGRESS`.
+  4. No hay batallas sin resolver: 409 `TOURNAMENT_HAS_UNRESOLVED_BATTLES`.
+  5. Queda exactamente un jugador con inscripción Aceptada: 409 `TOURNAMENT_WITHOUT_CHAMPION`.
+  - El estado lo controla `Torneo.Finalizar(campeon)` (Information Expert), y el servicio lo controla también
+    antes de consultar batallas e inscripciones, así un torneo Cancelado responde que no está en curso. Las
+    batallas y las inscripciones las controla el servicio con consultas que ya existían
+    (`ListarSinResolverDelTorneo` y `ListarAceptadasDelTorneo`), sin agregar métodos a los repositorios de otros.
 - **Campeón:** `Torneo.CampeonId` y `Campeon` (0..1), con FK a `Usuarios` y `Restrict`: un usuario con historial no
   se borra, se da de baja lógica (D-27). Se configura en un método propio del contexto
   (`ConfigurarFinalizacion`) y se agrega con la migración de este PR.
@@ -2067,6 +2068,9 @@ con FK opcional y `Restrict`, TDD Outside-In.
     corrigió en un commit aparte.
   - Por convención, EF mapeaba el campeón con `ClientSetNull`. El test del repositorio lo detectó y la relación se
     configuró explícitamente con `Restrict`.
+  - La colección completa de Postman, corrida contra la API real (SQL Server LocalDB), encontró que un torneo
+    Cancelado respondía `TOURNAMENT_WITHOUT_CHAMPION`, porque el estado se controlaba al final. Se corrigió como
+    bug: RED que lo reproduce y GREEN que controla el estado primero.
 
 ---
 
