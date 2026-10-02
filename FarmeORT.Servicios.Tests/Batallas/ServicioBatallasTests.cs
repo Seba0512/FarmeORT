@@ -41,6 +41,18 @@ public sealed class ServicioBatallasTests
     }
 
     [TestMethod]
+    public void Listar_OrganizadorAjeno_RechazaAntesDeConsultarBatallas()
+    {
+        _torneos.Setup(r => r.ObtenerPorId(5)).Returns(_batalla.Torneo);
+
+        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() =>
+            _servicio.Listar(new FiltroBatallasRequest { TorneoId = 5 }, 3, Roles.Organizador));
+
+        _batallas.VerifyNoOtherCalls();
+        _inscripciones.VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
     public void Listar_TorneoInexistente_RechazaSinConsultarBatallas()
     {
         _torneos.Setup(r => r.ObtenerPorId(5)).Returns((Torneo?)null);
