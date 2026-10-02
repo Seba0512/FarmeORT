@@ -126,6 +126,11 @@ public sealed partial class Usuario
 
     public void ActualizarElo(int elo)
     {
+        if(elo < 100)
+        {
+            throw new DatosInvalidosException("El ELO no puede ser menor que 100.");
+        }
+
         Elo = elo;
     }
 
