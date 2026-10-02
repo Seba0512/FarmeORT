@@ -62,6 +62,14 @@ public sealed class EmparejamientoPorEloTests
         Assert.AreSame(jugador1, pares[1].Jugador2);
     }
 
+    [TestMethod]
+    public void Emparejar_CantidadImpar_LanzaInvalidOperation()
+    {
+        List<Usuario> jugadores = [CrearJugador(1), CrearJugador(2), CrearJugador(3)];
+
+        Assert.ThrowsExactly<InvalidOperationException>(() => _estrategia.Emparejar(jugadores));
+    }
+
     private static Usuario CrearJugador(int id, int elo = 1200)
     {
         var jugador = new Usuario("Ana", "Pérez", $"jugador{id}@farmeort.com", $"jugador{id}", new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
