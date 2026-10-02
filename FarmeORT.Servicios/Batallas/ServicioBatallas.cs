@@ -51,13 +51,13 @@ internal sealed class ServicioBatallas(
     {
         var batalla = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
         ValidarVisibilidad(batalla.Torneo, usuarioId, rol);
-        throw new NotImplementedException();
+        return RespuestasBatallas.Detalle(batalla);
     }
 
     public IReadOnlyList<LanzamientoResponse> ListarLanzamientos(int id, int usuarioId, string rol)
     {
         var batalla = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
         ValidarVisibilidad(batalla.Torneo, usuarioId, rol);
-        throw new NotImplementedException();
+        return RespuestasBatallas.Detalle(batalla).Lanzamientos;
     }
 }
