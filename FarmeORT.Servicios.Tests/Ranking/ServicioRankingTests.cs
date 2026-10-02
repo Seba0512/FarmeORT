@@ -1,5 +1,8 @@
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Ranking;
+using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Servicios.Ranking;
 using Moq;
@@ -12,13 +15,15 @@ public sealed class ServicioRankingTests
     private static readonly DateOnly FechaActual = new(2026, 10, 1);
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
+    private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
     private ServicioRanking _servicio = null!;
 
     [TestInitialize]
     public void Inicializar()
     {
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
-        _servicio = new ServicioRanking(_repositorioUsuarios.Object);
+        _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
+        _servicio = new ServicioRanking(_repositorioUsuarios.Object, _repositorioTorneos.Object);
     }
 
     [TestMethod]
@@ -63,6 +68,17 @@ public sealed class ServicioRankingTests
 
         Assert.IsEmpty(ranking);
         _repositorioUsuarios.Verify(r => r.ListarRanking(10), Times.Once);
+    }
+
+    [TestMethod]
+    public void Obtener_TorneoInexistente_LanzaTorneoNoEncontradoSinConsultarElRanking()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
+        _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = 99 }));
+
+        _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
     }
 
     private static Usuario CrearJugador(int id, string nickname)
