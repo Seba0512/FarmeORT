@@ -42,6 +42,22 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    public void Fallar_GanadorAjeno_RechazaSinEfectos()
+    {
+        ConfigurarFalloValido();
+        _inscripciones.Setup(r => r.ObtenerAceptada(5, 7)).Returns(_inscripcion);
+        var request = new FalloRequest { GanadorId = 9, Comentario = "Victoria por abandono." };
+
+        Assert.ThrowsExactly<JugadorNoParticipaEnBatallaException>(() => _servicio.Fallar(12, 2, request));
+
+        _elo.Verify(e => e.Calcular(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.AreEqual(EstadoBatalla.Pendiente, _batalla.Estado);
+        Assert.AreEqual(1200, _batalla.Jugador1.Elo);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _inscripcion.Estado);
+    }
+
+    [TestMethod]
     [DataRow(EstadoBatalla.Finalizada)]
     [DataRow(EstadoBatalla.Cancelada)]
     public void Fallar_BatallaResuelta_RechazaSinEfectos(EstadoBatalla estado)
