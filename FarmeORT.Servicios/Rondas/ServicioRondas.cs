@@ -34,6 +34,12 @@ internal sealed class ServicioRondas(
                 throw new RondaSinResolverException();
             }
 
+            // Con un solo jugador sin eliminar ya hay campeón: corresponde finalizar el torneo, no otra ronda.
+            if(jugadores.Count < 2)
+            {
+                throw new TorneoListoParaFinalizarException();
+            }
+
             numero = ultima + 1;
         }
         else
