@@ -19,6 +19,7 @@ internal sealed class ServicioRondas(
     public RondaResponse Generar(int torneoId, int usuarioId, string rol)
     {
         var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
+        torneo.Iniciar();
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
         var pares = estrategiaEmparejamiento.Emparejar(jugadores);
         List<Batalla> batallas = [];
@@ -29,6 +30,8 @@ internal sealed class ServicioRondas(
             batallas.Add(batalla);
         }
 
+        // Un solo guardado: las batallas nuevas y el cambio de estado del torneo quedan juntos o no queda nada.
+        repositorioTorneos.Actualizar(torneo);
         return CrearResponse(1, batallas);
     }
 

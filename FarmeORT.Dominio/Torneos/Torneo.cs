@@ -134,6 +134,12 @@ public sealed class Torneo
         _skillsObligatorias.Remove(obligatoria);
     }
 
+    // La primera ronda pone el torneo En curso (D-62).
+    public void Iniciar()
+    {
+        Estado = EstadoTorneo.EnCurso;
+    }
+
     // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
     private void ValidarModificable()
     {
