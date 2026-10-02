@@ -51,6 +51,9 @@ internal sealed class ServicioTorneos(
 
         var detalle = CrearResponse<TorneoDetalleResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
         detalle.SkillsObligatorias = torneo.SkillsObligatorias.Select(CrearSkillResponse).ToList();
+        detalle.JugadoresAceptados = repositorioInscripciones.ListarAceptadasDelTorneo(torneo.Id)
+            .Select(i => new JugadorAceptadoResponse { JugadorId = i.JugadorId, Nickname = i.Jugador.Nickname, Elo = i.Jugador.Elo })
+            .ToList();
         return detalle;
     }
 
