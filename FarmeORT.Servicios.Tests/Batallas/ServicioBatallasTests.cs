@@ -41,6 +41,34 @@ public sealed class ServicioBatallasTests
     }
 
     [TestMethod]
+    [DataRow(false, Roles.Jugador)]
+    [DataRow(true, Roles.Jugador)]
+    [DataRow(false, Roles.Organizador)]
+    [DataRow(true, Roles.Organizador)]
+    public void Consultar_UsuarioAjeno_RechazaDetalleEHistorial(bool historial, string rol)
+    {
+        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
+        if(rol == Roles.Jugador)
+        {
+            _inscripciones.Setup(r => r.ExisteDelJugador(5, 9)).Returns(false);
+        }
+
+        Action consultar = historial
+            ? () => _servicio.ListarLanzamientos(12, 9, rol)
+            : () => _servicio.ObtenerPorId(12, 9, rol);
+        if(rol == Roles.Jugador)
+        {
+            Assert.ThrowsExactly<JugadorNoInscriptoEnTorneoException>(consultar);
+        }
+        else
+        {
+            Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(consultar);
+        }
+
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+    }
+
+    [TestMethod]
     [DataRow(false)]
     [DataRow(true)]
     public void Consultar_BatallaInexistente_RechazaSinConsultarInscripcion(bool historial)
