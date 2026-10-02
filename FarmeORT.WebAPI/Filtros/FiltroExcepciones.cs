@@ -110,6 +110,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status403Forbidden, "PLAYER_NOT_IN_TOURNAMENT", "No tenés una inscripción en este torneo."),
 
         // Persona C: rondas (D-62).
+        [typeof(TorneoModificadoException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_CHANGED", "El torneo cambió mientras se procesaba el pedido. Volvé a consultarlo."),
         [typeof(TorneoIncompletoException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas."),
         [typeof(RondaNoEncontradaException)] =
