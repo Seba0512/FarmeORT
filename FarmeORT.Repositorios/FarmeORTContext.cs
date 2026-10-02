@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Sesiones;
 using FarmeORT.Dominio.Skills;
@@ -50,6 +51,11 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     public DbSet<Torneo> Torneos => Set<Torneo>();
 
     public DbSet<Inscripcion> Inscripciones => Set<Inscripcion>();
+
+    // Persona B: batallas y lanzamientos.
+    public DbSet<Batalla> Batallas => Set<Batalla>();
+
+    public DbSet<Lanzamiento> Lanzamientos => Set<Lanzamiento>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -124,6 +130,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
         ConfigurarSkillsObligatorias(modelBuilder);
         ConfigurarInscripciones(modelBuilder);
+
+        ConfigurarBatallas(modelBuilder);
     }
 
     // Muchos a muchos sin datos propios: una skill puede ser obligatoria en varios torneos (D-40).
@@ -157,6 +165,50 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
             inscripcion.HasOne(i => i.Jugador)
                 .WithMany()
                 .HasForeignKey(i => i.JugadorId)
+                .OnDelete(DeleteBehavior.Restrict);
+        });
+    }
+
+    // Persona B: configuración independiente de las entidades de A y C.
+    private static void ConfigurarBatallas(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Batalla>(batalla =>
+        {
+            batalla.HasKey(b => b.Id);
+            batalla.Property(b => b.Estado).HasConversion<string>().HasMaxLength(20).IsConcurrencyToken();
+            batalla.HasOne(b => b.Torneo)
+                .WithMany()
+                .HasForeignKey(b => b.TorneoId)
+                .OnDelete(DeleteBehavior.Restrict);
+            batalla.HasOne(b => b.Jugador1)
+                .WithMany()
+                .HasForeignKey(b => b.Jugador1Id)
+                .OnDelete(DeleteBehavior.Restrict);
+            batalla.HasOne(b => b.Jugador2)
+                .WithMany()
+                .HasForeignKey(b => b.Jugador2Id)
+                .OnDelete(DeleteBehavior.Restrict);
+            batalla.Navigation(b => b.Lanzamientos).UsePropertyAccessMode(PropertyAccessMode.Field);
+        });
+
+        modelBuilder.Entity<Lanzamiento>(lanzamiento =>
+        {
+            lanzamiento.ToTable("Lanzamientos", tabla =>
+                tabla.HasCheckConstraint("CK_Lanzamientos_Turno", "[Turno] BETWEEN 1 AND 8"));
+            lanzamiento.HasKey(l => l.Id);
+            lanzamiento.HasIndex(l => new { l.BatallaId, l.Turno }).IsUnique();
+            lanzamiento.HasIndex(l => new { l.BatallaId, l.JugadorId, l.SkillId }).IsUnique();
+            lanzamiento.HasOne(l => l.Batalla)
+                .WithMany(b => b.Lanzamientos)
+                .HasForeignKey(l => l.BatallaId)
+                .OnDelete(DeleteBehavior.Cascade);
+            lanzamiento.HasOne(l => l.Jugador)
+                .WithMany()
+                .HasForeignKey(l => l.JugadorId)
+                .OnDelete(DeleteBehavior.Restrict);
+            lanzamiento.HasOne(l => l.Skill)
+                .WithMany()
+                .HasForeignKey(l => l.SkillId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
     }
