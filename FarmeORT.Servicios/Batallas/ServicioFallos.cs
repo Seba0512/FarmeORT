@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Elo;
 using FarmeORT.DTOs.Batallas;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IServicios.Batallas;
@@ -13,7 +14,12 @@ internal sealed class ServicioFallos(
 {
     public BatallaDetalleResponse Fallar(int batallaId, int organizadorId, FalloRequest request)
     {
-        _ = repositorioBatallas;
+        var batalla = repositorioBatallas.ObtenerPorId(batallaId);
+        if(batalla == null)
+        {
+            throw new BatallaNoEncontradaException();
+        }
+
         _ = repositorioInscripciones;
         _ = calculadorElo;
         throw new NotImplementedException();
