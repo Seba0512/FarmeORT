@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Rondas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Rondas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
@@ -141,9 +142,9 @@ internal sealed class ServicioRondas(
         };
     }
 
-    private static BatallaDeRondaResponse CrearResponse(Batalla batalla)
+    private static BatallaResponse CrearResponse(Batalla batalla)
     {
-        return new BatallaDeRondaResponse
+        return new BatallaResponse
         {
             Id = batalla.Id,
             Estado = batalla.Estado.ToString(),
@@ -153,8 +154,8 @@ internal sealed class ServicioRondas(
         };
     }
 
-    private static JugadorEnBatallaResponse CrearResponse(Usuario jugador)
+    private static JugadorBatallaResponse CrearResponse(Usuario jugador)
     {
-        return new JugadorEnBatallaResponse { Id = jugador.Id, Nickname = jugador.Nickname, Elo = jugador.Elo };
+        return new JugadorBatallaResponse { Id = jugador.Id, Nickname = jugador.Nickname, Elo = jugador.Elo };
     }
 }
