@@ -19,8 +19,9 @@ internal sealed class ServicioBatallas(
             throw new DatosInvalidosException("El torneoId es obligatorio y debe ser positivo.");
         }
 
+        var torneo = repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value) ?? throw new TorneoNoEncontradoException();
+        _ = torneo;
         _ = repositorioBatallas;
-        _ = repositorioTorneos;
         _ = repositorioInscripciones;
         throw new NotImplementedException();
     }
