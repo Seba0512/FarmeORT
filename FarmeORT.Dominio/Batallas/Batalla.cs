@@ -78,6 +78,21 @@ public sealed class Batalla
 
     public IReadOnlyCollection<Lanzamiento> Lanzamientos => _lanzamientos.AsReadOnly();
 
+    public int? GanadorId { get; private set; }
+
+    public Usuario? Ganador { get; private set; }
+
+    public string? Comentario { get; private set; }
+
+    public int? CambioEloJugador1 { get; private set; }
+
+    public int? CambioEloJugador2 { get; private set; }
+
+    public void Fallar(int ganadorId, string? comentario, int cambioEloJugador1, int cambioEloJugador2)
+    {
+        throw new NotImplementedException();
+    }
+
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
     {
         ValidarLanzamiento(jugador, skill);

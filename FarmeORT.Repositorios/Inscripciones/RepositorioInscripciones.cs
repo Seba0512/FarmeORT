@@ -102,6 +102,11 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
         contexto.SaveChanges();
     }
 
+    public Inscripcion? ObtenerAceptada(int torneoId, int jugadorId)
+    {
+        throw new NotImplementedException();
+    }
+
     public void Actualizar(Inscripcion inscripcion)
     {
         contexto.Inscripciones.Update(inscripcion);

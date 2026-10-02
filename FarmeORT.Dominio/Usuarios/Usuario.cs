@@ -124,6 +124,11 @@ public sealed partial class Usuario
         Eliminado = true;
     }
 
+    public void ActualizarElo(int elo)
+    {
+        throw new NotImplementedException();
+    }
+
     private static void ValidarNombre(string nombre)
     {
         if(string.IsNullOrWhiteSpace(nombre))

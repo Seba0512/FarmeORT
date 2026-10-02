@@ -42,6 +42,63 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    [DataRow(7, EstadoBatalla.Pendiente)]
+    [DataRow(8, EstadoBatalla.Pendiente)]
+    [DataRow(7, EstadoBatalla.EnArbitraje)]
+    [DataRow(8, EstadoBatalla.EnArbitraje)]
+    public void Fallar_DatosValidos_AplicaEfectosEnOrdenConEloPrevioYUnGuardado(int ganadorId, EstadoBatalla estado)
+    {
+        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(_batalla, estado);
+        var ganador = ganadorId == 7 ? _batalla.Jugador1 : _batalla.Jugador2;
+        var perdedor = ganadorId == 7 ? _batalla.Jugador2 : _batalla.Jugador1;
+        typeof(Usuario).GetProperty(nameof(Usuario.Elo))!.SetValue(ganador, 1500);
+        typeof(Usuario).GetProperty(nameof(Usuario.Elo))!.SetValue(perdedor, 1100);
+        _inscripcion = new Inscripcion(_batalla.Torneo, perdedor, FechaActual.ToDateTime(TimeOnly.MinValue));
+        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
+        _inscripciones.Setup(r => r.ObtenerAceptada(5, perdedor.Id)).Returns(_inscripcion);
+        _elo.Setup(e => e.Calcular(1500, 1100)).Callback(() =>
+        {
+            Assert.AreEqual(1500, ganador.Elo);
+            Assert.AreEqual(1100, perdedor.Elo);
+            Assert.AreEqual(estado, _batalla.Estado);
+            Assert.AreEqual(EstadoInscripcion.Aceptada, _inscripcion.Estado);
+        }).Returns(new ResultadoElo(1530, 1080));
+        _batallas.Setup(r => r.Guardar()).Callback(() =>
+        {
+            Assert.AreEqual(1530, ganador.Elo);
+            Assert.AreEqual(1080, perdedor.Elo);
+            Assert.AreEqual(EstadoBatalla.Finalizada, _batalla.Estado);
+            Assert.AreEqual(ganadorId, _batalla.GanadorId);
+            Assert.AreSame(ganador, _batalla.Ganador);
+            Assert.AreEqual("Victoria por abandono.", _batalla.Comentario);
+            Assert.IsNull(_batalla.JugadorTurnoId);
+            Assert.AreEqual(EstadoInscripcion.Eliminada, _inscripcion.Estado);
+        });
+        var request = new FalloRequest { GanadorId = ganadorId, Comentario = "Victoria por abandono." };
+
+        var resultado = _servicio.Fallar(12, 2, request);
+
+        _elo.Verify(e => e.Calcular(1500, 1100), Times.Once);
+        _batallas.Verify(r => r.Guardar(), Times.Once);
+        _inscripciones.Verify(r => r.Actualizar(It.IsAny<Inscripcion>()), Times.Never);
+        Assert.AreEqual(12, resultado.Id);
+        Assert.AreEqual(5, resultado.TorneoId);
+        Assert.AreEqual(1, resultado.Ronda);
+        Assert.AreEqual("Finalizada", resultado.Estado);
+        Assert.AreEqual(ganadorId, resultado.GanadorId);
+        Assert.AreEqual("Victoria por abandono.", resultado.Comentario);
+        Assert.AreEqual(7, resultado.Jugador1.Id);
+        Assert.AreEqual(8, resultado.Jugador2.Id);
+        Assert.AreEqual("usuario7", resultado.Jugador1.Nickname);
+        Assert.AreEqual("usuario8", resultado.Jugador2.Nickname);
+        Assert.AreEqual(ganadorId == 7 ? 1530 : 1080, resultado.Jugador1.Elo);
+        Assert.AreEqual(ganadorId == 8 ? 1530 : 1080, resultado.Jugador2.Elo);
+        Assert.AreEqual(ganadorId == 7 ? 30 : -20, resultado.CambioEloJugador1);
+        Assert.AreEqual(ganadorId == 8 ? 30 : -20, resultado.CambioEloJugador2);
+        Assert.IsNull(resultado.JugadorTurnoId);
+    }
+
+    [TestMethod]
     [DataRow(null)]
     [DataRow(0)]
     [DataRow(-1)]
