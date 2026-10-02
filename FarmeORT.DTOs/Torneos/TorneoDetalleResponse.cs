@@ -1,6 +1,9 @@
+using FarmeORT.DTOs.Skills;
+
 namespace FarmeORT.DTOs.Torneos;
 
-// Las skills obligatorias, los jugadores aceptados y las rondas se agregan con sus funcionalidades.
+// El cuadro (rondas y batallas) se agrega con las rondas.
 public sealed class TorneoDetalleResponse : TorneoResponse
 {
+    public IReadOnlyList<SkillResponse> SkillsObligatorias { get; init; } = [];
 }

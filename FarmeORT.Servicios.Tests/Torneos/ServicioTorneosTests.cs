@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
@@ -480,6 +481,25 @@ public sealed class ServicioTorneosTests
         _repositorioBatallas.Verify(r => r.ListarSinResolverDelTorneo(It.IsAny<int>()), Times.Never);
         _repositorioInscripciones.Verify(r => r.ListarAceptadasDelTorneo(It.IsAny<int>()), Times.Never);
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_TorneoConSkillsObligatorias_DevuelveLasSkillsObligatorias()
+    {
+        var torneo = CrearTorneo();
+        torneo.AsociarSkillObligatoria(new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2) { Id = 3 });
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: true);
+
+        Assert.HasCount(1, response.SkillsObligatorias);
+        var obligatoria = response.SkillsObligatorias.Single();
+        Assert.AreEqual(3, obligatoria.Id);
+        Assert.AreEqual("SIXSEVEN", obligatoria.Codigo);
+        Assert.AreEqual("Six-Seven", obligatoria.Nombre);
+        Assert.AreEqual(nameof(CategoriaSkill.Gestual), obligatoria.Categoria);
+        Assert.AreEqual(2, obligatoria.Dificultad);
+        Assert.IsTrue(obligatoria.Activa);
     }
 
     private void ConfigurarAltaValida()
