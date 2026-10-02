@@ -42,6 +42,21 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    public void Fallar_PerdedorSinInscripcionAceptada_RechazaSinEfectos()
+    {
+        ConfigurarFalloValido();
+        _inscripciones.Setup(r => r.ObtenerAceptada(5, 8)).Returns((Inscripcion?)null);
+
+        Assert.ThrowsExactly<InscripcionNoActivaException>(() => _servicio.Fallar(12, 2, RequestValido()));
+
+        _elo.Verify(e => e.Calcular(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.AreEqual(1200, _batalla.Jugador1.Elo);
+        Assert.AreEqual(1200, _batalla.Jugador2.Elo);
+        Assert.AreEqual(EstadoBatalla.Pendiente, _batalla.Estado);
+    }
+
+    [TestMethod]
     [DataRow(-1)]
     [DataRow(-2)]
     [DataRow(0)]
