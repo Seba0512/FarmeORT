@@ -45,7 +45,8 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
             consulta = consulta.Where(i => i.Fecha >= desde);
         }
 
-        if(filtro.FechaHasta != null)
+        // El día máximo ya incluye todos los DateTime representables; no existe un día siguiente.
+        if(filtro.FechaHasta != null && filtro.FechaHasta != DateOnly.MaxValue)
         {
             var hasta = filtro.FechaHasta.Value.AddDays(1).ToDateTime(TimeOnly.MinValue);
             consulta = consulta.Where(i => i.Fecha < hasta);
