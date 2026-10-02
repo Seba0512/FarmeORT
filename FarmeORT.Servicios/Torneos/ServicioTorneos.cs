@@ -1,5 +1,7 @@
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
@@ -47,7 +49,9 @@ internal sealed class ServicioTorneos(
             throw new TorneoNoEncontradoException();
         }
 
-        return CrearResponse<TorneoDetalleResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+        var detalle = CrearResponse<TorneoDetalleResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+        detalle.SkillsObligatorias = torneo.SkillsObligatorias.Select(CrearSkillResponse).ToList();
+        return detalle;
     }
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
@@ -185,6 +189,20 @@ internal sealed class ServicioTorneos(
             InscripcionesAceptadas = inscripcionesAceptadas,
             OrganizadorId = torneo.OrganizadorId,
             Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
+        };
+    }
+
+    private static SkillResponse CrearSkillResponse(Skill skill)
+    {
+        return new SkillResponse
+        {
+            Id = skill.Id,
+            Codigo = skill.Codigo,
+            Nombre = skill.Nombre,
+            Descripcion = skill.Descripcion,
+            Categoria = skill.Categoria.ToString(),
+            Dificultad = skill.Dificultad,
+            Activa = skill.Activa,
         };
     }
 
