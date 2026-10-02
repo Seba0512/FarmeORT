@@ -21,7 +21,7 @@ public sealed class RondasController(IServicioRondas servicioRondas) : Controlle
     [HttpGet]
     public IActionResult Listar(int torneoId)
     {
-        _ = torneoId;
-        throw new NotImplementedException();
+        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
+        return Ok(servicioRondas.Listar(torneoId, esAnonimo));
     }
 }
