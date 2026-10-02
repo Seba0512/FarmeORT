@@ -107,6 +107,11 @@ public sealed class Batalla
         {
             throw new BatallaNoFallableException();
         }
+
+        if(ganadorId != Jugador1Id && ganadorId != Jugador2Id)
+        {
+            throw new JugadorNoParticipaEnBatallaException();
+        }
     }
 
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
