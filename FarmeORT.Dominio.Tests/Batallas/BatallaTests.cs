@@ -13,6 +13,68 @@ public sealed class BatallaTests
     private static readonly DateOnly FechaActual = new(2026, 10, 1);
 
     [TestMethod]
+    [DataRow(7, 10)]
+    [DataRow(8, 500)]
+    public void Fallar_ComentarioEnLimites_ConservaFalloYCambiosDeElo(int ganadorId, int largo)
+    {
+        var batalla = CrearBatallaConHistorial(0);
+        var comentario = new string('a', largo);
+
+        batalla.Fallar(ganadorId, comentario, 16, -16);
+
+        Assert.AreEqual(EstadoBatalla.Finalizada, batalla.Estado);
+        Assert.AreEqual(ganadorId, batalla.GanadorId);
+        Assert.AreSame(ganadorId == 7 ? batalla.Jugador1 : batalla.Jugador2, batalla.Ganador);
+        Assert.AreEqual(comentario, batalla.Comentario);
+        Assert.AreEqual(16, batalla.CambioEloJugador1);
+        Assert.AreEqual(-16, batalla.CambioEloJugador2);
+        Assert.IsNull(batalla.JugadorTurnoId);
+    }
+
+    [TestMethod]
+    [DataRow(null)]
+    [DataRow("")]
+    [DataRow("         ")]
+    [DataRow("123456789")]
+    public void Fallar_ComentarioInvalido_RechazaSinCambiarEstado(string? comentario)
+    {
+        var batalla = CrearBatallaConHistorial(0);
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => batalla.Fallar(7, comentario, 16, -16));
+
+        Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
+        Assert.IsNull(batalla.GanadorId);
+        Assert.IsNull(batalla.Comentario);
+        Assert.IsNull(batalla.CambioEloJugador1);
+        Assert.IsNull(batalla.CambioEloJugador2);
+    }
+
+    [TestMethod]
+    public void Fallar_GanadorAjeno_RechazaSinRegistrarFallo()
+    {
+        var batalla = CrearBatallaConHistorial(0);
+
+        Assert.ThrowsExactly<JugadorNoParticipaEnBatallaException>(() => batalla.Fallar(9, "Victoria por abandono.", 16, -16));
+
+        Assert.IsNull(batalla.GanadorId);
+        Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
+    }
+
+    [TestMethod]
+    [DataRow(EstadoBatalla.Finalizada)]
+    [DataRow(EstadoBatalla.Cancelada)]
+    public void Fallar_BatallaResuelta_RechazaSinRegistrarFallo(EstadoBatalla estado)
+    {
+        var batalla = CrearBatallaConHistorial(0);
+        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
+
+        Assert.ThrowsExactly<BatallaNoFallableException>(() => batalla.Fallar(7, "Victoria por abandono.", 16, -16));
+
+        Assert.IsNull(batalla.GanadorId);
+        Assert.AreEqual(estado, batalla.Estado);
+    }
+
+    [TestMethod]
     public void Constructor_EloEmpatado_IniciaPendienteConJugadorElegidoPorSorteo()
     {
         var jugador1 = CrearUsuario(7, Rol.Jugador);

@@ -90,6 +90,7 @@ public sealed class FiltroExcepcionesTests
     [DataRow(typeof(UsuarioOrganizaTorneoVigenteException), StatusCodes.Status409Conflict, "USER_ORGANIZES_ACTIVE_TOURNAMENT", "El usuario organiza un torneo que no está Finalizado ni Cancelado.")]
     [DataRow(typeof(UsuarioConBatallasSinResolverException), StatusCodes.Status409Conflict, "USER_HAS_UNRESOLVED_BATTLES", "El usuario tiene batallas Pendientes o En arbitraje.")]
     [DataRow(typeof(UsuarioConInscripcionVigenteException), StatusCodes.Status409Conflict, "USER_HAS_ACTIVE_REGISTRATION", "El usuario está inscripto en un torneo que no está Finalizado ni Cancelado.")]
+    [DataRow(typeof(BatallaNoFallableException), StatusCodes.Status409Conflict, "BATTLE_NOT_JUDGEABLE", "Solo se puede fallar una batalla Pendiente o En arbitraje.")]
     public void OnException_ErrorMapeado_DevuelveSuStatusYCodigo(Type tipo, int status, string codigo, string mensaje)
     {
         var contexto = CrearContexto((Exception)Activator.CreateInstance(tipo)!);

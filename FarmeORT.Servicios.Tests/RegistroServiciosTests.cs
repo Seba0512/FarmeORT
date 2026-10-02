@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Elo;
+using FarmeORT.IServicios.Batallas;
 using FarmeORT.IServicios.Inscripciones;
 using FarmeORT.IServicios.Ranking;
 using FarmeORT.IServicios.Repertorio;
@@ -7,6 +8,7 @@ using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Skills;
 using FarmeORT.IServicios.Torneos;
 using FarmeORT.IServicios.Usuarios;
+using FarmeORT.Servicios.Batallas;
 using FarmeORT.Servicios.Inscripciones;
 using FarmeORT.Servicios.Ranking;
 using FarmeORT.Servicios.Repertorio;
@@ -34,6 +36,7 @@ public sealed class RegistroServiciosTests
     [DataRow(typeof(IServicioInscripciones), typeof(ServicioInscripciones))]
     [DataRow(typeof(ICalculadorElo), typeof(CalculadorEloBase))]
     [DataRow(typeof(IServicioRanking), typeof(ServicioRanking))]
+    [DataRow(typeof(IServicioFallos), typeof(ServicioFallos))]
     public void AgregarServicios_InterfazDeServicio_RegistraImplementacionScoped(Type interfaz, Type implementacion)
     {
         var servicios = new ServiceCollection();

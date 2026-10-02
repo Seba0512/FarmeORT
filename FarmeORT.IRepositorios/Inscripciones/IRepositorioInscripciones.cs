@@ -24,4 +24,7 @@ public interface IRepositorioInscripciones
     void Agregar(Inscripcion inscripcion);
 
     void Actualizar(Inscripcion inscripcion);
+
+    // Persona B: inscripción rastreada del perdedor para el único guardado del fallo.
+    Inscripcion? ObtenerAceptada(int torneoId, int jugadorId);
 }

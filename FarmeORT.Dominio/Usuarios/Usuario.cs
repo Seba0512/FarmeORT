@@ -124,6 +124,16 @@ public sealed partial class Usuario
         Eliminado = true;
     }
 
+    public void ActualizarElo(int elo)
+    {
+        if(elo < 100)
+        {
+            throw new DatosInvalidosException("El ELO no puede ser menor que 100.");
+        }
+
+        Elo = elo;
+    }
+
     private static void ValidarNombre(string nombre)
     {
         if(string.IsNullOrWhiteSpace(nombre))

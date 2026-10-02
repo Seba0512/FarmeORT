@@ -30,11 +30,24 @@ namespace FarmeORT.Repositorios.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
 
+                    b.Property<int?>("CambioEloJugador1")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("CambioEloJugador2")
+                        .HasColumnType("int");
+
+                    b.Property<string>("Comentario")
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
                     b.Property<string>("Estado")
                         .IsConcurrencyToken()
                         .IsRequired()
                         .HasMaxLength(20)
                         .HasColumnType("nvarchar(20)");
+
+                    b.Property<int?>("GanadorId")
+                        .HasColumnType("int");
 
                     b.Property<int>("Jugador1Id")
                         .HasColumnType("int");
@@ -55,6 +68,8 @@ namespace FarmeORT.Repositorios.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GanadorId");
 
                     b.HasIndex("Jugador1Id");
 
@@ -289,6 +304,7 @@ namespace FarmeORT.Repositorios.Migrations
                         .HasColumnType("bit");
 
                     b.Property<int>("Elo")
+                        .IsConcurrencyToken()
                         .HasColumnType("int");
 
                     b.Property<string>("Email")
@@ -357,6 +373,11 @@ namespace FarmeORT.Repositorios.Migrations
 
             modelBuilder.Entity("FarmeORT.Dominio.Batallas.Batalla", b =>
                 {
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Ganador")
+                        .WithMany()
+                        .HasForeignKey("GanadorId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Jugador1")
                         .WithMany()
                         .HasForeignKey("Jugador1Id")
@@ -374,6 +395,8 @@ namespace FarmeORT.Repositorios.Migrations
                         .HasForeignKey("TorneoId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.Navigation("Ganador");
 
                     b.Navigation("Jugador1");
 
