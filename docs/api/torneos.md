@@ -4,6 +4,29 @@ Contrato: letra (gestión de torneos), especificación de la API del equipo, D-3
 `/api/v1`, HTTP, JSON camelCase, `Accept: application/json`. La identidad sale solo de
 `Authorization: Bearer {token}`.
 
+## Detalle de un torneo
+
+| Operación | Entrada | Respuesta | Estados |
+|---|---|---|---|
+| GET `/torneos/{id}` | Id del torneo en la ruta (sale del listado). `Authorization` opcional. | `TorneoDetalleResponse` | 200, 401, 404 |
+
+Rol: todos, incluido el anónimo. Un token enviado pero inválido responde 401 (D-36).
+
+`TorneoDetalleResponse` tiene los campos de `TorneoResponse` y además (D-44):
+- `skillsObligatorias`: `SkillResponse[]` (`id`, `codigo`, `nombre`, `descripcion`, `categoria`,
+  `dificultad`, `activa`), el mismo formato que `GET /torneos/{id}/skills-obligatorias`.
+- `jugadoresAceptados`: `JugadorAceptadoResponse[]` (`jugadorId`, `nickname`, `elo`), en orden de
+  inscripción. Solo las inscripciones Aceptadas.
+- El cuadro (rondas y batallas) se agrega con las rondas.
+
+| Estado | errorCode | Cuándo |
+|---|---|---|
+| 401 | `INVALID_TOKEN` | Se envió un token que no corresponde a una sesión activa |
+| 404 | `TOURNAMENT_NOT_FOUND` | No existe, o es un torneo Cancelado y quien consulta es anónimo |
+
+Ejemplo: `GET /api/v1/torneos/4` responde 200 con
+`{"id":4,"codigo":"COPAAURA",...,"inscripcionesAceptadas":1,"skillsObligatorias":[{"id":3,"codigo":"SIXSEVEN",...}],"jugadoresAceptados":[{"jugadorId":7,"nickname":"aurafarmer","elo":1200}]}`.
+
 ## Cancelar un torneo
 
 | Operación | Entrada | Respuesta | Estados |
