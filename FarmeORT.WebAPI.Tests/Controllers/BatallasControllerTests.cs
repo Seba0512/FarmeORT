@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Batallas;
@@ -13,6 +14,20 @@ namespace FarmeORT.WebAPI.Tests.Controllers;
 [TestClass]
 public sealed class BatallasControllerTests
 {
+    [TestMethod]
+    [DataRow(null, false)]
+    [DataRow(0, false)]
+    [DataRow(-1, false)]
+    [DataRow(5, true)]
+    public void FiltroBatallasRequest_Torneo_ExigeIdentificadorPositivo(int? torneoId, bool esperado)
+    {
+        var filtro = new FiltroBatallasRequest { TorneoId = torneoId, Ronda = -1, JugadorId = -1, Limit = -1, Offset = -1 };
+
+        var valido = Validator.TryValidateObject(filtro, new ValidationContext(filtro), [], validateAllProperties: true);
+
+        Assert.AreEqual(esperado, valido);
+    }
+
     [TestMethod]
     public void Consultas_RequierenAutenticacionYLosTresRoles()
     {
