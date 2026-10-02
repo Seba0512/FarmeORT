@@ -35,6 +35,9 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioBatallas = new Mock<IRepositorioBatallas>(MockBehavior.Strict);
         _hasheadorContrasenas = new Mock<IHasheadorContrasenas>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
+
+        // Por defecto el usuario no tiene torneos, batallas ni inscripciones vigentes que impidan cambiarle el rol.
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(false);
         _servicio = new ServicioUsuarios(
             _repositorioUsuarios.Object,
             _repositorioTorneos.Object,
@@ -180,6 +183,19 @@ public sealed class ServicioModificacionUsuariosTests
         var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(UsuarioId, request, AdministradorActualId));
 
         Assert.AreEqual("La fecha de nacimiento es obligatoria.", excepcion.Message);
+    }
+
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnOrganizadorConTorneoVigente_LanzaUsuarioOrganizaTorneoVigenteSinActualizar()
+    {
+        var usuario = ConfigurarModificacionValida();
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(true);
+
+        Assert.ThrowsExactly<UsuarioOrganizaTorneoVigenteException>(
+            () => _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Jugador), AdministradorActualId));
+
+        Assert.AreEqual(Rol.Organizador, usuario.Rol);
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
     }
 
     private Usuario ConfigurarModificacionValida()
