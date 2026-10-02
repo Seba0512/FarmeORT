@@ -502,6 +502,26 @@ public sealed class ServicioTorneosTests
         Assert.IsTrue(obligatoria.Activa);
     }
 
+    [TestMethod]
+    public void ObtenerPorId_TorneoConInscriptosAceptados_DevuelveLosJugadoresConNicknameYEloEnOrdenDeInscripcion()
+    {
+        var torneo = CrearTorneo();
+        var primero = new Usuario("Ana", "Perez", "ana@farmeort.com", "aurafarmer", new DateOnly(2000, 1, 1), Rol.Jugador, "hash", FechaActual) { Id = 7 };
+        var segundo = new Usuario("Beto", "Diaz", "beto@farmeort.com", "sixseven", new DateOnly(2000, 1, 1), Rol.Jugador, "hash", FechaActual) { Id = 8 };
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(
+        [
+            new Inscripcion(torneo, primero, new DateTime(2026, 10, 1, 12, 0, 0)),
+            new Inscripcion(torneo, segundo, new DateTime(2026, 10, 1, 12, 5, 0)),
+        ]);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: true);
+
+        CollectionAssert.AreEqual(new[] { 7, 8 }, response.JugadoresAceptados.Select(j => j.JugadorId).ToArray());
+        CollectionAssert.AreEqual(new[] { "aurafarmer", "sixseven" }, response.JugadoresAceptados.Select(j => j.Nickname).ToArray());
+        CollectionAssert.AreEqual(new[] { 1200, 1200 }, response.JugadoresAceptados.Select(j => j.Elo).ToArray());
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();

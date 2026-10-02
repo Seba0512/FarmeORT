@@ -7,4 +7,6 @@ namespace FarmeORT.DTOs.Torneos;
 public sealed class TorneoDetalleResponse : TorneoResponse
 {
     public IReadOnlyList<SkillResponse> SkillsObligatorias { get; set; } = [];
+
+    public IReadOnlyList<JugadorAceptadoResponse> JugadoresAceptados { get; set; } = [];
 }
