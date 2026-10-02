@@ -33,6 +33,36 @@ public sealed class RepositorioInscripcionesTests
     }
 
     [TestMethod]
+    [DataRow(EstadoInscripcion.Aceptada)]
+    [DataRow(EstadoInscripcion.Eliminada)]
+    [DataRow(EstadoInscripcion.Cancelada)]
+    public void ExisteDelJugador_InscripcionHistorica_FiltraTorneoYJugadorSinExcluirEstados(EstadoInscripcion estado)
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var otroTorneoId = GuardarTorneo("COPAFUEGO");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        var otroJugadorId = GuardarUsuario("brunolopez", Rol.Jugador);
+        GuardarInscripcion(torneoId, jugadorId, i =>
+        {
+            if(estado == EstadoInscripcion.Eliminada)
+            {
+                i.Eliminar();
+            }
+            else if(estado == EstadoInscripcion.Cancelada)
+            {
+                i.Cancelar();
+            }
+        });
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        Assert.IsTrue(_repositorio.ExisteDelJugador(torneoId, jugadorId));
+        Assert.IsFalse(_repositorio.ExisteDelJugador(otroTorneoId, jugadorId));
+        Assert.IsFalse(_repositorio.ExisteDelJugador(torneoId, otroJugadorId));
+        Assert.IsFalse(_repositorio.ExisteDelJugador(99, 99));
+        Assert.AreEqual(0, _baseDeDatos.Contexto.ChangeTracker.Entries().Count());
+    }
+
+    [TestMethod]
     public void ObtenerAceptada_FiltraTorneoJugadorYEstadoYDevuelveEntidadRastreada()
     {
         var torneoId = GuardarTorneo("COPAAURA");
