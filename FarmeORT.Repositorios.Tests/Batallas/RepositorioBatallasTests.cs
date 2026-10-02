@@ -31,6 +31,19 @@ public sealed class RepositorioBatallasTests
     }
 
     [TestMethod]
+    public void Persistencia_Fallo_ConfiguraGanadorOpcionalYComentarioAcotado()
+    {
+        var entidad = _baseDeDatos.Contexto.Model.FindEntityType(typeof(Batalla))!;
+
+        var ganador = entidad.FindNavigation(nameof(Batalla.Ganador))!;
+
+        Assert.AreEqual(500, entidad.FindProperty(nameof(Batalla.Comentario))!.GetMaxLength());
+        Assert.IsTrue(entidad.FindProperty(nameof(Batalla.GanadorId))!.IsNullable);
+        Assert.AreEqual(nameof(Batalla.GanadorId), ganador.ForeignKey.Properties.Single().Name);
+        Assert.AreEqual(DeleteBehavior.Restrict, ganador.ForeignKey.DeleteBehavior);
+    }
+
+    [TestMethod]
     public void ObtenerPorId_BatallaInexistente_DevuelveNull()
     {
         var resultado = _repositorio.ObtenerPorId(99);
