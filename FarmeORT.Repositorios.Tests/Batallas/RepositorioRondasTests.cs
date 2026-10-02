@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.Repositorios.Batallas;
 using Microsoft.EntityFrameworkCore;
 
@@ -25,6 +26,54 @@ public sealed class RepositorioRondasTests
     public void Limpiar()
     {
         _baseDeDatos.Dispose();
+    }
+
+    [TestMethod]
+    [DataRow(1)]
+    [DataRow(2)]
+    public void GuardarRonda_DosPedidosPreparanLaMismaRonda_SoloUnoSeConfirma(int numero)
+    {
+        var jugadores = Enumerable.Range(7, 4).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
+        var torneo = CrearTorneo();
+        _baseDeDatos.Contexto.AddRange(jugadores);
+        _baseDeDatos.Contexto.Add(torneo);
+        if(numero == 2)
+        {
+            torneo.Iniciar(4);
+            var anterior1 = new Batalla(torneo, 1, jugadores[0], jugadores[3], new SorteoInicial(jugadores[0]));
+            var anterior2 = new Batalla(torneo, 1, jugadores[1], jugadores[2], new SorteoInicial(jugadores[1]));
+            anterior1.Cancelar();
+            anterior2.Cancelar();
+            _baseDeDatos.Contexto.AddRange(anterior1, anterior2);
+        }
+
+        _baseDeDatos.Contexto.SaveChanges();
+        using var primero = _baseDeDatos.CrearContexto();
+        using var segundo = _baseDeDatos.CrearContexto();
+        var torneo1 = primero.Torneos.Single(t => t.Id == torneo.Id);
+        var torneo2 = segundo.Torneos.Single(t => t.Id == torneo.Id);
+        if(numero == 1)
+        {
+            torneo1.Iniciar(4);
+            torneo2.Iniciar(4);
+        }
+
+        var cantidad = numero == 1 ? 4 : 2;
+        var jugadores1 = primero.Usuarios.Where(u => u.Rol == Rol.Jugador).OrderBy(u => u.Id).Take(cantidad).ToList();
+        var jugadores2 = segundo.Usuarios.Where(u => u.Rol == Rol.Jugador).OrderBy(u => u.Id).Take(cantidad).ToList();
+        var ronda1 = CrearBatallas(torneo1, numero, jugadores1);
+        var ronda2 = CrearBatallas(torneo2, numero, jugadores2);
+        new RepositorioBatallas(primero).GuardarRonda(torneo1, ronda1);
+        var repositorio = new RepositorioBatallas(segundo);
+
+        Assert.ThrowsExactly<RondaSinResolverException>(() => repositorio.GuardarRonda(torneo2, ronda2));
+
+        Assert.AreEqual(cantidad / 2, _baseDeDatos.Contexto.Batallas.Count(b => b.TorneoId == torneo.Id && b.NumeroRonda == numero));
+        var participantes = _baseDeDatos.Contexto.Batallas.Where(b => b.TorneoId == torneo.Id && b.NumeroRonda == numero)
+            .Select(b => new { b.Jugador1Id, b.Jugador2Id }).ToList().SelectMany(b => new[] { b.Jugador1Id, b.Jugador2Id }).ToList();
+        Assert.AreEqual(cantidad, participantes.Distinct().Count());
+        Assert.AreEqual(EstadoTorneo.EnCurso, _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Estado);
+        Assert.IsEmpty(segundo.ChangeTracker.Entries().ToList());
     }
 
     [TestMethod]
@@ -72,6 +121,13 @@ public sealed class RepositorioRondasTests
         CollectionAssert.AreEqual(new[] { 11, 12, 10 }, batallas.Select(b => b.Id).ToArray());
         Assert.AreEqual("usuario7", batallas[0].Jugador1.Nickname);
         Assert.AreEqual("usuario10", batallas[0].Jugador2.Nickname);
+    }
+
+    private static List<Batalla> CrearBatallas(Torneo torneo, int numero, List<Usuario> jugadores)
+    {
+        return Enumerable.Range(0, jugadores.Count / 2)
+            .Select(i => new Batalla(torneo, numero, jugadores[i], jugadores[^(i + 1)], new SorteoInicial(jugadores[i])))
+            .ToList();
     }
 
     private static Torneo CrearTorneo()
