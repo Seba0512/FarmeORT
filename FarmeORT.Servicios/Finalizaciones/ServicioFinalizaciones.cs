@@ -33,7 +33,14 @@ internal sealed class ServicioFinalizaciones(
             throw new TorneoConBatallasSinResolverException();
         }
 
-        var campeon = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Single().Jugador;
+        // El campeón es el único jugador que sigue con inscripción Aceptada: el resto quedó Eliminado al fallar.
+        var sinEliminar = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId);
+        if(sinEliminar.Count != 1)
+        {
+            throw new TorneoSinCampeonException();
+        }
+
+        var campeon = sinEliminar[0].Jugador;
         torneo.Finalizar(campeon);
         repositorioTorneos.Actualizar(torneo);
         return new FinalizacionResponse
