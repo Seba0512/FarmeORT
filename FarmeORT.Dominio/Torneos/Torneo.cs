@@ -158,6 +158,11 @@ public sealed class Torneo
     // Finalizar deja al jugador que quedó sin eliminar como campeón (D-64).
     public void Finalizar(Usuario campeon)
     {
+        if(Estado != EstadoTorneo.EnCurso)
+        {
+            throw new TorneoNoEnCursoException();
+        }
+
         Estado = EstadoTorneo.Finalizado;
         Campeon = campeon;
         CampeonId = campeon.Id;
