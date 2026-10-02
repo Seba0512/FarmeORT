@@ -443,7 +443,7 @@ public sealed class RepositorioBatallasTests
     [TestMethod]
     public void ContarResultadosPorJugador_BatallasFalladasYPendientes_CuentaGanadasYPerdidasSoloDeLasFinalizadas()
     {
-        var torneo = CrearTorneoConId(5, "COPAAURA");
+        var torneo = CrearTorneoConId(5, "COPAAURA", CrearUsuario(2, Rol.Organizador));
         var jugador7 = CrearUsuario(7, Rol.Jugador);
         var jugador8 = CrearUsuario(8, Rol.Jugador);
         var jugador9 = CrearUsuario(9, Rol.Jugador);
@@ -464,10 +464,31 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(new ResultadosDeBatallas(1, 1), resultados[8]);
     }
 
-    private static Torneo CrearTorneoConId(int id, string codigo)
+    [TestMethod]
+    public void ContarResultadosPorJugador_ConTorneo_CuentaSoloLasBatallasDeEseTorneo()
+    {
+        var organizador = CrearUsuario(2, Rol.Organizador);
+        var torneo = CrearTorneoConId(5, "COPAAURA", organizador);
+        var otroTorneo = CrearTorneoConId(6, "COPAFARM", organizador);
+        var jugador7 = CrearUsuario(7, Rol.Jugador);
+        var jugador8 = CrearUsuario(8, Rol.Jugador);
+        _baseDeDatos.Contexto.Batallas.AddRange(
+            BatallaFallada(12, torneo, jugador7, jugador8, ganador: jugador7),
+            BatallaFallada(13, otroTorneo, jugador7, jugador8, ganador: jugador8),
+            BatallaFallada(14, otroTorneo, jugador8, jugador7, ganador: jugador7));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultados = _repositorio.ContarResultadosPorJugador([7], 5);
+
+        Assert.HasCount(1, resultados);
+        Assert.AreEqual(new ResultadosDeBatallas(1, 0), resultados[7]);
+    }
+
+    private static Torneo CrearTorneoConId(int id, string codigo, Usuario organizador)
     {
         return new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.",
-            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, CrearUsuario(2, Rol.Organizador), FechaActual)
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, organizador, FechaActual)
         { Id = id };
     }
 
