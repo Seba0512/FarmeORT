@@ -18,6 +18,12 @@ public sealed class FiltroExcepcionesRondasTests
         VerificarMapa(new TorneoIncompletoException(), 409, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas.");
     }
 
+    [TestMethod]
+    public void OnException_RondaNoEncontrada_Devuelve404ConROUND_NOT_FOUND()
+    {
+        VerificarMapa(new RondaNoEncontradaException(), 404, "ROUND_NOT_FOUND", "El torneo no tiene una ronda con ese número.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
