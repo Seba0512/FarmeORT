@@ -14,6 +14,17 @@ namespace FarmeORT.WebAPI.Tests.Controllers;
 public sealed class FallosControllerTests
 {
     [TestMethod]
+    public void Fallar_RequiereAutenticacionYRolOrganizador()
+    {
+        var atributo = typeof(FallosController).GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>().SingleOrDefault();
+
+        Assert.IsNotNull(atributo);
+        Assert.IsInstanceOfType<AutenticacionAttribute>(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Organizador }, atributo.RolesPermitidos.ToArray());
+    }
+
+    [TestMethod]
     public void Fallar_DatosValidos_Devuelve201ConLocationYOrganizadorAutenticado()
     {
         var servicio = new Mock<IServicioFallos>(MockBehavior.Strict);
