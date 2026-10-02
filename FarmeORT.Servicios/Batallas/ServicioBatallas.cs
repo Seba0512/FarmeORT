@@ -1,4 +1,5 @@
 using FarmeORT.DTOs.Batallas;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -13,6 +14,11 @@ internal sealed class ServicioBatallas(
 {
     public IReadOnlyList<BatallaResponse> Listar(FiltroBatallasRequest filtro, int usuarioId, string rol)
     {
+        if(filtro.TorneoId == null || filtro.TorneoId <= 0)
+        {
+            throw new DatosInvalidosException("El torneoId es obligatorio y debe ser positivo.");
+        }
+
         _ = repositorioBatallas;
         _ = repositorioTorneos;
         _ = repositorioInscripciones;
