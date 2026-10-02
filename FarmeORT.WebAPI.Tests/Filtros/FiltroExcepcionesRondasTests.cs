@@ -30,6 +30,12 @@ public sealed class FiltroExcepcionesRondasTests
         VerificarMapa(new RondaSinResolverException(), 409, "ROUND_NOT_RESOLVED", "La ronda anterior todavía tiene batallas sin resolver.");
     }
 
+    [TestMethod]
+    public void OnException_TorneoListoParaFinalizar_Devuelve409ConTOURNAMENT_READY_TO_FINISH()
+    {
+        VerificarMapa(new TorneoListoParaFinalizarException(), 409, "TOURNAMENT_READY_TO_FINISH", "Queda un solo jugador sin eliminar: corresponde finalizar el torneo.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
