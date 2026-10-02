@@ -52,6 +52,11 @@ internal sealed class ServicioRondas(
     // Una ronda son las batallas del torneo con el mismo número; el repositorio ya las trae ordenadas (D-62).
     public IReadOnlyList<RondaResponse> Listar(int torneoId, bool esAnonimo)
     {
+        if(repositorioTorneos.ObtenerPorId(torneoId) == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
         var batallas = repositorioBatallas.ListarDelTorneo(torneoId);
         return batallas
             .GroupBy(b => b.NumeroRonda)
