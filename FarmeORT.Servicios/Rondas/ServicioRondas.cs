@@ -26,7 +26,15 @@ internal sealed class ServicioRondas(
         var numero = 1;
         if(torneo.Estado == EstadoTorneo.EnCurso)
         {
-            numero = repositorioBatallas.ListarDelTorneo(torneoId).Max(b => b.NumeroRonda) + 1;
+            // La ronda anterior tiene que estar resuelta: todas sus batallas Finalizadas o Canceladas.
+            var anteriores = repositorioBatallas.ListarDelTorneo(torneoId);
+            var ultima = anteriores.Max(b => b.NumeroRonda);
+            if(anteriores.Any(b => b.NumeroRonda == ultima && b.Estado != EstadoBatalla.Finalizada && b.Estado != EstadoBatalla.Cancelada))
+            {
+                throw new RondaSinResolverException();
+            }
+
+            numero = ultima + 1;
         }
         else
         {
