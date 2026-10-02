@@ -126,7 +126,7 @@ public sealed partial class Usuario
 
     public void ActualizarElo(int elo)
     {
-        throw new NotImplementedException();
+        Elo = elo;
     }
 
     private static void ValidarNombre(string nombre)

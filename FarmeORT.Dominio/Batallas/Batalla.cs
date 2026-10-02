@@ -90,7 +90,13 @@ public sealed class Batalla
 
     public void Fallar(int ganadorId, string? comentario, int cambioEloJugador1, int cambioEloJugador2)
     {
-        throw new NotImplementedException();
+        Ganador = ganadorId == Jugador1Id ? Jugador1 : Jugador2;
+        GanadorId = ganadorId;
+        Comentario = comentario;
+        CambioEloJugador1 = cambioEloJugador1;
+        CambioEloJugador2 = cambioEloJugador2;
+        Estado = EstadoBatalla.Finalizada;
+        JugadorTurnoId = null;
     }
 
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
