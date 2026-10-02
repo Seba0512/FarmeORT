@@ -20,6 +20,12 @@ internal sealed class BaseDeDatosEnMemoria : IDisposable
 
     public FarmeORTContext Contexto { get; }
 
+    // Contextos independientes para intercalar lecturas y guardados sin compartir el ChangeTracker.
+    public FarmeORTContext CrearContexto()
+    {
+        return new FarmeORTContext(new DbContextOptionsBuilder<FarmeORTContext>().UseSqlite(_conexion).Options);
+    }
+
     public void Dispose()
     {
         Contexto.Dispose();

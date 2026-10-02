@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.Repositorios.Inscripciones;
 using Microsoft.EntityFrameworkCore;
@@ -82,6 +83,29 @@ public sealed class RepositorioInscripcionesTests
         Assert.IsNull(_repositorio.ObtenerAceptada(torneoId, eliminadoId));
         Assert.IsNull(_repositorio.ObtenerAceptada(99, jugadorId));
         Assert.IsNull(_repositorio.ObtenerAceptada(torneoId, 99));
+    }
+
+    [TestMethod]
+    public void Agregar_DosPedidosDelMismoJugadorLeenAntesDeGuardar_SoloUnoQuedaAceptado()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        using var primero = _baseDeDatos.CrearContexto();
+        using var segundo = _baseDeDatos.CrearContexto();
+        var primera = new Inscripcion(primero.Torneos.Single(t => t.Id == torneoId), primero.Usuarios.Single(u => u.Id == jugadorId), Ahora);
+        var segunda = new Inscripcion(segundo.Torneos.Single(t => t.Id == torneoId), segundo.Usuarios.Single(u => u.Id == jugadorId), Ahora);
+        var primerRepositorio = new RepositorioInscripciones(primero);
+        var segundoRepositorio = new RepositorioInscripciones(segundo);
+        Assert.IsFalse(primerRepositorio.ExisteAceptada(torneoId, jugadorId));
+        Assert.IsFalse(segundoRepositorio.ExisteAceptada(torneoId, jugadorId));
+        Assert.AreEqual(0, primerRepositorio.ContarAceptadas(torneoId));
+        Assert.AreEqual(0, segundoRepositorio.ContarAceptadas(torneoId));
+        primerRepositorio.Agregar(primera);
+
+        Assert.ThrowsExactly<InscripcionYaExisteException>(() => segundoRepositorio.Agregar(segunda));
+
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.IsEmpty(segundo.ChangeTracker.Entries().ToList());
     }
 
     [TestMethod]
