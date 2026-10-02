@@ -95,6 +95,18 @@ public sealed class RondasControllerTests
         CollectionAssert.AreEquivalent(new[] { Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
 
+    [TestMethod]
+    [DataRow(nameof(RondasController.Listar))]
+    [DataRow(nameof(RondasController.ObtenerPorNumero))]
+    public void Consultas_IncluidoAnonimo_UsanAutenticacionOpcional(string accion)
+    {
+        var metodo = typeof(RondasController).GetMethod(accion);
+
+        var atributo = metodo?.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+
+        Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
+    }
+
     private void Autenticar(int usuarioId, string rol)
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = rol };
