@@ -119,6 +119,22 @@ public sealed class ServicioRondasTests
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Listar_TorneoConBatallas_AgrupaLasBatallasPorRonda()
+    {
+        IReadOnlyList<Batalla> batallas = [CrearBatalla(10, 1, 0, 3), CrearBatalla(11, 1, 1, 2), CrearBatalla(12, 2, 0, 1)];
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns(batallas);
+
+        var rondas = _servicio.Listar(TorneoId, false);
+
+        Assert.HasCount(2, rondas);
+        Assert.AreEqual(1, rondas[0].Numero);
+        CollectionAssert.AreEqual(new[] { 10, 11 }, rondas[0].Batallas.Select(b => b.Id).ToArray());
+        Assert.AreEqual(2, rondas[1].Numero);
+        CollectionAssert.AreEqual(new[] { 12 }, rondas[1].Batallas.Select(b => b.Id).ToArray());
+    }
+
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
     // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar. Todo se guarda con el torneo.
     private void PrepararPrimeraRondaCompleta()
@@ -135,11 +151,26 @@ public sealed class ServicioRondasTests
         _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
     }
 
+    private Batalla CrearBatalla(int id, int numeroRonda, int indiceJugador1, int indiceJugador2)
+    {
+        var jugador1 = _jugadores[indiceJugador1];
+        var jugador2 = _jugadores[indiceJugador2];
+        return new Batalla(_torneo, numeroRonda, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = id };
+    }
+
     private static Usuario CrearUsuario(int id, Rol rol)
     {
         return new Usuario("Ana", "Pérez", $"usuario{id}@farmeort.com", $"usuario{id}", new DateOnly(2000, 1, 15), rol, "hash", FechaActual)
         {
             Id = id,
         };
+    }
+
+    private sealed class SorteoInicial(Usuario elegido) : ISorteo
+    {
+        public Usuario ElegirEntre(Usuario jugador1, Usuario jugador2)
+        {
+            return elegido;
+        }
     }
 }
