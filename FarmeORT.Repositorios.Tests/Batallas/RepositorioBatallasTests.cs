@@ -440,6 +440,44 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(esperado, existe);
     }
 
+    [TestMethod]
+    public void ContarResultadosPorJugador_BatallasFalladasYPendientes_CuentaGanadasYPerdidasSoloDeLasFinalizadas()
+    {
+        var torneo = CrearTorneoConId(5, "COPAAURA");
+        var jugador7 = CrearUsuario(7, Rol.Jugador);
+        var jugador8 = CrearUsuario(8, Rol.Jugador);
+        var jugador9 = CrearUsuario(9, Rol.Jugador);
+        var jugador10 = CrearUsuario(10, Rol.Jugador);
+        _baseDeDatos.Contexto.Batallas.AddRange(
+            BatallaFallada(12, torneo, jugador7, jugador8, ganador: jugador7),
+            BatallaFallada(13, torneo, jugador7, jugador9, ganador: jugador9),
+            BatallaFallada(14, torneo, jugador8, jugador9, ganador: jugador8),
+            BatallaFallada(15, torneo, jugador7, jugador10, ganador: jugador10),
+            new Batalla(torneo, 1, jugador7, jugador8, new SorteoInicial(jugador7)) { Id = 16 });
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultados = _repositorio.ContarResultadosPorJugador([7, 8], null);
+
+        Assert.HasCount(2, resultados);
+        Assert.AreEqual(new ResultadosDeBatallas(1, 2), resultados[7]);
+        Assert.AreEqual(new ResultadosDeBatallas(1, 1), resultados[8]);
+    }
+
+    private static Torneo CrearTorneoConId(int id, string codigo)
+    {
+        return new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 8, CrearUsuario(2, Rol.Organizador), FechaActual)
+        { Id = id };
+    }
+
+    private static Batalla BatallaFallada(int id, Torneo torneo, Usuario jugador1, Usuario jugador2, Usuario ganador)
+    {
+        var batalla = new Batalla(torneo, 1, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = id };
+        batalla.Fallar(ganador.Id, "Ganó por mejor ejecución de las skills.", 16, -16);
+        return batalla;
+    }
+
     private FarmeORTContext CrearOtroContexto()
     {
         var opciones = new DbContextOptionsBuilder<FarmeORTContext>()
