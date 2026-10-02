@@ -483,6 +483,86 @@
       "key": "bEloJugador2Final",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "rondasSufijo",
+      "value": ""
+    },
+    {
+      "key": "rondasIndice",
+      "value": ""
+    },
+    {
+      "key": "rondasJugadoresIds",
+      "value": ""
+    },
+    {
+      "key": "rondasJugadoresTokens",
+      "value": ""
+    },
+    {
+      "key": "rondasSkillCodigo",
+      "value": ""
+    },
+    {
+      "key": "rondasEmailActual",
+      "value": ""
+    },
+    {
+      "key": "rondasNicknameActual",
+      "value": ""
+    },
+    {
+      "key": "rondasOrganizadorId",
+      "value": ""
+    },
+    {
+      "key": "rondasOrganizadorIdEmail",
+      "value": ""
+    },
+    {
+      "key": "rondasOtroOrganizadorId",
+      "value": ""
+    },
+    {
+      "key": "rondasOtroOrganizadorIdEmail",
+      "value": ""
+    },
+    {
+      "key": "rondasTokenActual",
+      "value": ""
+    },
+    {
+      "key": "rondasSkillActual",
+      "value": ""
+    },
+    {
+      "key": "rondasFechaInicio",
+      "value": ""
+    },
+    {
+      "key": "rondasFechaFin",
+      "value": ""
+    },
+    {
+      "key": "rondasTorneoCodigo",
+      "value": ""
+    },
+    {
+      "key": "rondasTorneoCanceladoCodigo",
+      "value": ""
+    },
+    {
+      "key": "rondasTorneoCanceladoId",
+      "value": ""
+    },
+    {
+      "key": "rondasFinalId",
+      "value": ""
+    },
+    {
+      "key": "rondasFinalGanadorId",
+      "value": ""
     }
   ],
   "item": [
@@ -13417,7 +13497,2130 @@
                     "exec": [
                       "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
                       "pm.test(\"Código de error TOURNAMENT_FULL\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_FULL\"));",
-                      "pm.execution.setNextRequest(\"Ranking - anónimo con la cantidad por defecto → 200\");"
+                      "pm.execution.setNextRequest(\"Rondas - alta de la primera skill obligatoria → 201\");"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Rondas",
+      "item": [
+        {
+          "name": "Rondas - Preparación",
+          "item": [
+            {
+              "name": "Rondas - alta de la primera skill obligatoria → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasSkillCodigo}}\",\n  \"nombre\": \"Obligatoria uno\",\n  \"descripcion\": \"Skill creada para las batallas de las rondas.\",\n  \"categoria\": \"Gestual\",\n  \"dificultad\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Un sufijo por corrida: los códigos, emails y nicknames no chocan si la colección se corre varias veces.",
+                      "pm.collectionVariables.set(\"rondasSufijo\", Date.now().toString(36).toUpperCase().slice(-6));",
+                      "pm.collectionVariables.set(\"rondasIndice\", 0);",
+                      "pm.collectionVariables.set(\"rondasJugadoresIds\", \"[]\");",
+                      "pm.collectionVariables.set(\"rondasJugadoresTokens\", \"[]\");",
+                      "pm.collectionVariables.set(\"rondasSkillCodigo\", \"RDOA\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bSkillObligatoria1Id\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta de la segunda skill obligatoria → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasSkillCodigo}}\",\n  \"nombre\": \"Obligatoria dos\",\n  \"descripcion\": \"Skill creada para las batallas de las rondas.\",\n  \"categoria\": \"Gestual\",\n  \"dificultad\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasSkillCodigo\", \"RDOB\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bSkillObligatoria2Id\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta de una skill libre → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasSkillCodigo}}\",\n  \"nombre\": \"Libre uno\",\n  \"descripcion\": \"Skill creada para las batallas de las rondas.\",\n  \"categoria\": \"Gestual\",\n  \"dificultad\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasSkillCodigo\", \"RDLA\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bSkillLibre1Id\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta de la skill libre que se va a desactivar → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasSkillCodigo}}\",\n  \"nombre\": \"Libre que se desactiva\",\n  \"descripcion\": \"Skill creada para las batallas de las rondas.\",\n  \"categoria\": \"Gestual\",\n  \"dificultad\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasSkillCodigo\", \"RDLB\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bSkillLibreInactivaId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta de otra skill libre → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasSkillCodigo}}\",\n  \"nombre\": \"Libre extra\",\n  \"descripcion\": \"Skill creada para las batallas de las rondas.\",\n  \"categoria\": \"Gestual\",\n  \"dificultad\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasSkillCodigo\", \"RDLC\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bSkillLibreExtraId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta de una skill que nadie declara → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasSkillCodigo}}\",\n  \"nombre\": \"Nadie la declara\",\n  \"descripcion\": \"Skill creada para las batallas de las rondas.\",\n  \"categoria\": \"Gestual\",\n  \"dificultad\": 2\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasSkillCodigo\", \"RDND\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bSkillNoDeclaradaId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta del organizador del torneo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Organizador\",\n  \"apellido\": \"Rondas\",\n  \"email\": \"{{rondasEmailActual}}\",\n  \"nickname\": \"{{rondasNicknameActual}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"1990-05-20\",\n  \"rol\": \"Organizador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.collectionVariables.get(\"rondasSufijo\");",
+                      "pm.collectionVariables.set(\"rondasEmailActual\", \"orgrd.\" + sufijo.toLowerCase() + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"rondasNicknameActual\", \"orgrd\" + sufijo);",
+                      "pm.collectionVariables.set(\"rondasOrganizadorIdEmail\", pm.collectionVariables.get(\"rondasEmailActual\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"rondasOrganizadorId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta de otro organizador → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Organizador\",\n  \"apellido\": \"Rondas\",\n  \"email\": \"{{rondasEmailActual}}\",\n  \"nickname\": \"{{rondasNicknameActual}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"1990-05-20\",\n  \"rol\": \"Organizador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.collectionVariables.get(\"rondasSufijo\");",
+                      "pm.collectionVariables.set(\"rondasEmailActual\", \"otrord.\" + sufijo.toLowerCase() + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"rondasNicknameActual\", \"otrord\" + sufijo);",
+                      "pm.collectionVariables.set(\"rondasOtroOrganizadorIdEmail\", pm.collectionVariables.get(\"rondasEmailActual\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"rondasOtroOrganizadorId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - login del organizador del torneo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{rondasOrganizadorIdEmail}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bOrganizadorToken\", pm.response.json().token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - login del otro organizador → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{rondasOtroOrganizadorIdEmail}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bOtroOrganizadorToken\", pm.response.json().token);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - registro de los cinco jugadores (se repite) → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Rondas\",\n  \"email\": \"{{rondasEmailActual}}\",\n  \"nickname\": \"{{rondasNicknameActual}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Los cuatro primeros juegan el torneo; el quinto queda sin inscripción.",
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "const sufijo = pm.collectionVariables.get(\"rondasSufijo\");",
+                      "pm.collectionVariables.set(\"rondasEmailActual\", \"jugrd\" + indice + \".\" + sufijo.toLowerCase() + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"rondasNicknameActual\", \"jugrd\" + indice + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const ids = JSON.parse(pm.collectionVariables.get(\"rondasJugadoresIds\"));",
+                      "const tokens = JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"));",
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "ids[indice] = pm.response.json().id;",
+                      "pm.collectionVariables.set(\"rondasJugadoresIds\", JSON.stringify(ids));",
+                      "if(indice + 1 < 5) {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", 0);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - login de los cinco jugadores (se repite) → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{rondasEmailActual}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "const sufijo = pm.collectionVariables.get(\"rondasSufijo\");",
+                      "pm.collectionVariables.set(\"rondasEmailActual\", \"jugrd\" + indice + \".\" + sufijo.toLowerCase() + \"@farmeort.test\");"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const ids = JSON.parse(pm.collectionVariables.get(\"rondasJugadoresIds\"));",
+                      "const tokens = JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"));",
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "tokens[indice] = pm.response.json().token;",
+                      "pm.collectionVariables.set(\"rondasJugadoresTokens\", JSON.stringify(tokens));",
+                      "pm.collectionVariables.set(\"bJugadorSinInscripcionToken\", tokens[4] || \"\");",
+                      "if(indice + 1 < 5) {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", 0);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - cada jugador declara sus cinco skills (se repite) → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores",
+                    "actual",
+                    "repertorio"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{rondasSkillActual}},\n  \"nivel\": 3\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{rondasTokenActual}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// 20 vueltas: los cuatro jugadores del torneo declaran las dos obligatorias y las tres libres.",
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "const tokens = JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"));",
+                      "const skills = [\"bSkillObligatoria1Id\", \"bSkillObligatoria2Id\", \"bSkillLibre1Id\", \"bSkillLibreInactivaId\", \"bSkillLibreExtraId\"];",
+                      "pm.collectionVariables.set(\"rondasTokenActual\", tokens[Math.floor(indice / 5)]);",
+                      "pm.collectionVariables.set(\"rondasSkillActual\", pm.collectionVariables.get(skills[indice % 5]));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "if(indice + 1 < 20) {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", 0);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - desactiva una skill que ya declararon → 200",
+              "request": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/skills/{{bSkillLibreInactivaId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "skills",
+                    "{{bSkillLibreInactivaId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"activa\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Queda inactiva\", () => pm.expect(pm.response.json().activa).to.eql(false));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta del torneo de cupo 4 → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasTorneoCodigo}}\",\n  \"nombre\": \"Copa de Rondas\",\n  \"descripcion\": \"Torneo eliminatorio para probar las rondas.\",\n  \"fechaInicio\": \"{{rondasFechaInicio}}\",\n  \"fechaFin\": \"{{rondasFechaFin}}\",\n  \"cupo\": 4,\n  \"organizadorId\": {{rondasOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const dia = 24 * 60 * 60 * 1000;",
+                      "const fecha = d => new Date(Date.now() + d * dia).toISOString().slice(0, 10);",
+                      "pm.collectionVariables.set(\"rondasFechaInicio\", fecha(2));",
+                      "pm.collectionVariables.set(\"rondasFechaFin\", fecha(30));",
+                      "pm.collectionVariables.set(\"rondasTorneoCodigo\", \"RDT\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"bTorneoId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - el organizador asocia la primera obligatoria → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/skills-obligatorias",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "skills-obligatorias"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{bSkillObligatoria1Id}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - el organizador asocia la segunda obligatoria → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/skills-obligatorias",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "skills-obligatorias"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"skillId\": {{bSkillObligatoria2Id}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - se inscriben tres jugadores (se repite) → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{bTorneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{rondasTokenActual}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "pm.collectionVariables.set(\"rondasTokenActual\", JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"))[indice]);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const indice = Number(pm.collectionVariables.get(\"rondasIndice\"));",
+                      "if(indice + 1 < 3) {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"rondasIndice\", 0);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - alta de un torneo que se va a cancelar → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{rondasTorneoCanceladoCodigo}}\",\n  \"nombre\": \"Copa Cancelada\",\n  \"descripcion\": \"Torneo que se cancela antes de generar rondas.\",\n  \"fechaInicio\": \"{{rondasFechaInicio}}\",\n  \"fechaFin\": \"{{rondasFechaFin}}\",\n  \"cupo\": 4,\n  \"organizadorId\": {{rondasOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasTorneoCanceladoCodigo\", \"RDX\" + pm.collectionVariables.get(\"rondasSufijo\"));"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"rondasTorneoCanceladoId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - cancela ese torneo → 200",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{rondasTorneoCanceladoId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{rondasTorneoCanceladoId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Rondas - Errores",
+          "item": [
+            {
+              "name": "Rondas - generar sin token → 401",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"errorCode INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - un jugador no puede generar → 403",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{rondasTokenActual}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasTokenActual\", JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"))[0]);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"errorCode FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - organizador que no es el asignado → 403",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bOtroOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                      "pm.test(\"errorCode NOT_TOURNAMENT_ORGANIZER\", () => pm.expect(pm.response.json().errorCode).to.eql(\"NOT_TOURNAMENT_ORGANIZER\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - generar en un torneo inexistente → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/999999/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "999999",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"errorCode TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - con el cupo incompleto no se genera → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"errorCode TOURNAMENT_NOT_FULL\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FULL\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - torneo cancelado, aunque lo pida un administrador → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{rondasTorneoCanceladoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{rondasTorneoCanceladoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"errorCode TOURNAMENT_NOT_OPEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_OPEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - el anónimo no ve las rondas de un torneo cancelado → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{rondasTorneoCanceladoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{rondasTorneoCanceladoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"errorCode TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - consulta de un torneo inexistente → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/999999/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "999999",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"errorCode TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - antes de generarla no existe la ronda 1 → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas",
+                    "1"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"errorCode ROUND_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"ROUND_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - antes de generarla el listado está vacío → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Sin rondas\", () => pm.expect(pm.response.json()).to.eql([]));"
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "Rondas - Éxito",
+          "item": [
+            {
+              "name": "Rondas - se inscribe el cuarto jugador → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{bTorneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{rondasTokenActual}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"rondasTokenActual\", JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"))[3]);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - el organizador genera la primera ronda → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const ronda = pm.response.json();",
+                      "const torneoId = Number(pm.collectionVariables.get(\"bTorneoId\"));",
+                      "const ids = JSON.parse(pm.collectionVariables.get(\"rondasJugadoresIds\"));",
+                      "const tokens = JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"));",
+                      "pm.test(\"Location de la ronda 1\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/torneos/\" + torneoId + \"/rondas/1\"));",
+                      "pm.test(\"Ronda 1 con dos batallas Pendientes\", () => {",
+                      "    pm.expect(ronda.numero).to.eql(1);",
+                      "    pm.expect(ronda.batallas.length).to.eql(2);",
+                      "    ronda.batallas.forEach(b => { pm.expect(b.estado).to.eql(\"Pendiente\"); pm.expect(b.ronda).to.eql(1); pm.expect(b.torneoId).to.eql(torneoId); pm.expect(b.ganadorId).to.eql(null); });",
+                      "});",
+                      "// Con el mismo ELO se ordena por id: el primero enfrenta al último y el segundo al tercero (D-62).",
+                      "pm.test(\"Mejor contra peor, con desempate por id\", () => {",
+                      "    pm.expect([ronda.batallas[0].jugador1.id, ronda.batallas[0].jugador2.id]).to.eql([ids[0], ids[3]]);",
+                      "    pm.expect([ronda.batallas[1].jugador1.id, ronda.batallas[1].jugador2.id]).to.eql([ids[1], ids[2]]);",
+                      "});",
+                      "pm.test(\"Empieza uno de los dos jugadores\", () => ronda.batallas.forEach(b => pm.expect([b.jugador1.id, b.jugador2.id]).to.include(b.jugadorTurnoId)));",
+                      "// Variables que usan las carpetas de la persona B (docs/api/batallas-lanzamientos.md).",
+                      "const guardar = (prefijo, jugador) => { const i = ids.indexOf(jugador.id); pm.collectionVariables.set(prefijo + \"Id\", jugador.id); pm.collectionVariables.set(prefijo + \"Token\", tokens[i]); };",
+                      "pm.collectionVariables.set(\"bBattleId\", ronda.batallas[0].id);",
+                      "guardar(\"bJugador1\", ronda.batallas[0].jugador1);",
+                      "guardar(\"bJugador2\", ronda.batallas[0].jugador2);",
+                      "pm.collectionVariables.set(\"bBattleAbandonoId\", ronda.batallas[1].id);",
+                      "guardar(\"bJugador3\", ronda.batallas[1].jugador1);",
+                      "guardar(\"bJugador4\", ronda.batallas[1].jugador2);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - el detalle del torneo trae el cuadro → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const torneo = pm.response.json();",
+                      "pm.test(\"Torneo En curso\", () => pm.expect(torneo.estado).to.eql(\"EnCurso\"));",
+                      "pm.test(\"Cuadro con la ronda 1\", () => { pm.expect(torneo.rondas.length).to.eql(1); pm.expect(torneo.rondas[0].batallas.length).to.eql(2); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - el anónimo lista las rondas → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Una ronda con dos batallas\", () => { const rondas = pm.response.json(); pm.expect(rondas.length).to.eql(1); pm.expect(rondas[0].numero).to.eql(1); pm.expect(rondas[0].batallas.length).to.eql(2); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - consulta de la ronda 1 → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas/1",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas",
+                    "1"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Es la ronda 1\", () => pm.expect(pm.response.json().numero).to.eql(1));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - la ronda 2 todavía no existe → 404",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas/2",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas",
+                    "2"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"errorCode ROUND_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"ROUND_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - no se genera otra con la primera sin resolver → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{bTorneoId}}",
+                    "rondas"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bOrganizadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"errorCode ROUND_NOT_RESOLVED\", () => pm.expect(pm.response.json().errorCode).to.eql(\"ROUND_NOT_RESOLVED\"));",
+                      "pm.execution.setNextRequest(\"Batallas - listado organizador → 200\");"
                     ]
                   }
                 }
@@ -17331,6 +19534,264 @@
         }
       ],
       "description": "Ejecutar después de Lanzamientos. bBattleId queda EnArbitraje; bBattleAbandonoId sigue Pendiente con otros dos jugadores. Los conflictos de concurrencia y REGISTRATION_NOT_ACTIVE se verifican en los tests SQLite/servicio: no se fuerzan estados inconsistentes mediante la API."
+    },
+    {
+      "name": "Rondas siguientes",
+      "item": [
+        {
+          "name": "Rondas siguientes - con la primera resuelta se genera la final → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "rondas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "const ronda = pm.response.json();",
+                  "const participantes = [\"bJugador1Id\", \"bJugador2Id\", \"bJugador3Id\", \"bJugador4Id\"].map(v => Number(pm.collectionVariables.get(v)));",
+                  "pm.test(\"Location de la ronda 2\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/torneos/\" + pm.collectionVariables.get(\"bTorneoId\") + \"/rondas/2\"));",
+                  "pm.test(\"Final con una batalla entre dos participantes\", () => {",
+                  "    pm.expect(ronda.numero).to.eql(2);",
+                  "    pm.expect(ronda.batallas.length).to.eql(1);",
+                  "    pm.expect(participantes).to.include(ronda.batallas[0].jugador1.id);",
+                  "    pm.expect(participantes).to.include(ronda.batallas[0].jugador2.id);",
+                  "});",
+                  "pm.collectionVariables.set(\"rondasFinalId\", ronda.batallas[0].id);",
+                  "pm.collectionVariables.set(\"rondasFinalGanadorId\", ronda.batallas[0].jugador1.id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rondas siguientes - el cuadro muestra las dos rondas → 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const torneo = pm.response.json();",
+                  "pm.test(\"Dos rondas en el cuadro\", () => pm.expect(torneo.rondas.map(r => r.numero)).to.eql([1, 2]));",
+                  "pm.test(\"La ronda 1 tiene sus ganadores\", () => torneo.rondas[0].batallas.forEach(b => pm.expect(b.ganadorId).to.not.eql(null)));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rondas siguientes - no se genera otra con la final sin resolver → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "rondas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode ROUND_NOT_RESOLVED\", () => pm.expect(pm.response.json().errorCode).to.eql(\"ROUND_NOT_RESOLVED\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rondas siguientes - el organizador falla la final → 201",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/batallas/{{rondasFinalId}}/fallos",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "batallas",
+                "{{rondasFinalId}}",
+                "fallos"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"ganadorId\": {{rondasFinalGanadorId}},\n  \"comentario\": \"Ganó la final del torneo por abandono del rival.\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                  "pm.test(\"Final fallada\", () => pm.expect(pm.response.json().estado).to.eql(\"Finalizada\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rondas siguientes - con un solo jugador sin eliminar corresponde finalizar → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "rondas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode TOURNAMENT_READY_TO_FINISH\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_READY_TO_FINISH\"));",
+                  "pm.execution.setNextRequest(\"Ranking - anónimo con la cantidad por defecto → 200\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     },
     {
       "name": "Ranking",
