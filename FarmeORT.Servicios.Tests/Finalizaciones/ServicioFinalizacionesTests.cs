@@ -108,6 +108,21 @@ public sealed class ServicioFinalizacionesTests
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(2)]
+    public void Finalizar_SinUnUnicoJugadorSinEliminar_LanzaTorneoSinCampeon(int sinEliminar)
+    {
+        var aceptadas = Enumerable.Range(7, sinEliminar).Select(id => new Inscripcion(_torneo, CrearUsuario(id, Rol.Jugador), new DateTime(2026, 10, 2))).ToList();
+        _torneo.Iniciar(4);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([]);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(aceptadas);
+
+        Assert.ThrowsExactly<TorneoSinCampeonException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.
     private void PrepararTorneoListoParaFinalizar()
     {
