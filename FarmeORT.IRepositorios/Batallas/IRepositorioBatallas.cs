@@ -22,9 +22,6 @@ public interface IRepositorioBatallas
     // Un jugador sin batallas Finalizadas no figura.
     IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId);
 
-    // Persona C: deja la batalla nueva rastreada para guardarla junto con el torneo (D-62).
-    void Agregar(Batalla batalla);
-
     // Persona C: las batallas del torneo con sus jugadores, ordenadas por ronda y por id, para armar las rondas.
     IReadOnlyList<Batalla> ListarDelTorneo(int torneoId);
 

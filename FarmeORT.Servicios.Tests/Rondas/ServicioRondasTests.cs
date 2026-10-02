@@ -62,8 +62,9 @@ public sealed class ServicioRondasTests
         Assert.IsNull(ronda.Batallas[0].GanadorId);
         Assert.AreEqual(8, ronda.Batallas[1].Jugador1.Id);
         Assert.AreEqual(9, ronda.Batallas[1].Jugador2.Id);
-        _repositorioBatallas.Verify(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 1 && b.Jugador1Id == 7 && b.Jugador2Id == 10)), Times.Once);
-        _repositorioBatallas.Verify(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 1 && b.Jugador1Id == 8 && b.Jugador2Id == 9)), Times.Once);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(_torneo, It.Is<IReadOnlyList<Batalla>>(b => b.Count == 2
+            && b[0].NumeroRonda == 1 && b[0].Jugador1Id == 7 && b[0].Jugador2Id == 10
+            && b[1].NumeroRonda == 1 && b[1].Jugador1Id == 8 && b[1].Jugador2Id == 9)), Times.Once);
     }
 
     [TestMethod]
@@ -74,7 +75,7 @@ public sealed class ServicioRondasTests
         _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
 
         Assert.AreEqual(EstadoTorneo.EnCurso, _torneo.Estado);
-        _repositorioTorneos.Verify(r => r.Actualizar(_torneo), Times.Once);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(_torneo, It.Is<IReadOnlyList<Batalla>>(b => b.Count == 2)), Times.Once);
     }
 
     [TestMethod]
@@ -83,7 +84,7 @@ public sealed class ServicioRondasTests
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns((Torneo?)null);
 
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
-        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(It.IsAny<Torneo>(), It.IsAny<IReadOnlyList<Batalla>>()), Times.Never);
     }
 
     [TestMethod]
@@ -93,7 +94,7 @@ public sealed class ServicioRondasTests
 
         Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() => _servicio.Generar(TorneoId, 5, Roles.Organizador));
         Assert.AreEqual(EstadoTorneo.Abierto, _torneo.Estado);
-        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(It.IsAny<Torneo>(), It.IsAny<IReadOnlyList<Batalla>>()), Times.Never);
     }
 
     [TestMethod]
@@ -115,8 +116,7 @@ public sealed class ServicioRondasTests
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(inscripciones);
 
         Assert.ThrowsExactly<TorneoIncompletoException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
-        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
-        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(It.IsAny<Torneo>(), It.IsAny<IReadOnlyList<Batalla>>()), Times.Never);
     }
 
     [TestMethod]
@@ -219,15 +219,15 @@ public sealed class ServicioRondasTests
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(ganadores);
         _estrategia.Setup(e => e.Emparejar(It.Is<IReadOnlyList<Usuario>>(j => j.SequenceEqual(_jugadores.Take(2))))).Returns(pares);
         _sorteo.Setup(s => s.ElegirEntre(_jugadores[0], _jugadores[1])).Returns(_jugadores[0]);
-        _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 2 && b.Jugador1Id == 7 && b.Jugador2Id == 8)));
-        _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
+        _repositorioBatallas.Setup(r => r.GuardarRonda(_torneo, It.Is<IReadOnlyList<Batalla>>(b => b.Count == 1
+            && b[0].NumeroRonda == 2 && b[0].Jugador1Id == 7 && b[0].Jugador2Id == 8)));
 
         var ronda = _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
 
         Assert.AreEqual(2, ronda.Numero);
         Assert.HasCount(1, ronda.Batallas);
-        _repositorioBatallas.Verify(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 2 && b.Jugador1Id == 7 && b.Jugador2Id == 8)), Times.Once);
-        _repositorioTorneos.Verify(r => r.Actualizar(_torneo), Times.Once);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(_torneo, It.Is<IReadOnlyList<Batalla>>(b => b.Count == 1
+            && b[0].NumeroRonda == 2 && b[0].Jugador1Id == 7 && b[0].Jugador2Id == 8)), Times.Once);
     }
 
     [TestMethod]
@@ -241,7 +241,7 @@ public sealed class ServicioRondasTests
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(siguen);
 
         Assert.ThrowsExactly<RondaSinResolverException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
-        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(It.IsAny<Torneo>(), It.IsAny<IReadOnlyList<Batalla>>()), Times.Never);
     }
 
     [TestMethod]
@@ -255,7 +255,7 @@ public sealed class ServicioRondasTests
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(campeon);
 
         Assert.ThrowsExactly<TorneoListoParaFinalizarException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
-        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(It.IsAny<Torneo>(), It.IsAny<IReadOnlyList<Batalla>>()), Times.Never);
     }
 
     [TestMethod]
@@ -272,8 +272,7 @@ public sealed class ServicioRondasTests
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(siguen);
         _estrategia.Setup(e => e.Emparejar(It.Is<IReadOnlyList<Usuario>>(j => j.SequenceEqual(_jugadores.Take(2))))).Returns(pares);
         _sorteo.Setup(s => s.ElegirEntre(_jugadores[0], _jugadores[1])).Returns(_jugadores[0]);
-        _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 2)));
-        _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
+        _repositorioBatallas.Setup(r => r.GuardarRonda(_torneo, It.Is<IReadOnlyList<Batalla>>(b => b.Count == 1 && b[0].NumeroRonda == 2)));
 
         var ronda = _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
 
@@ -306,7 +305,7 @@ public sealed class ServicioRondasTests
         _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns([]);
 
         Assert.ThrowsExactly<TorneoNoAbiertoException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
-        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
+        _repositorioBatallas.Verify(r => r.GuardarRonda(It.IsAny<Torneo>(), It.IsAny<IReadOnlyList<Batalla>>()), Times.Never);
     }
 
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
@@ -320,9 +319,8 @@ public sealed class ServicioRondasTests
         _estrategia.Setup(e => e.Emparejar(It.Is<IReadOnlyList<Usuario>>(j => j.SequenceEqual(_jugadores)))).Returns(pares);
         _sorteo.Setup(s => s.ElegirEntre(_jugadores[0], _jugadores[3])).Returns(_jugadores[0]);
         _sorteo.Setup(s => s.ElegirEntre(_jugadores[1], _jugadores[2])).Returns(_jugadores[1]);
-        _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.Jugador1Id == 7 && b.Jugador2Id == 10)));
-        _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.Jugador1Id == 8 && b.Jugador2Id == 9)));
-        _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
+        _repositorioBatallas.Setup(r => r.GuardarRonda(_torneo, It.Is<IReadOnlyList<Batalla>>(b => b.Count == 2
+            && b[0].Jugador1Id == 7 && b[0].Jugador2Id == 10 && b[1].Jugador1Id == 8 && b[1].Jugador2Id == 9)));
     }
 
     private Batalla CrearBatalla(int id, int numeroRonda, int indiceJugador1, int indiceJugador2)

@@ -120,12 +120,6 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
                 perdidasComoJugador1.GetValueOrDefault(id) + perdidasComoJugador2.GetValueOrDefault(id)));
     }
 
-    // No guarda: la batalla se persiste con el SaveChanges que guarda el torneo, en la misma transacción (D-62).
-    public void Agregar(Batalla batalla)
-    {
-        contexto.Batallas.Add(batalla);
-    }
-
     public IReadOnlyList<Batalla> ListarDelTorneo(int torneoId)
     {
         return contexto.Batallas

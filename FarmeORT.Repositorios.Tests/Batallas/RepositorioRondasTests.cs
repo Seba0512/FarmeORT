@@ -28,22 +28,6 @@ public sealed class RepositorioRondasTests
     }
 
     [TestMethod]
-    public void Agregar_BatallaNueva_QuedaRastreadaSinGuardarseTodavia()
-    {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var jugador2 = CrearUsuario(8, Rol.Jugador);
-        var torneo = CrearTorneo();
-        _baseDeDatos.Contexto.AddRange(jugador1, jugador2, torneo);
-        _baseDeDatos.Contexto.SaveChanges();
-        var batalla = new Batalla(torneo, 1, jugador1, jugador2, new SorteoInicial(jugador1));
-
-        _repositorio.Agregar(batalla);
-
-        Assert.AreEqual(EntityState.Added, _baseDeDatos.Contexto.Entry(batalla).State);
-        Assert.AreEqual(0, _baseDeDatos.Contexto.Batallas.Count());
-    }
-
-    [TestMethod]
     public void GuardarRonda_RondaNueva_GuardaLasBatallasYElEstadoDelTorneoJuntos()
     {
         var jugadores = Enumerable.Range(7, 4).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
