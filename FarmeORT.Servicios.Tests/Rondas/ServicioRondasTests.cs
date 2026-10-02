@@ -65,8 +65,19 @@ public sealed class ServicioRondasTests
         _repositorioBatallas.Verify(r => r.Agregar(It.Is<Batalla>(b => b.NumeroRonda == 1 && b.Jugador1Id == 8 && b.Jugador2Id == 9)), Times.Once);
     }
 
+    [TestMethod]
+    public void Generar_PrimeraRonda_PasaElTorneoAEnCursoYGuardaTodoJunto()
+    {
+        PrepararPrimeraRondaCompleta();
+
+        _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
+
+        Assert.AreEqual(EstadoTorneo.EnCurso, _torneo.Estado);
+        _repositorioTorneos.Verify(r => r.Actualizar(_torneo), Times.Once);
+    }
+
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
-    // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar.
+    // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar. Todo se guarda con el torneo.
     private void PrepararPrimeraRondaCompleta()
     {
         var inscripciones = _jugadores.Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
@@ -78,6 +89,7 @@ public sealed class ServicioRondasTests
         _sorteo.Setup(s => s.ElegirEntre(_jugadores[1], _jugadores[2])).Returns(_jugadores[1]);
         _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.Jugador1Id == 7 && b.Jugador2Id == 10)));
         _repositorioBatallas.Setup(r => r.Agregar(It.Is<Batalla>(b => b.Jugador1Id == 8 && b.Jugador2Id == 9)));
+        _repositorioTorneos.Setup(r => r.Actualizar(_torneo));
     }
 
     private static Usuario CrearUsuario(int id, Rol rol)
