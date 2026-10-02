@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Ranking;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -15,20 +16,7 @@ internal sealed class ServicioRanking(
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
-        var cantidad = AjustarCantidad(filtro.Cantidad);
-        if(filtro.TorneoId != null)
-        {
-            // El ranking es público y para el público un torneo cancelado no existe (D-36).
-            var torneo = repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value);
-            if(torneo == null || !torneo.EsVisibleParaAnonimos)
-            {
-                throw new TorneoNoEncontradoException();
-            }
-        }
-
-        var jugadores = filtro.TorneoId != null
-            ? repositorioUsuarios.ListarRankingDelTorneo(filtro.TorneoId.Value, cantidad)
-            : repositorioUsuarios.ListarRanking(cantidad);
+        var jugadores = ListarJugadores(filtro.TorneoId, AjustarCantidad(filtro.Cantidad));
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
@@ -42,6 +30,27 @@ internal sealed class ServicioRanking(
         }
 
         return ranking;
+    }
+
+    private IReadOnlyList<Usuario> ListarJugadores(int? torneoId, int cantidad)
+    {
+        if(torneoId == null)
+        {
+            return repositorioUsuarios.ListarRanking(cantidad);
+        }
+
+        ValidarTorneoVisible(torneoId.Value);
+        return repositorioUsuarios.ListarRankingDelTorneo(torneoId.Value, cantidad);
+    }
+
+    // El ranking es público y para el público un torneo cancelado no existe (D-36).
+    private void ValidarTorneoVisible(int torneoId)
+    {
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null || !torneo.EsVisibleParaAnonimos)
+        {
+            throw new TorneoNoEncontradoException();
+        }
     }
 
     // Fuera de rango se ajusta en lugar de rechazarse, igual que la paginación (D-35).
