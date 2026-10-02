@@ -64,6 +64,15 @@ internal sealed class ServicioFallos(
             Comentario = batalla.Comentario,
             CambioEloJugador1 = batalla.CambioEloJugador1,
             CambioEloJugador2 = batalla.CambioEloJugador2,
+            Lanzamientos = batalla.Lanzamientos.OrderBy(l => l.Turno).Select(l => new LanzamientoResponse
+            {
+                Turno = l.Turno,
+                JugadorId = l.JugadorId,
+                Nickname = l.Jugador.Nickname,
+                SkillId = l.SkillId,
+                Skill = l.Skill.Nombre,
+                Fecha = l.Fecha,
+            }).ToList(),
         };
     }
 }
