@@ -276,6 +276,25 @@ public sealed class RepositorioTorneosTests
         Assert.AreEqual(EstadoInscripcion.Cancelada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
     }
 
+    [TestMethod]
+    public void Actualizar_BatallaModificadaPorOtroPedido_LanzaBatallaModificadaSinGuardarNingunCambio()
+    {
+        var torneo = GuardarTorneoConBatallaEInscripcion();
+        var batalla = _baseDeDatos.Contexto.Batallas.Single(b => b.TorneoId == torneo.Id);
+        var inscripcion = _baseDeDatos.Contexto.Inscripciones.Single(i => i.TorneoId == torneo.Id);
+        torneo.Cancelar();
+        batalla.Cancelar();
+        inscripcion.Cancelar();
+        CambiarEstadoDesdeOtroContexto(batalla.Id, EstadoBatalla.EnArbitraje);
+
+        Assert.ThrowsExactly<BatallaModificadaException>(() => _repositorio.Actualizar(torneo));
+
+        Assert.AreEqual(EstadoTorneo.Abierto, _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Estado);
+        Assert.AreEqual(EstadoBatalla.EnArbitraje, _baseDeDatos.Contexto.Batallas.AsNoTracking().Single(b => b.Id == batalla.Id).Estado);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _baseDeDatos.Contexto.Inscripciones.AsNoTracking().Single(i => i.Id == inscripcion.Id).Estado);
+        AssertPuedeGuardarOtroTorneo();
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroTorneos Filtro(
         EstadoTorneo? estado = null,
@@ -338,6 +357,18 @@ public sealed class RepositorioTorneosTests
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
         return _baseDeDatos.Contexto.Torneos.Include(t => t.Organizador).Single(t => t.Id == torneo.Id);
+    }
+
+    // Simula otro pedido (por ejemplo, el octavo lanzamiento) que cambia la batalla con su propio contexto.
+    private void CambiarEstadoDesdeOtroContexto(int batallaId, EstadoBatalla estado)
+    {
+        var opciones = new DbContextOptionsBuilder<FarmeORTContext>()
+            .UseSqlite(_baseDeDatos.Contexto.Database.GetDbConnection())
+            .Options;
+        using var otroContexto = new FarmeORTContext(opciones);
+        var batalla = otroContexto.Batallas.Single(b => b.Id == batallaId);
+        otroContexto.Entry(batalla).Property(b => b.Estado).CurrentValue = estado;
+        otroContexto.SaveChanges();
     }
 
     private static Usuario CrearJugador(int numero)
