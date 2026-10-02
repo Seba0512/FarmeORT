@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Rondas;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Rondas;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -18,7 +19,12 @@ internal sealed class ServicioRondas(
 {
     public RondaResponse Generar(int torneoId, int usuarioId, string rol)
     {
-        var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
         torneo.Iniciar();
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
         var pares = estrategiaEmparejamiento.Emparejar(jugadores);
