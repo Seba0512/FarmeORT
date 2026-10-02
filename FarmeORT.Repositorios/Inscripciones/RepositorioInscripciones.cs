@@ -104,7 +104,8 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public Inscripcion? ObtenerAceptada(int torneoId, int jugadorId)
     {
-        throw new NotImplementedException();
+        return contexto.Inscripciones.SingleOrDefault(i =>
+            i.TorneoId == torneoId && i.JugadorId == jugadorId && i.Estado == EstadoInscripcion.Aceptada);
     }
 
     public void Actualizar(Inscripcion inscripcion)
