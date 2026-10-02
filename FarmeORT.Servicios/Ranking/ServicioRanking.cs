@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Ranking;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Ranking;
@@ -9,13 +10,15 @@ namespace FarmeORT.Servicios.Ranking;
 
 internal sealed class ServicioRanking(
     IRepositorioUsuarios repositorioUsuarios,
-    IRepositorioTorneos repositorioTorneos) : IServicioRanking
+    IRepositorioTorneos repositorioTorneos,
+    IRepositorioBatallas repositorioBatallas) : IServicioRanking
 {
     private const int CantidadMaxima = 100;
     private const int CantidadPorDefecto = 10;
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
+        _ = repositorioBatallas;
         var jugadores = ListarJugadores(filtro.TorneoId, AjustarCantidad(filtro.Cantidad));
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)

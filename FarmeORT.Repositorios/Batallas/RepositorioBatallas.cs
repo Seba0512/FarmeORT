@@ -93,4 +93,11 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
         return consulta.OrderBy(b => b.NumeroRonda).ThenBy(b => b.Id)
             .Skip(filtro.Desplazamiento).Take(filtro.Limite).ToList();
     }
+
+    public IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId)
+    {
+        _ = jugadorIds;
+        _ = torneoId;
+        throw new NotImplementedException();
+    }
 }
