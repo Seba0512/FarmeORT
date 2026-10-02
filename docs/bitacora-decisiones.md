@@ -1605,7 +1605,7 @@ determinismo, TDD Outside-In, tests de repositorio con SQLite y DRY.
 **Participación de IA:**
 - Claude Code (agente de la Persona A) propuso las opciones de quién entra y el conteo por torneo; el
   integrante eligió las recomendadas. El 404 del torneo cancelado y el del `torneoId` no positivo los
-  decidió Claude Code siguiendo D-36 y la especificación, y quedan para revisar en el PR.
+  propuso Claude Code siguiendo D-36 y la especificación; el integrante los aprobó antes del PR.
 - Para que el test del desempate no pasara por casualidad, Claude Code quitó `ThenBy` a propósito, vio
   fallar los dos tests de desempate y restauró el código antes de commitear.
 
