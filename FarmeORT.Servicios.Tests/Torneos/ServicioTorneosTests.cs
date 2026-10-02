@@ -468,6 +468,20 @@ public sealed class ServicioTorneosTests
         _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
     }
 
+    [TestMethod]
+    public void Cancelar_TorneoYaCancelado_LanzaTorneoNoCancelableSinTocarBatallasNiInscripciones()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+
+        Assert.ThrowsExactly<TorneoNoCancelableException>(() => _servicio.Cancelar(TorneoId));
+
+        _repositorioBatallas.Verify(r => r.ListarSinResolverDelTorneo(It.IsAny<int>()), Times.Never);
+        _repositorioInscripciones.Verify(r => r.ListarAceptadasDelTorneo(It.IsAny<int>()), Times.Never);
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     private void ConfigurarAltaValida()
     {
         ConfigurarFechaActual();
