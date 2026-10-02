@@ -46,11 +46,29 @@ public sealed class EmparejamientoPorEloTests
         Assert.AreSame(jugador3, pares[1].Jugador2);
     }
 
-    private static Usuario CrearJugador(int id)
+    [TestMethod]
+    public void Emparejar_EloDistinto_EnfrentaAlDeMayorEloConElDeMenor()
     {
-        return new Usuario("Ana", "Pérez", $"jugador{id}@farmeort.com", $"jugador{id}", new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
+        var jugador1 = CrearJugador(1, 1300);
+        var jugador2 = CrearJugador(2, 1500);
+        var jugador3 = CrearJugador(3, 1200);
+        var jugador4 = CrearJugador(4, 1400);
+
+        var pares = _estrategia.Emparejar([jugador1, jugador2, jugador3, jugador4]);
+
+        Assert.AreSame(jugador2, pares[0].Jugador1);
+        Assert.AreSame(jugador3, pares[0].Jugador2);
+        Assert.AreSame(jugador4, pares[1].Jugador1);
+        Assert.AreSame(jugador1, pares[1].Jugador2);
+    }
+
+    private static Usuario CrearJugador(int id, int elo = 1200)
+    {
+        var jugador = new Usuario("Ana", "Pérez", $"jugador{id}@farmeort.com", $"jugador{id}", new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
         {
             Id = id,
         };
+        jugador.ActualizarElo(elo);
+        return jugador;
     }
 }
