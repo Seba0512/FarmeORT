@@ -68,8 +68,29 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
         return contexto.Batallas.Any(b => (b.Jugador1Id == jugadorId || b.Jugador2Id == jugadorId)
             && (b.Estado == EstadoBatalla.Pendiente || b.Estado == EstadoBatalla.EnArbitraje));
     }
+
     public IReadOnlyList<Batalla> Listar(FiltroBatallas filtro)
     {
-        throw new NotImplementedException();
+        var consulta = contexto.Batallas.AsNoTracking()
+            .Include(b => b.Jugador1)
+            .Include(b => b.Jugador2)
+            .Where(b => b.TorneoId == filtro.TorneoId);
+        if(filtro.Estado != null)
+        {
+            consulta = consulta.Where(b => b.Estado == filtro.Estado);
+        }
+
+        if(filtro.Ronda != null)
+        {
+            consulta = consulta.Where(b => b.NumeroRonda == filtro.Ronda);
+        }
+
+        if(filtro.JugadorId != null)
+        {
+            consulta = consulta.Where(b => b.Jugador1Id == filtro.JugadorId || b.Jugador2Id == filtro.JugadorId);
+        }
+
+        return consulta.OrderBy(b => b.NumeroRonda).ThenBy(b => b.Id)
+            .Skip(filtro.Desplazamiento).Take(filtro.Limite).ToList();
     }
 }
