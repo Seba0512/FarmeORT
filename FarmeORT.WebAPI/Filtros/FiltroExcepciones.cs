@@ -118,6 +118,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "ROUND_NOT_RESOLVED", "La ronda anterior todavía tiene batallas sin resolver."),
         [typeof(TorneoListoParaFinalizarException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_READY_TO_FINISH", "Queda un solo jugador sin eliminar: corresponde finalizar el torneo."),
+        [typeof(TorneoNoEnCursoException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_IN_PROGRESS", "El torneo no está en curso."),
     };
 
     public void OnException(ExceptionContext context)
