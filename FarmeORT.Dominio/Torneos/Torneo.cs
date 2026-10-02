@@ -155,6 +155,14 @@ public sealed class Torneo
         Estado = EstadoTorneo.EnCurso;
     }
 
+    // Finalizar deja al jugador que quedó sin eliminar como campeón (D-64).
+    public void Finalizar(Usuario campeon)
+    {
+        Estado = EstadoTorneo.Finalizado;
+        Campeon = campeon;
+        CampeonId = campeon.Id;
+    }
+
     // Solo un torneo Abierto admite cambios: En curso, Finalizado o Cancelado ya no.
     private void ValidarModificable()
     {

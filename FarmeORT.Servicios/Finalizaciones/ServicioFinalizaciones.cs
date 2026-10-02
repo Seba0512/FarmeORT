@@ -17,10 +17,12 @@ internal sealed class ServicioFinalizaciones(
         _ = repositorioBatallas;
         var torneo = repositorioTorneos.ObtenerPorId(torneoId)!;
         var campeon = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Single().Jugador;
+        torneo.Finalizar(campeon);
+        repositorioTorneos.Actualizar(torneo);
         return new FinalizacionResponse
         {
             TorneoId = torneo.Id,
-            Estado = "Finalizado",
+            Estado = torneo.Estado.ToString(),
             Campeon = new JugadorBatallaResponse { Id = campeon.Id, Nickname = campeon.Nickname, Elo = campeon.Elo },
         };
     }
