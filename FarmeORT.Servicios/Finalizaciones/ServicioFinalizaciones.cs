@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Finalizaciones;
 using FarmeORT.Excepciones;
@@ -23,6 +24,12 @@ internal sealed class ServicioFinalizaciones(
         }
 
         PermisosDelTorneo.ValidarOrganizadorOAdministrador(torneo, usuarioId, rol);
+
+        // Primero el estado: un torneo Abierto, Finalizado o Cancelado no está en curso, tenga o no campeón (D-64).
+        if(torneo.Estado != EstadoTorneo.EnCurso)
+        {
+            throw new TorneoNoEnCursoException();
+        }
 
         if(repositorioBatallas.ListarSinResolverDelTorneo(torneoId).Count > 0)
         {
