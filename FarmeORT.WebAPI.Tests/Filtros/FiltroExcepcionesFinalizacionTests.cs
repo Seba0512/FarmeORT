@@ -18,6 +18,12 @@ public sealed class FiltroExcepcionesFinalizacionTests
         VerificarMapa(new TorneoNoEnCursoException(), 409, "TOURNAMENT_NOT_IN_PROGRESS", "El torneo no está en curso.");
     }
 
+    [TestMethod]
+    public void OnException_TorneoConBatallasSinResolver_Devuelve409ConTOURNAMENT_HAS_UNRESOLVED_BATTLES()
+    {
+        VerificarMapa(new TorneoConBatallasSinResolverException(), 409, "TOURNAMENT_HAS_UNRESOLVED_BATTLES", "El torneo todavía tiene batallas sin resolver.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
