@@ -107,6 +107,18 @@ public sealed class ServicioRondasTests
         Assert.AreEqual(EstadoTorneo.EnCurso, _torneo.Estado);
     }
 
+    [TestMethod]
+    public void Generar_TorneoIncompleto_NoCreaBatallasNiGuarda()
+    {
+        var inscripciones = _jugadores.Take(3).Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(inscripciones);
+
+        Assert.ThrowsExactly<TorneoIncompletoException>(() => _servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
+        _repositorioBatallas.Verify(r => r.Agregar(It.IsAny<Batalla>()), Times.Never);
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
     // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar. Todo se guarda con el torneo.
     private void PrepararPrimeraRondaCompleta()
