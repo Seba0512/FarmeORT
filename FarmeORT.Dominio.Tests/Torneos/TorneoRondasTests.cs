@@ -18,6 +18,16 @@ public sealed class TorneoRondasTests
         Assert.ThrowsExactly<TorneoNoAbiertoException>(torneo.Iniciar);
     }
 
+    [TestMethod]
+    public void Iniciar_TorneoYaEnCurso_LanzaTorneoNoAbierto()
+    {
+        var torneo = CrearTorneo();
+        torneo.Iniciar();
+
+        Assert.ThrowsExactly<TorneoNoAbiertoException>(torneo.Iniciar);
+        Assert.AreEqual(EstadoTorneo.EnCurso, torneo.Estado);
+    }
+
     private static Torneo CrearTorneo()
     {
         var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
