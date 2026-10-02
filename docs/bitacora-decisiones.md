@@ -1491,6 +1491,63 @@ organizado por un Jugador.
 
 ---
 
+### D-44 — El detalle del torneo suma sus skills obligatorias y sus jugadores aceptados
+
+**Problema:** la letra (1.3, detalle de un torneo) pide devolver, además del resumen, las skills
+obligatorias, la lista de jugadores aceptados con nickname y ELO actual, y el cuadro completo. D-36 dejó
+`TorneoDetalleResponse` sin propiedades propias hasta que existieran esas entidades. El cuadro (rondas y
+batallas) lo agrega la Persona C después; este cambio suma las otras dos partes.
+
+**Alternativas consideradas:**
+- Skills obligatorias: un DTO nuevo con menos campos o reusar `SkillResponse`, que ya devuelve
+  `GET /torneos/{id}/skills-obligatorias`.
+- Jugadores: reusar `InscripcionResponse` (con id de inscripción, torneo, estado y fecha) o un DTO propio
+  con lo que pide la letra.
+- Orden de los jugadores: por ELO, por nickname o por orden de inscripción.
+- Cómo completar el detalle sin repetir el mapeo común con el resumen: propiedades `init` y un mapeo
+  aparte del detalle, o propiedades propias con `set`, que se completan después del mapeo común.
+
+**Decisión adoptada:**
+- `skillsObligatorias`: `SkillResponse[]`, el mismo formato que el sub-recurso de skills obligatorias.
+- `jugadoresAceptados`: `JugadorAceptadoResponse[]` con `jugadorId`, `nickname` y `elo`, en orden de
+  inscripción. Es el orden de `ListarAceptadasDelTorneo`, que ordena por id en la consulta y no depende
+  del orden accidental de la base.
+- Una sola consulta de las Aceptadas sirve para la lista y para `inscripcionesAceptadas`. El detalle ya no
+  hace un `COUNT` aparte.
+- Las dos propiedades nuevas tienen `set`: `CrearResponse<T>` comparte el mapeo del resumen y el servicio
+  completa el detalle después. Las propiedades del resumen siguen siendo `init`.
+- `RespuestasSkills.Crear` reemplaza el mapeo de `Skill` a `SkillResponse` que repetían `ServicioSkills`,
+  `ServicioSkillsObligatorias` y ahora `ServicioTorneos`.
+- La visibilidad no cambia (D-36): el anónimo ve el detalle de los torneos no cancelados, con los mismos
+  datos que un usuario autenticado. El ranking ya es público, así que nickname y ELO no son datos
+  reservados.
+
+**Justificación:**
+- Reusar `SkillResponse` evita dos formatos para la misma skill. Un DTO propio para los jugadores expone
+  solo lo que pide la letra, sin datos de la inscripción.
+- El orden de inscripción es estable y no cambia cuando cambia un ELO. El ranking ya ordena por ELO.
+- `set` en dos propiedades es más simple que repetir once asignaciones del resumen en un mapeo propio del
+  detalle. La Persona C puede sumar el cuadro de la misma forma.
+
+**Conceptos del curso:** contrato REST (una sola llamada con todo el detalle), DTOs sin entidades, DRY,
+Information Expert y refactor sin cambiar comportamiento.
+
+**Evidencia:**
+- `ServicioTorneosTests`: un ciclo para las skills obligatorias y otro para los jugadores aceptados.
+  Además, dos REFACTOR: `RespuestasSkills` y la consulta única. El test de la cantidad de aceptadas
+  cambió solo su arrange.
+- `TorneoDetalleResponse`, `JugadorAceptadoResponse` y `RespuestasSkills`.
+- Postman: "Inscripciones - el detalle del torneo muestra obligatorias y jugadores aceptados", como
+  anónimo.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) propuso el formato de las dos listas, el orden de inscripción y
+  reusar `SkillResponse`; el integrante lo revisa en el PR.
+- Problema que apareció: con `init`, el detalle no se podía completar después del mapeo genérico del
+  resumen. Se eligió `set` en las dos propiedades nuevas y se documentó en el DTO.
+
+---
+
 ### D-50 — Coordinación del alcance de Persona B
 
 **Problema:** A, B y C trabajan en paralelo sobre un modelo compartido. Numerar decisiones y mantener migraciones sin coordinación puede causar conflictos y respuestas distintas para la misma autorización por torneo.
@@ -1723,7 +1780,8 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
     misma operación (atómica). Hoy solo cambia el estado.~~ Resuelto en D-42.
   - ~~Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar`.~~ Resuelto en D-40.
   - ~~Calcular `InscripcionesAceptadas` (hoy vale 0).~~ Resuelto en D-41.
-  - Sumar al detalle las skills obligatorias, los jugadores aceptados y el cuadro (rondas y batallas).
+  - ~~Sumar al detalle las skills obligatorias y los jugadores aceptados.~~ Resuelto en D-44. Falta el
+    cuadro (rondas y batallas), que agrega la Persona C.
   - ~~Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
     que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).~~ Resuelto en D-41.
   - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya

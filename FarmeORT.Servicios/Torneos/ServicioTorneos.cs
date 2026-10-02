@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
@@ -7,6 +8,7 @@ using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Torneos;
+using FarmeORT.Servicios.Skills;
 
 namespace FarmeORT.Servicios.Torneos;
 
@@ -47,7 +49,12 @@ internal sealed class ServicioTorneos(
             throw new TorneoNoEncontradoException();
         }
 
-        return CrearResponse<TorneoDetalleResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+        // Una sola consulta de las Aceptadas da la cantidad y la lista de jugadores.
+        var aceptadas = repositorioInscripciones.ListarAceptadasDelTorneo(torneo.Id);
+        var detalle = CrearResponse<TorneoDetalleResponse>(torneo, aceptadas.Count);
+        detalle.SkillsObligatorias = torneo.SkillsObligatorias.Select(RespuestasSkills.Crear).ToList();
+        detalle.JugadoresAceptados = aceptadas.Select(CrearJugadorAceptado).ToList();
+        return detalle;
     }
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
@@ -185,6 +192,16 @@ internal sealed class ServicioTorneos(
             InscripcionesAceptadas = inscripcionesAceptadas,
             OrganizadorId = torneo.OrganizadorId,
             Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
+        };
+    }
+
+    private static JugadorAceptadoResponse CrearJugadorAceptado(Inscripcion inscripcion)
+    {
+        return new JugadorAceptadoResponse
+        {
+            JugadorId = inscripcion.JugadorId,
+            Nickname = inscripcion.Jugador.Nickname,
+            Elo = inscripcion.Jugador.Elo,
         };
     }
 

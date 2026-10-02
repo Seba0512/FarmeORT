@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
@@ -382,8 +383,14 @@ public sealed class ServicioTorneosTests
     [TestMethod]
     public void ObtenerPorId_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
     {
-        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
-        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(3);
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(
+        [
+            new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0)),
+            new Inscripcion(torneo, CrearUsuario(8, Rol.Jugador), new DateTime(2026, 10, 1, 12, 5, 0)),
+            new Inscripcion(torneo, CrearUsuario(9, Rol.Jugador), new DateTime(2026, 10, 1, 12, 10, 0)),
+        ]);
 
         var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: false);
 
@@ -480,6 +487,45 @@ public sealed class ServicioTorneosTests
         _repositorioBatallas.Verify(r => r.ListarSinResolverDelTorneo(It.IsAny<int>()), Times.Never);
         _repositorioInscripciones.Verify(r => r.ListarAceptadasDelTorneo(It.IsAny<int>()), Times.Never);
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_TorneoConSkillsObligatorias_DevuelveLasSkillsObligatorias()
+    {
+        var torneo = CrearTorneo();
+        torneo.AsociarSkillObligatoria(new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2) { Id = 3 });
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: true);
+
+        Assert.HasCount(1, response.SkillsObligatorias);
+        var obligatoria = response.SkillsObligatorias.Single();
+        Assert.AreEqual(3, obligatoria.Id);
+        Assert.AreEqual("SIXSEVEN", obligatoria.Codigo);
+        Assert.AreEqual("Six-Seven", obligatoria.Nombre);
+        Assert.AreEqual(nameof(CategoriaSkill.Gestual), obligatoria.Categoria);
+        Assert.AreEqual(2, obligatoria.Dificultad);
+        Assert.IsTrue(obligatoria.Activa);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_TorneoConInscriptosAceptados_DevuelveLosJugadoresConNicknameYEloEnOrdenDeInscripcion()
+    {
+        var torneo = CrearTorneo();
+        var primero = new Usuario("Ana", "Perez", "ana@farmeort.com", "aurafarmer", new DateOnly(2000, 1, 1), Rol.Jugador, "hash", FechaActual) { Id = 7 };
+        var segundo = new Usuario("Beto", "Diaz", "beto@farmeort.com", "sixseven", new DateOnly(2000, 1, 1), Rol.Jugador, "hash", FechaActual) { Id = 8 };
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(
+        [
+            new Inscripcion(torneo, primero, new DateTime(2026, 10, 1, 12, 0, 0)),
+            new Inscripcion(torneo, segundo, new DateTime(2026, 10, 1, 12, 5, 0)),
+        ]);
+
+        var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: true);
+
+        CollectionAssert.AreEqual(new[] { 7, 8 }, response.JugadoresAceptados.Select(j => j.JugadorId).ToArray());
+        CollectionAssert.AreEqual(new[] { "aurafarmer", "sixseven" }, response.JugadoresAceptados.Select(j => j.Nickname).ToArray());
+        CollectionAssert.AreEqual(new[] { 1200, 1200 }, response.JugadoresAceptados.Select(j => j.Elo).ToArray());
     }
 
     private void ConfigurarAltaValida()
