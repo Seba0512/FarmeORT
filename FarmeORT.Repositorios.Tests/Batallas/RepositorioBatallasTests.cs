@@ -32,6 +32,62 @@ public sealed class RepositorioBatallasTests
     }
 
     [TestMethod]
+    public void Guardar_Fallo_PersisteGanadorComentarioEloYEliminacionJuntos()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var inscripcion = new Inscripcion(batalla.Torneo, batalla.Jugador2, FechaActual.ToDateTime(TimeOnly.MinValue));
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        _baseDeDatos.Contexto.SaveChanges();
+        batalla.Jugador1.ActualizarElo(1216);
+        batalla.Jugador2.ActualizarElo(1184);
+        batalla.Fallar(7, "Victoria por abandono.", 16, -16);
+        inscripcion.Eliminar();
+
+        _repositorio.Guardar();
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var guardada = _baseDeDatos.Contexto.Batallas.Include(b => b.Ganador).Single(b => b.Id == 12);
+        Assert.AreEqual(EstadoBatalla.Finalizada, guardada.Estado);
+        Assert.AreEqual(7, guardada.GanadorId);
+        Assert.AreEqual(7, guardada.Ganador!.Id);
+        Assert.AreEqual("Victoria por abandono.", guardada.Comentario);
+        Assert.AreEqual(16, guardada.CambioEloJugador1);
+        Assert.AreEqual(-16, guardada.CambioEloJugador2);
+        Assert.IsNull(guardada.JugadorTurnoId);
+        Assert.AreEqual(1216, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 7).Elo);
+        Assert.AreEqual(1184, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 8).Elo);
+        Assert.AreEqual(EstadoInscripcion.Eliminada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
+    }
+
+    [TestMethod]
+    public void Guardar_CancelacionConcurrente_RevierteTodosLosEfectosDelFallo()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var inscripcion = new Inscripcion(batalla.Torneo, batalla.Jugador2, FechaActual.ToDateTime(TimeOnly.MinValue));
+        _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
+        _baseDeDatos.Contexto.SaveChanges();
+        batalla.Jugador1.ActualizarElo(1216);
+        batalla.Jugador2.ActualizarElo(1184);
+        batalla.Fallar(7, "Victoria por abandono.", 16, -16);
+        inscripcion.Eliminar();
+        using var otroContexto = CrearOtroContexto();
+        var cancelada = otroContexto.Batallas.Single(b => b.Id == 12);
+        cancelada.Cancelar();
+        otroContexto.SaveChanges();
+
+        Assert.ThrowsExactly<BatallaModificadaException>(_repositorio.Guardar);
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var guardada = _baseDeDatos.Contexto.Batallas.Single(b => b.Id == 12);
+        Assert.AreEqual(EstadoBatalla.Cancelada, guardada.Estado);
+        Assert.IsNull(guardada.GanadorId);
+        Assert.IsNull(guardada.Comentario);
+        Assert.AreEqual(1200, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 7).Elo);
+        Assert.AreEqual(1200, _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == 8).Elo);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.Id == inscripcion.Id).Estado);
+    }
+
+    [TestMethod]
     public void Guardar_EloConcurrente_RechazaFalloSinGuardarEfectosParciales()
     {
         var batalla = GuardarBatallaConHistorial();

@@ -43,6 +43,20 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    public void Fallar_SegundoFallo_RechazaSinRecalcularEloNiGuardarOtraVez()
+    {
+        ConfigurarFalloValido();
+        _servicio.Fallar(12, 2, RequestValido());
+
+        Assert.ThrowsExactly<BatallaNoFallableException>(() => _servicio.Fallar(12, 2, RequestValido()));
+
+        _elo.Verify(e => e.Calcular(1200, 1200), Times.Once);
+        _batallas.Verify(r => r.Guardar(), Times.Once);
+        Assert.AreEqual(1216, _batalla.Jugador1.Elo);
+        Assert.AreEqual(1184, _batalla.Jugador2.Elo);
+    }
+
+    [TestMethod]
     public void Fallar_BatallaConLanzamientos_DevuelveHistorialOrdenado()
     {
         ConfigurarFalloValido();

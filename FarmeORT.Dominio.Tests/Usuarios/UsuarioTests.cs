@@ -9,6 +9,18 @@ public sealed class UsuarioTests
     private static readonly DateOnly FechaActual = new(2026, 9, 30);
 
     [TestMethod]
+    [DataRow(100)]
+    [DataRow(1216)]
+    public void ActualizarElo_ValorValido_ConservaNuevoElo(int elo)
+    {
+        var usuario = CrearUsuario();
+
+        usuario.ActualizarElo(elo);
+
+        Assert.AreEqual(elo, usuario.Elo);
+    }
+
+    [TestMethod]
     [DataRow(-1)]
     [DataRow(0)]
     [DataRow(99)]
