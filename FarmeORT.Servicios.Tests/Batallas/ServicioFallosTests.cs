@@ -42,6 +42,19 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    public void Fallar_OrganizadorAjeno_RechazaSinEfectos()
+    {
+        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
+
+        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() => _servicio.Fallar(12, 3, RequestValido()));
+
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        _elo.Verify(e => e.Calcular(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        Assert.AreEqual(EstadoBatalla.Pendiente, _batalla.Estado);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _inscripcion.Estado);
+    }
+
+    [TestMethod]
     public void Fallar_BatallaInexistente_RechazaSinCalcularNiGuardar()
     {
         _batallas.Setup(r => r.ObtenerPorId(99)).Returns((Batalla?)null);
