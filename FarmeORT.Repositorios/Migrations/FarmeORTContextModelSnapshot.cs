@@ -22,6 +22,121 @@ namespace FarmeORT.Repositorios.Migrations
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
+            modelBuilder.Entity("FarmeORT.Dominio.Batallas.Batalla", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Estado")
+                        .IsConcurrencyToken()
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<int>("Jugador1Id")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Jugador2Id")
+                        .HasColumnType("int");
+
+                    b.Property<int>("JugadorInicialId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("JugadorTurnoId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("NumeroRonda")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TorneoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("Jugador1Id");
+
+                    b.HasIndex("Jugador2Id");
+
+                    b.HasIndex("TorneoId");
+
+                    b.ToTable("Batallas");
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Batallas.Lanzamiento", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("BatallaId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTimeOffset>("Fecha")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<int>("JugadorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("SkillId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("Turno")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JugadorId");
+
+                    b.HasIndex("SkillId");
+
+                    b.HasIndex("BatallaId", "Turno")
+                        .IsUnique();
+
+                    b.HasIndex("BatallaId", "JugadorId", "SkillId")
+                        .IsUnique();
+
+                    b.ToTable("Lanzamientos", null, t =>
+                        {
+                            t.HasCheckConstraint("CK_Lanzamientos_Turno", "[Turno] BETWEEN 1 AND 8");
+                        });
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Inscripciones.Inscripcion", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
+
+                    b.Property<DateTime>("Fecha")
+                        .HasColumnType("datetime2");
+
+                    b.Property<int>("JugadorId")
+                        .HasColumnType("int");
+
+                    b.Property<int>("TorneoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("JugadorId");
+
+                    b.HasIndex("TorneoId", "JugadorId");
+
+                    b.ToTable("Inscripciones");
+                });
+
             modelBuilder.Entity("FarmeORT.Dominio.Sesiones.Sesion", b =>
                 {
                     b.Property<Guid>("Token")
@@ -240,6 +355,79 @@ namespace FarmeORT.Repositorios.Migrations
                     b.ToTable("SkillsObligatorias");
                 });
 
+            modelBuilder.Entity("FarmeORT.Dominio.Batallas.Batalla", b =>
+                {
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Jugador1")
+                        .WithMany()
+                        .HasForeignKey("Jugador1Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Jugador2")
+                        .WithMany()
+                        .HasForeignKey("Jugador2Id")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FarmeORT.Dominio.Torneos.Torneo", "Torneo")
+                        .WithMany()
+                        .HasForeignKey("TorneoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Jugador1");
+
+                    b.Navigation("Jugador2");
+
+                    b.Navigation("Torneo");
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Batallas.Lanzamiento", b =>
+                {
+                    b.HasOne("FarmeORT.Dominio.Batallas.Batalla", "Batalla")
+                        .WithMany("Lanzamientos")
+                        .HasForeignKey("BatallaId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Jugador")
+                        .WithMany()
+                        .HasForeignKey("JugadorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FarmeORT.Dominio.Skills.Skill", "Skill")
+                        .WithMany()
+                        .HasForeignKey("SkillId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Batalla");
+
+                    b.Navigation("Jugador");
+
+                    b.Navigation("Skill");
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Inscripciones.Inscripcion", b =>
+                {
+                    b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Jugador")
+                        .WithMany()
+                        .HasForeignKey("JugadorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FarmeORT.Dominio.Torneos.Torneo", "Torneo")
+                        .WithMany()
+                        .HasForeignKey("TorneoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Jugador");
+
+                    b.Navigation("Torneo");
+                });
+
             modelBuilder.Entity("FarmeORT.Dominio.Sesiones.Sesion", b =>
                 {
                     b.HasOne("FarmeORT.Dominio.Usuarios.Usuario", "Usuario")
@@ -292,6 +480,11 @@ namespace FarmeORT.Repositorios.Migrations
                         .HasForeignKey("TorneoId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+                });
+
+            modelBuilder.Entity("FarmeORT.Dominio.Batallas.Batalla", b =>
+                {
+                    b.Navigation("Lanzamientos");
                 });
 
             modelBuilder.Entity("FarmeORT.Dominio.Usuarios.Usuario", b =>
