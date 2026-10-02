@@ -98,7 +98,7 @@ internal sealed class ServicioUsuarios(
         }
 
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        ValidarSinTorneosNiBatallasPendientes(usuario);
+        ValidarSinParticipacionVigente(usuario);
         usuario.Eliminar();
         repositorioUsuarios.Eliminar(usuario);
     }
