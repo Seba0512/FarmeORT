@@ -135,8 +135,9 @@ public sealed class Torneo
     }
 
     // La primera ronda pone el torneo En curso (D-62).
-    public void Iniciar()
+    public void Iniciar(int inscripcionesAceptadas)
     {
+        _ = inscripcionesAceptadas;
         if(Estado != EstadoTorneo.Abierto)
         {
             throw new TorneoNoAbiertoException();

@@ -15,17 +15,28 @@ public sealed class TorneoRondasTests
         var torneo = CrearTorneo();
         torneo.Cancelar();
 
-        Assert.ThrowsExactly<TorneoNoAbiertoException>(torneo.Iniciar);
+        Assert.ThrowsExactly<TorneoNoAbiertoException>(() => torneo.Iniciar(4));
     }
 
     [TestMethod]
     public void Iniciar_TorneoYaEnCurso_LanzaTorneoNoAbierto()
     {
         var torneo = CrearTorneo();
-        torneo.Iniciar();
+        torneo.Iniciar(4);
 
-        Assert.ThrowsExactly<TorneoNoAbiertoException>(torneo.Iniciar);
+        Assert.ThrowsExactly<TorneoNoAbiertoException>(() => torneo.Iniciar(4));
         Assert.AreEqual(EstadoTorneo.EnCurso, torneo.Estado);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(3)]
+    public void Iniciar_MenosAceptadasQueElCupo_LanzaTorneoIncompleto(int inscripcionesAceptadas)
+    {
+        var torneo = CrearTorneo();
+
+        Assert.ThrowsExactly<TorneoIncompletoException>(() => torneo.Iniciar(inscripcionesAceptadas));
+        Assert.AreEqual(EstadoTorneo.Abierto, torneo.Estado);
     }
 
     private static Torneo CrearTorneo()

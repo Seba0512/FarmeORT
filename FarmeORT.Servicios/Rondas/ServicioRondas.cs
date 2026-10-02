@@ -33,8 +33,8 @@ internal sealed class ServicioRondas(
             throw new NoEsOrganizadorDelTorneoException();
         }
 
-        torneo.Iniciar();
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
+        torneo.Iniciar(jugadores.Count);
         var pares = estrategiaEmparejamiento.Emparejar(jugadores);
         List<Batalla> batallas = [];
         foreach(var par in pares)
