@@ -104,6 +104,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         // Persona B: fallo de batalla (D-53).
         [typeof(BatallaNoFallableException)] =
             new(StatusCodes.Status409Conflict, "BATTLE_NOT_JUDGEABLE", "Solo se puede fallar una batalla Pendiente o En arbitraje."),
+
+        // Persona B: visibilidad de consultas de batallas (D-55).
+        [typeof(JugadorNoInscriptoEnTorneoException)] =
+            new(StatusCodes.Status403Forbidden, "PLAYER_NOT_IN_TOURNAMENT", "No tenés una inscripción en este torneo."),
     };
 
     public void OnException(ExceptionContext context)
