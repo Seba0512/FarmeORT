@@ -92,13 +92,14 @@ internal sealed class ServicioRondas(
             return 1;
         }
 
-        // Un torneo En curso sin batallas (por ejemplo, cargado a mano) arranca por la ronda 1.
+        // Sin batallas sería la primera ronda, que la letra exige con el torneo Abierto y el cupo completo.
         var anteriores = repositorioBatallas.ListarDelTorneo(torneo.Id);
-        var ultima = 0;
-        if(anteriores.Count > 0)
+        if(anteriores.Count == 0)
         {
-            ultima = anteriores.Max(b => b.NumeroRonda);
+            throw new TorneoNoAbiertoException();
         }
+
+        var ultima = anteriores.Max(b => b.NumeroRonda);
 
         if(anteriores.Any(b => b.NumeroRonda == ultima && !EstaResuelta(b)))
         {
