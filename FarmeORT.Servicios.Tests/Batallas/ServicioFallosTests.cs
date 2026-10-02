@@ -42,6 +42,23 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    [DataRow(EstadoBatalla.Finalizada)]
+    [DataRow(EstadoBatalla.Cancelada)]
+    public void Fallar_BatallaResuelta_RechazaSinEfectos(EstadoBatalla estado)
+    {
+        ConfigurarFalloValido();
+        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(_batalla, estado);
+
+        Assert.ThrowsExactly<BatallaNoFallableException>(() => _servicio.Fallar(12, 2, RequestValido()));
+
+        _elo.Verify(e => e.Calcular(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.AreEqual(estado, _batalla.Estado);
+        Assert.AreEqual(1200, _batalla.Jugador1.Elo);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _inscripcion.Estado);
+    }
+
+    [TestMethod]
     [DataRow(7, EstadoBatalla.Pendiente)]
     [DataRow(8, EstadoBatalla.Pendiente)]
     [DataRow(7, EstadoBatalla.EnArbitraje)]
@@ -134,6 +151,14 @@ public sealed class ServicioFallosTests
 
         _elo.Verify(e => e.Calcular(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
         _batallas.Verify(r => r.Guardar(), Times.Never);
+    }
+
+    private void ConfigurarFalloValido()
+    {
+        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
+        _inscripciones.Setup(r => r.ObtenerAceptada(5, 8)).Returns(_inscripcion);
+        _elo.Setup(e => e.Calcular(1200, 1200)).Returns(new ResultadoElo(1216, 1184));
+        _batallas.Setup(r => r.Guardar());
     }
 
     private static FalloRequest RequestValido()
