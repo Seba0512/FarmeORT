@@ -24,6 +24,12 @@ public sealed class FiltroExcepcionesFinalizacionTests
         VerificarMapa(new TorneoConBatallasSinResolverException(), 409, "TOURNAMENT_HAS_UNRESOLVED_BATTLES", "El torneo todavía tiene batallas sin resolver.");
     }
 
+    [TestMethod]
+    public void OnException_TorneoSinCampeon_Devuelve409ConTOURNAMENT_WITHOUT_CHAMPION()
+    {
+        VerificarMapa(new TorneoSinCampeonException(), 409, "TOURNAMENT_WITHOUT_CHAMPION", "Para finalizar el torneo tiene que quedar un solo jugador sin eliminar.");
+    }
+
     private static void VerificarMapa(Exception excepcion, int status, string codigo, string mensaje)
     {
         var accion = new ActionContext(new DefaultHttpContext(), new RouteData(), new ActionDescriptor());
