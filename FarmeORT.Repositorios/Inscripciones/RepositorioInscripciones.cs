@@ -16,9 +16,31 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
 
     public IReadOnlyList<Inscripcion> Listar(FiltroInscripciones filtro)
     {
-        return contexto.Inscripciones
-            .Include(i => i.Torneo)
-            .Include(i => i.Jugador)
+        var consulta = contexto.Inscripciones.Include(i => i.Torneo).Include(i => i.Jugador).AsQueryable();
+        if(filtro.TorneoId != null)
+        {
+            consulta = consulta.Where(i => i.TorneoId == filtro.TorneoId.Value);
+        }
+
+        if(filtro.Estado != null)
+        {
+            consulta = consulta.Where(i => i.Estado == filtro.Estado.Value);
+        }
+
+        // Las fechas del filtro son días completos: hasta incluye todo ese día.
+        if(filtro.FechaDesde != null)
+        {
+            var desde = filtro.FechaDesde.Value.ToDateTime(TimeOnly.MinValue);
+            consulta = consulta.Where(i => i.Fecha >= desde);
+        }
+
+        if(filtro.FechaHasta != null)
+        {
+            var hasta = filtro.FechaHasta.Value.AddDays(1).ToDateTime(TimeOnly.MinValue);
+            consulta = consulta.Where(i => i.Fecha < hasta);
+        }
+
+        return consulta
             .OrderBy(i => i.Id)
             .Skip(filtro.Desplazamiento)
             .Take(filtro.Limite)
