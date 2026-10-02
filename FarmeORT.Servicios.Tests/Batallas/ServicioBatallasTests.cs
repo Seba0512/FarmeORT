@@ -41,6 +41,26 @@ public sealed class ServicioBatallasTests
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Consultar_BatallaInexistente_RechazaSinConsultarInscripcion(bool historial)
+    {
+        _batallas.Setup(r => r.ObtenerPorId(12)).Returns((Batalla?)null);
+
+        if(historial)
+        {
+            Assert.ThrowsExactly<BatallaNoEncontradaException>(() => _servicio.ListarLanzamientos(12, 7, Roles.Jugador));
+        }
+        else
+        {
+            Assert.ThrowsExactly<BatallaNoEncontradaException>(() => _servicio.ObtenerPorId(12, 7, Roles.Jugador));
+        }
+
+        _batallas.Verify(r => r.ObtenerPorId(12), Times.Once);
+        _inscripciones.VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
     [DataRow(Roles.Jugador, "Finalizada", 2, 8, 10, 3, EstadoBatalla.Finalizada, 2, 8, 10, 3)]
     [DataRow(Roles.Organizador, "EnArbitraje", 1, 7, 150, -3, EstadoBatalla.EnArbitraje, 1, 7, 100, 0)]
     [DataRow(Roles.Administrador, "1", 0, -1, 0, 0, null, null, null, 20, 0)]
