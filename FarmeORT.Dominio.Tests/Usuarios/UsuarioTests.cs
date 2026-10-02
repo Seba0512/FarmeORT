@@ -9,6 +9,19 @@ public sealed class UsuarioTests
     private static readonly DateOnly FechaActual = new(2026, 9, 30);
 
     [TestMethod]
+    [DataRow(-1)]
+    [DataRow(0)]
+    [DataRow(99)]
+    public void ActualizarElo_MenorAlPiso_RechazaSinModificar(int elo)
+    {
+        var usuario = CrearUsuario();
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => usuario.ActualizarElo(elo));
+
+        Assert.AreEqual(1200, usuario.Elo);
+    }
+
+    [TestMethod]
     public void Constructor_DatosValidos_ConservaLosDatosYEloInicial()
     {
         var fechaNacimiento = new DateOnly(2000, 1, 15);
