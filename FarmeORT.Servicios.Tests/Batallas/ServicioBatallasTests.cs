@@ -41,6 +41,19 @@ public sealed class ServicioBatallasTests
     }
 
     [TestMethod]
+    public void Listar_TorneoInexistente_RechazaSinConsultarBatallas()
+    {
+        _torneos.Setup(r => r.ObtenerPorId(5)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() =>
+            _servicio.Listar(new FiltroBatallasRequest { TorneoId = 5 }, 7, Roles.Jugador));
+
+        _torneos.Verify(r => r.ObtenerPorId(5), Times.Once);
+        _batallas.VerifyNoOtherCalls();
+        _inscripciones.VerifyNoOtherCalls();
+    }
+
+    [TestMethod]
     [DataRow(null)]
     [DataRow(0)]
     [DataRow(-1)]
