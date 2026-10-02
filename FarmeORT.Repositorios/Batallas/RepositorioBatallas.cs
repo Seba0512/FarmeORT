@@ -53,4 +53,10 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             throw;
         }
     }
+
+    public bool ExisteSinResolverDelJugador(int jugadorId)
+    {
+        _ = jugadorId;
+        throw new NotImplementedException();
+    }
 }

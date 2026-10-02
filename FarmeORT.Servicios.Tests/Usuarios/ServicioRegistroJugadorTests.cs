@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
@@ -31,6 +32,7 @@ public sealed class ServicioRegistroJugadorTests
         _servicio = new ServicioUsuarios(
             _repositorio.Object,
             new Mock<IRepositorioTorneos>(MockBehavior.Strict).Object,
+            new Mock<IRepositorioBatallas>(MockBehavior.Strict).Object,
             _hasheador.Object, _reloj.Object);
     }
 

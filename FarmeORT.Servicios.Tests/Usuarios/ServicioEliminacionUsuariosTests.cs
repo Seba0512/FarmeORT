@@ -1,5 +1,6 @@
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
@@ -16,6 +17,7 @@ public sealed class ServicioEliminacionUsuariosTests
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
     private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
+    private Mock<IRepositorioBatallas> _repositorioBatallas = null!;
     private ServicioUsuarios _servicio = null!;
 
     [TestInitialize]
@@ -23,12 +25,20 @@ public sealed class ServicioEliminacionUsuariosTests
     {
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
         _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
+        _repositorioBatallas = new Mock<IRepositorioBatallas>(MockBehavior.Strict);
         var hasheadorContrasenas = new Mock<IHasheadorContrasenas>(MockBehavior.Strict);
         var reloj = new Mock<TimeProvider>(MockBehavior.Strict);
 
-        // Por defecto el usuario no organiza torneos vigentes; los tests de esa regla lo redefinen.
+        // Por defecto el usuario no organiza torneos vigentes ni tiene batallas sin resolver; los tests de cada
+        // regla lo redefinen.
         _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(false);
-        _servicio = new ServicioUsuarios(_repositorioUsuarios.Object, _repositorioTorneos.Object, hasheadorContrasenas.Object, reloj.Object);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(false);
+        _servicio = new ServicioUsuarios(
+            _repositorioUsuarios.Object,
+            _repositorioTorneos.Object,
+            _repositorioBatallas.Object,
+            hasheadorContrasenas.Object,
+            reloj.Object);
     }
 
     [TestMethod]
@@ -68,6 +78,20 @@ public sealed class ServicioEliminacionUsuariosTests
         Assert.ThrowsExactly<UsuarioOrganizaTorneoVigenteException>(() => _servicio.Eliminar(UsuarioId, AdministradorActualId));
 
         Assert.IsFalse(organizador.Eliminado);
+        _repositorioUsuarios.Verify(r => r.Eliminar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Eliminar_JugadorConBatallasSinResolver_LanzaUsuarioConBatallasSinResolverSinDarDeBaja()
+    {
+        var jugador = CrearUsuario(Rol.Jugador);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(UsuarioId)).Returns(jugador);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(true);
+        _repositorioUsuarios.Setup(r => r.Eliminar(jugador));
+
+        Assert.ThrowsExactly<UsuarioConBatallasSinResolverException>(() => _servicio.Eliminar(UsuarioId, AdministradorActualId));
+
+        Assert.IsFalse(jugador.Eliminado);
         _repositorioUsuarios.Verify(r => r.Eliminar(It.IsAny<Usuario>()), Times.Never);
     }
 
