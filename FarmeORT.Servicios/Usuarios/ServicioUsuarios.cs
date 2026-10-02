@@ -96,7 +96,11 @@ internal sealed class ServicioUsuarios(
             throw new UsuarioOrganizaTorneoVigenteException();
         }
 
-        _ = repositorioBatallas;
+        if(repositorioBatallas.ExisteSinResolverDelJugador(usuario.Id))
+        {
+            throw new UsuarioConBatallasSinResolverException();
+        }
+
         usuario.Eliminar();
         repositorioUsuarios.Eliminar(usuario);
     }
