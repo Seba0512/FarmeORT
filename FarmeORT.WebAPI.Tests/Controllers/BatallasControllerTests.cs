@@ -14,6 +14,17 @@ namespace FarmeORT.WebAPI.Tests.Controllers;
 public sealed class BatallasControllerTests
 {
     [TestMethod]
+    public void Consultas_RequierenAutenticacionYLosTresRoles()
+    {
+        var atributo = typeof(BatallasController).GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
+            .OfType<AutorizacionAttribute>().SingleOrDefault();
+
+        Assert.IsNotNull(atributo);
+        Assert.IsInstanceOfType<AutenticacionAttribute>(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Jugador, Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
+    }
+
+    [TestMethod]
     public void ObtenerPorId_BatallaExistente_Devuelve200YUsaSesion()
     {
         var servicio = new Mock<IServicioBatallas>(MockBehavior.Strict);
