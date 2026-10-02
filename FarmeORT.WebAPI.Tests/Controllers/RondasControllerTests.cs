@@ -49,11 +49,7 @@ public sealed class RondasControllerTests
     [DataRow(true)]
     public void Listar_TorneoVisible_Devuelve200IndicandoSiConsultaUnAnonimo(bool autenticado)
     {
-        if(autenticado)
-        {
-            Autenticar(OrganizadorId, Roles.Organizador);
-        }
-
+        AutenticarSi(autenticado);
         IReadOnlyList<RondaResponse> rondas = [new RondaResponse { Numero = 1 }];
         _servicio.Setup(s => s.Listar(TorneoId, !autenticado)).Returns(rondas);
 
@@ -69,11 +65,7 @@ public sealed class RondasControllerTests
     [DataRow(true)]
     public void ObtenerPorNumero_RondaExistente_Devuelve200IndicandoSiConsultaUnAnonimo(bool autenticado)
     {
-        if(autenticado)
-        {
-            Autenticar(OrganizadorId, Roles.Organizador);
-        }
-
+        AutenticarSi(autenticado);
         var ronda = new RondaResponse { Numero = 2 };
         _servicio.Setup(s => s.ObtenerPorNumero(TorneoId, 2, !autenticado)).Returns(ronda);
 
@@ -96,15 +88,32 @@ public sealed class RondasControllerTests
     }
 
     [TestMethod]
-    [DataRow(nameof(RondasController.Listar))]
-    [DataRow(nameof(RondasController.ObtenerPorNumero))]
-    public void Consultas_IncluidoAnonimo_UsanAutenticacionOpcional(string accion)
+    public void Listar_ContratoDeSeguridad_UsaAutenticacionOpcional()
     {
-        var metodo = typeof(RondasController).GetMethod(accion);
+        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.Listar));
 
         var atributo = metodo?.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
 
         Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
+    }
+
+    [TestMethod]
+    public void ObtenerPorNumero_ContratoDeSeguridad_UsaAutenticacionOpcional()
+    {
+        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.ObtenerPorNumero));
+
+        var atributo = metodo?.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+
+        Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
+    }
+
+    // Sin sesión en el contexto, el controller trata la consulta como anónima.
+    private void AutenticarSi(bool autenticado)
+    {
+        if(autenticado)
+        {
+            Autenticar(OrganizadorId, Roles.Organizador);
+        }
     }
 
     private void Autenticar(int usuarioId, string rol)
