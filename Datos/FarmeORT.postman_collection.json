@@ -10882,6 +10882,47 @@
               ]
             },
             {
+              "name": "Inscripciones - el detalle del torneo muestra obligatorias y jugadores aceptados → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const torneo = pm.response.json();",
+                      "pm.test(\"Incluye la skill obligatoria\", () => pm.expect(torneo.skillsObligatorias.map(s => s.id)).to.include(Number(pm.collectionVariables.get(\"skillId\"))));",
+                      "pm.test(\"Lista al jugador aceptado con nickname y ELO\", () => { pm.expect(torneo.jugadoresAceptados).to.have.lengthOf(1); pm.expect(torneo.jugadoresAceptados[0].nickname).to.eql(pm.collectionVariables.get(\"skillsJugadorNickname\")); pm.expect(torneo.jugadoresAceptados[0].elo).to.eql(1200); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
               "name": "Inscripciones - jugador cancela su inscripción → 200",
               "request": {
                 "method": "POST",
