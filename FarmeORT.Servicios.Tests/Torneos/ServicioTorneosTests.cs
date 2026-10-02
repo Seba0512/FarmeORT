@@ -383,8 +383,14 @@ public sealed class ServicioTorneosTests
     [TestMethod]
     public void ObtenerPorId_TorneoConInscripciones_DevuelveLaCantidadDeAceptadas()
     {
-        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
-        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(3);
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(
+        [
+            new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0)),
+            new Inscripcion(torneo, CrearUsuario(8, Rol.Jugador), new DateTime(2026, 10, 1, 12, 5, 0)),
+            new Inscripcion(torneo, CrearUsuario(9, Rol.Jugador), new DateTime(2026, 10, 1, 12, 10, 0)),
+        ]);
 
         var response = _servicio.ObtenerPorId(TorneoId, esAnonimo: false);
 
