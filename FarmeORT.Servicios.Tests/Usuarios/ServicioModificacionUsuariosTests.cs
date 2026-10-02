@@ -198,6 +198,18 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
     }
 
+    [TestMethod]
+    public void Modificar_MismoRolConTorneoVigente_ActualizaSinControlarSusTorneos()
+    {
+        var usuario = ConfigurarModificacionValida();
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(true);
+
+        _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId);
+
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.Is<Usuario>(u => u == usuario && u.Rol == Rol.Organizador)), Times.Once);
+        _repositorioTorneos.Verify(r => r.ExisteVigenteDelOrganizador(It.IsAny<int>()), Times.Never);
+    }
+
     private Usuario ConfigurarModificacionValida()
     {
         var usuario = CrearUsuarioExistente();
