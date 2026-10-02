@@ -42,6 +42,27 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    [DataRow(-1)]
+    [DataRow(-2)]
+    [DataRow(0)]
+    [DataRow(9)]
+    [DataRow(501)]
+    public void Fallar_ComentarioInvalido_RechazaSinEfectos(int largo)
+    {
+        ConfigurarFalloValido();
+        var comentario = largo == -1 ? null : largo == -2 ? new string(' ', 20) : new string('a', largo);
+        var request = new FalloRequest { GanadorId = 7, Comentario = comentario };
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Fallar(12, 2, request));
+
+        _elo.Verify(e => e.Calcular(It.IsAny<int>(), It.IsAny<int>()), Times.Never);
+        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.AreEqual(1200, _batalla.Jugador1.Elo);
+        Assert.AreEqual(EstadoBatalla.Pendiente, _batalla.Estado);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _inscripcion.Estado);
+    }
+
+    [TestMethod]
     public void Fallar_GanadorAjeno_RechazaSinEfectos()
     {
         ConfigurarFalloValido();
