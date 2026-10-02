@@ -58,7 +58,7 @@ internal sealed class ServicioUsuarios(
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
         var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
-        if(repositorioTorneos.ExisteVigenteDelOrganizador(usuario.Id))
+        if(usuario.Rol != rol && repositorioTorneos.ExisteVigenteDelOrganizador(usuario.Id))
         {
             throw new UsuarioOrganizaTorneoVigenteException();
         }
