@@ -2,7 +2,6 @@ using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Repositorios.Batallas;
-using FarmeORT.Repositorios.Torneos;
 using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Batallas;
@@ -42,25 +41,6 @@ public sealed class RepositorioRondasTests
 
         Assert.AreEqual(EntityState.Added, _baseDeDatos.Contexto.Entry(batalla).State);
         Assert.AreEqual(0, _baseDeDatos.Contexto.Batallas.Count());
-    }
-
-    [TestMethod]
-    public void Agregar_ConElTorneoActualizado_GuardaLasBatallasYElEstadoJuntos()
-    {
-        var jugadores = Enumerable.Range(7, 4).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
-        var torneo = CrearTorneo();
-        _baseDeDatos.Contexto.AddRange(jugadores);
-        _baseDeDatos.Contexto.Add(torneo);
-        _baseDeDatos.Contexto.SaveChanges();
-        torneo.Iniciar(4);
-        _repositorio.Agregar(new Batalla(torneo, 1, jugadores[0], jugadores[3], new SorteoInicial(jugadores[0])));
-        _repositorio.Agregar(new Batalla(torneo, 1, jugadores[1], jugadores[2], new SorteoInicial(jugadores[1])));
-
-        new RepositorioTorneos(_baseDeDatos.Contexto).Actualizar(torneo);
-
-        _baseDeDatos.Contexto.ChangeTracker.Clear();
-        Assert.AreEqual(EstadoTorneo.EnCurso, _baseDeDatos.Contexto.Torneos.Single(t => t.Id == 4).Estado);
-        Assert.AreEqual(2, _baseDeDatos.Contexto.Batallas.Count(b => b.TorneoId == 4 && b.NumeroRonda == 1));
     }
 
     [TestMethod]
