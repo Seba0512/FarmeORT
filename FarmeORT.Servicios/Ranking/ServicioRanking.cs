@@ -15,9 +15,14 @@ internal sealed class ServicioRanking(
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
     {
-        if(filtro.TorneoId != null && repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value) == null)
+        if(filtro.TorneoId != null)
         {
-            throw new TorneoNoEncontradoException();
+            // El ranking es público y para el público un torneo cancelado no existe (D-36).
+            var torneo = repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value);
+            if(torneo == null || !torneo.EsVisibleParaAnonimos)
+            {
+                throw new TorneoNoEncontradoException();
+            }
         }
 
         var jugadores = repositorioUsuarios.ListarRanking(AjustarCantidad(filtro.Cantidad));
