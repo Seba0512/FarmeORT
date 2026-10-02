@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
@@ -63,6 +64,14 @@ public sealed class ServicioFinalizacionesTests
         Assert.AreEqual(7, _torneo.CampeonId);
         Assert.AreSame(_campeon, _torneo.Campeon);
         _repositorioTorneos.Verify(r => r.Actualizar(_torneo), Times.Once);
+    }
+
+    [TestMethod]
+    public void Finalizar_TorneoInexistente_LanzaTorneoNoEncontrado()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns((Torneo?)null);
+
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
     }
 
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.
