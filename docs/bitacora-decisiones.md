@@ -1908,8 +1908,13 @@ entidad, dónde vive el emparejamiento, cómo se cruzan los jugadores y cómo se
   anónimo no ve las rondas de un torneo Cancelado (D-36). Un número que el torneo no tiene responde 404
   `ROUND_NOT_FOUND`. `IRepositorioBatallas.ListarDelTorneo` trae las batallas con sus jugadores, ordenadas por
   ronda y por id.
-- **Respuesta:** `RondaResponse` con el número y sus batallas (`id`, `estado`, los dos jugadores con nickname y ELO
-  actual, y `ganadorId`, que vale `null` hasta que la batalla se falle).
+- **Respuesta:** `RondaResponse` con el número y sus batallas en el mismo `BatallaResponse` que `GET /batallas`
+  (se reusa `RespuestasBatallas.Resumen` de la persona B, en lugar de un DTO propio que repetía los mismos campos).
+  `ganadorId` vale `null` hasta que la batalla se falle.
+- **Cuadro:** el detalle del torneo trae `rondas` con todas las rondas y sus batallas, así una sola llamada alcanza
+  para dibujar el cuadro (letra). El armado de las rondas lo comparten `ServicioRondas` y `ServicioTorneos` en
+  `RespuestasRondas`.
+- Un torneo En curso sin batallas (cargado a mano) arranca por la ronda 1 en lugar de fallar.
 - Las consultas nuevas van al final de `IRepositorioBatallas`, la interfaz de la persona B, como estaba acordado.
 
 **Justificación:**
@@ -1944,8 +1949,8 @@ atomicidad con un solo `SaveChanges`, REST (sub-recurso `/rondas`), status 404 y
   administrador).
 - `TOURNAMENT_NOT_OPEN` reusa el mensaje de las inscripciones ("El torneo no está abierto a inscripciones."), que
   en las rondas se lee algo forzado. Cambiarlo toca el mapeo de la persona A.
-- Agregar `IEstrategiaEmparejamiento`, `EmparejamientoPorElo` y `ParDeJugadores` al diagrama de clases y la
-  secuencia de generar ronda (`docs/uml/`).
+- La secuencia de generar ronda y las clases que participan están en `docs/uml/generar-ronda.puml` y
+  `docs/uml/rondas-clases.puml`; falta sumarlas al diagrama de clases general del informe.
 
 **Participación de IA:**
 - Claude Code propuso el contrato, la ronda derivada, mejor contra peor y los códigos de error nuevos; el
@@ -2028,8 +2033,8 @@ asignado; el integrante eligió sumar al Administrador.
     misma operación (atómica). Hoy solo cambia el estado.~~ Resuelto en D-42.
   - ~~Aplicar el filtro `skillObligatoriaId` en `RepositorioTorneos.Listar`.~~ Resuelto en D-40.
   - ~~Calcular `InscripcionesAceptadas` (hoy vale 0).~~ Resuelto en D-41.
-  - ~~Sumar al detalle las skills obligatorias y los jugadores aceptados.~~ Resuelto en D-44. Falta el
-    cuadro (rondas y batallas), que agrega la Persona C.
+  - ~~Sumar al detalle las skills obligatorias y los jugadores aceptados.~~ Resuelto en D-44.
+    ~~Falta el cuadro (rondas y batallas), que agrega la Persona C.~~ Resuelto en D-62.
   - ~~Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
     que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).~~ Resuelto en D-41.
   - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya

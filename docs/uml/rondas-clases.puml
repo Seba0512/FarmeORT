@@ -23,6 +23,16 @@ package FarmeORT.Servicios {
     - PrepararRonda(torneo : Torneo, jugadoresQueSiguen : int) : int
     - CrearBatallas(torneo : Torneo, numeroRonda : int, pares : IReadOnlyList<ParDeJugadores>) : List<Batalla>
   }
+  class ServicioTorneos {
+    + ObtenerPorId(id : int, esAnonimo : bool) : TorneoDetalleResponse
+  }
+  class RespuestasRondas <<static>> {
+    + Crear(numero : int, batallas : IEnumerable<Batalla>) : RondaResponse
+    + Agrupar(batallas : IEnumerable<Batalla>) : IReadOnlyList<RondaResponse>
+  }
+  class RespuestasBatallas <<static>> {
+    + Resumen(batalla : Batalla) : BatallaResponse
+  }
 }
 
 package FarmeORT.Dominio {
@@ -70,19 +80,20 @@ package FarmeORT.IRepositorios {
 package FarmeORT.DTOs {
   class RondaResponse {
     + Numero : int
-    + Batallas : IReadOnlyList<BatallaDeRondaResponse>
+    + Batallas : IReadOnlyList<BatallaResponse>
   }
-  class BatallaDeRondaResponse {
+  class BatallaResponse {
     + Id : int
+    + TorneoId : int
+    + Ronda : int
+    + Jugador1 : JugadorBatallaResponse
+    + Jugador2 : JugadorBatallaResponse
     + Estado : string
-    + Jugador1 : JugadorEnBatallaResponse
-    + Jugador2 : JugadorEnBatallaResponse
+    + JugadorTurnoId : int?
     + GanadorId : int?
   }
-  class JugadorEnBatallaResponse {
-    + Id : int
-    + Nickname : string
-    + Elo : int
+  class TorneoDetalleResponse {
+    + Rondas : IReadOnlyList<RondaResponse>
   }
 }
 
@@ -95,9 +106,13 @@ ServicioRondas ..> IRepositorioTorneos : <<use>>
 ServicioRondas ..> IRepositorioInscripciones : <<use>>
 ServicioRondas ..> IRepositorioBatallas : <<use>>
 ServicioRondas ..> Batalla : <<create>>
-ServicioRondas ..> RondaResponse : <<create>>
+ServicioRondas ..> RespuestasRondas : <<use>>
+ServicioTorneos ..> RespuestasRondas : <<use>>
+ServicioTorneos ..> IRepositorioBatallas : <<use>>
+RespuestasRondas ..> RespuestasBatallas : <<use>>
+RespuestasRondas ..> RondaResponse : <<create>>
 EmparejamientoPorElo ..> ParDeJugadores : <<create>>
 Batalla "*" --> "1" Torneo
-RondaResponse "1" *-- "*" BatallaDeRondaResponse
-BatallaDeRondaResponse "1" *-- "2" JugadorEnBatallaResponse
+RondaResponse "1" *-- "*" BatallaResponse
+TorneoDetalleResponse "1" *-- "*" RondaResponse : cuadro
 @enduml
