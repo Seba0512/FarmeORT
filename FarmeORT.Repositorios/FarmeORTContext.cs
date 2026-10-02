@@ -174,6 +174,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
     private static void ConfigurarFallos(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Usuario>().Property(u => u.Elo).IsConcurrencyToken();
+
         modelBuilder.Entity<Batalla>(batalla =>
         {
             batalla.Property(b => b.Comentario).HasMaxLength(500);
