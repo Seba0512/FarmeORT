@@ -68,4 +68,10 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
         return contexto.Batallas.Any(b => (b.Jugador1Id == jugadorId || b.Jugador2Id == jugadorId)
             && (b.Estado == EstadoBatalla.Pendiente || b.Estado == EstadoBatalla.EnArbitraje));
     }
+
+    public void Agregar(Batalla batalla)
+    {
+        _ = batalla;
+        throw new NotImplementedException();
+    }
 }
