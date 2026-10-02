@@ -1,7 +1,6 @@
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
-using FarmeORT.DTOs.Rondas;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
@@ -9,7 +8,7 @@ using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Torneos;
-using FarmeORT.Servicios.Batallas;
+using FarmeORT.Servicios.Rondas;
 using FarmeORT.Servicios.Skills;
 
 namespace FarmeORT.Servicios.Torneos;
@@ -56,10 +55,7 @@ internal sealed class ServicioTorneos(
         var detalle = CrearResponse<TorneoDetalleResponse>(torneo, aceptadas.Count);
         detalle.SkillsObligatorias = torneo.SkillsObligatorias.Select(RespuestasSkills.Crear).ToList();
         detalle.JugadoresAceptados = aceptadas.Select(CrearJugadorAceptado).ToList();
-        detalle.Rondas = repositorioBatallas.ListarDelTorneo(torneo.Id)
-            .GroupBy(b => b.NumeroRonda)
-            .Select(ronda => new RondaResponse { Numero = ronda.Key, Batallas = ronda.Select(RespuestasBatallas.Resumen).ToList() })
-            .ToList();
+        detalle.Rondas = RespuestasRondas.Agrupar(repositorioBatallas.ListarDelTorneo(torneo.Id));
         return detalle;
     }
 

@@ -8,7 +8,6 @@ using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IServicios.Rondas;
-using FarmeORT.Servicios.Batallas;
 
 namespace FarmeORT.Servicios.Rondas;
 
@@ -28,18 +27,14 @@ internal sealed class ServicioRondas(
 
         // Un solo guardado: las batallas nuevas y el cambio de estado del torneo quedan juntos o no queda nada.
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse(numero, batallas);
+        return RespuestasRondas.Crear(numero, batallas);
     }
 
     // Una ronda son las batallas del torneo con el mismo número; el repositorio ya las trae ordenadas (D-62).
     public IReadOnlyList<RondaResponse> Listar(int torneoId, bool esAnonimo)
     {
         ValidarTorneoVisible(torneoId, esAnonimo);
-        var batallas = repositorioBatallas.ListarDelTorneo(torneoId);
-        return batallas
-            .GroupBy(b => b.NumeroRonda)
-            .Select(ronda => CrearResponse(ronda.Key, ronda.ToList()))
-            .ToList();
+        return RespuestasRondas.Agrupar(repositorioBatallas.ListarDelTorneo(torneoId));
     }
 
     public RondaResponse ObtenerPorNumero(int torneoId, int numero, bool esAnonimo)
@@ -136,14 +131,5 @@ internal sealed class ServicioRondas(
         }
 
         return batallas;
-    }
-
-    private static RondaResponse CrearResponse(int numero, IReadOnlyList<Batalla> batallas)
-    {
-        return new RondaResponse
-        {
-            Numero = numero,
-            Batallas = batallas.Select(RespuestasBatallas.Resumen).ToList(),
-        };
     }
 }
