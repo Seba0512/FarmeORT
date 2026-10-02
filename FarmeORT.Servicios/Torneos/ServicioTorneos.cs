@@ -116,8 +116,12 @@ internal sealed class ServicioTorneos(
             inscripcion.Cancelar();
         }
 
+        // Un solo guardado: los tres repositorios comparten el contexto Scoped, así que el SaveChanges del
+        // torneo persiste también las batallas y las inscripciones canceladas, o ninguna (D-42).
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+
+        // La cancelación acaba de pasar todas las Aceptadas a Cancelada.
+        return CrearResponse<TorneoResponse>(torneo, 0);
     }
 
     private Torneo ObtenerTorneoExistente(int id)
