@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Batallas;
+using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Torneos;
@@ -48,8 +49,10 @@ public sealed class ServicioTorneosTests
         _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(0);
         _repositorioInscripciones.Setup(r => r.ContarAceptadasPorTorneo(new[] { TorneoId })).Returns(new Dictionary<int, int>());
 
-        // Por defecto el torneo no tiene batallas sin resolver; los tests de la cancelación agregan las suyas.
+        // Por defecto el torneo no tiene batallas sin resolver ni inscripciones Aceptadas; los tests de la
+        // cancelación agregan las suyas.
         _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([]);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([]);
         _servicio = new ServicioTorneos(
             _repositorioTorneos.Object,
             _repositorioUsuarios.Object,
@@ -441,6 +444,22 @@ public sealed class ServicioTorneosTests
         _servicio.Cancelar(TorneoId);
 
         Assert.AreEqual(EstadoBatalla.Cancelada, estadoAlGuardar);
+        _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoConInscripcionAceptada_CancelaLaInscripcionEnElMismoGuardado()
+    {
+        var torneo = CrearTorneo();
+        var inscripcion = new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0));
+        EstadoInscripcion? estadoAlGuardar = null;
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([inscripcion]);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo)).Callback(() => estadoAlGuardar = inscripcion.Estado);
+
+        _servicio.Cancelar(TorneoId);
+
+        Assert.AreEqual(EstadoInscripcion.Cancelada, estadoAlGuardar);
         _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
     }
 
