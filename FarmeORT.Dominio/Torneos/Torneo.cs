@@ -137,6 +137,11 @@ public sealed class Torneo
     // La primera ronda pone el torneo En curso (D-62).
     public void Iniciar()
     {
+        if(Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoAbiertoException();
+        }
+
         Estado = EstadoTorneo.EnCurso;
     }
 
