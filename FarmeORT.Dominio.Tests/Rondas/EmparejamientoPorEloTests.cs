@@ -29,6 +29,23 @@ public sealed class EmparejamientoPorEloTests
         Assert.AreSame(segundo, pares[0].Jugador2);
     }
 
+    [TestMethod]
+    public void Emparejar_EloIgual_EnfrentaAlPrimeroConElUltimoOrdenadosPorId()
+    {
+        var jugador1 = CrearJugador(1);
+        var jugador2 = CrearJugador(2);
+        var jugador3 = CrearJugador(3);
+        var jugador4 = CrearJugador(4);
+
+        var pares = _estrategia.Emparejar([jugador3, jugador1, jugador4, jugador2]);
+
+        Assert.HasCount(2, pares);
+        Assert.AreSame(jugador1, pares[0].Jugador1);
+        Assert.AreSame(jugador4, pares[0].Jugador2);
+        Assert.AreSame(jugador2, pares[1].Jugador1);
+        Assert.AreSame(jugador3, pares[1].Jugador2);
+    }
+
     private static Usuario CrearJugador(int id)
     {
         return new Usuario("Ana", "Pérez", $"jugador{id}@farmeort.com", $"jugador{id}", new DateOnly(2000, 1, 15), Rol.Jugador, "hash", FechaActual)
