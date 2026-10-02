@@ -17,4 +17,11 @@ public sealed class RondasController(IServicioRondas servicioRondas) : Controlle
         var response = servicioRondas.Generar(torneoId, sesion.UsuarioId, sesion.Rol);
         return Created($"/api/v1/torneos/{torneoId}/rondas/{response.Numero}", response);
     }
+
+    [HttpGet]
+    public IActionResult Listar(int torneoId)
+    {
+        _ = torneoId;
+        throw new NotImplementedException();
+    }
 }

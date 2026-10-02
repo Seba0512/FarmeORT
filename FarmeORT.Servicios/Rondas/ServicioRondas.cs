@@ -49,6 +49,13 @@ internal sealed class ServicioRondas(
         return CrearResponse(1, batallas);
     }
 
+    public IReadOnlyList<RondaResponse> Listar(int torneoId, bool esAnonimo)
+    {
+        _ = torneoId;
+        _ = esAnonimo;
+        throw new NotImplementedException();
+    }
+
     private static RondaResponse CrearResponse(int numero, IReadOnlyList<Batalla> batallas)
     {
         return new RondaResponse

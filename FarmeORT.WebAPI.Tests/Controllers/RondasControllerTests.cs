@@ -45,6 +45,26 @@ public sealed class RondasControllerTests
     }
 
     [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Listar_TorneoVisible_Devuelve200IndicandoSiConsultaUnAnonimo(bool autenticado)
+    {
+        if(autenticado)
+        {
+            Autenticar(OrganizadorId, Roles.Organizador);
+        }
+
+        IReadOnlyList<RondaResponse> rondas = [new RondaResponse { Numero = 1 }];
+        _servicio.Setup(s => s.Listar(TorneoId, !autenticado)).Returns(rondas);
+
+        var resultado = _controller.Listar(TorneoId) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(rondas, resultado.Value);
+    }
+
+    [TestMethod]
     public void Generar_ContratoDeSeguridad_PermiteSoloOrganizadorYAdministrador()
     {
         var metodo = typeof(RondasController).GetMethod(nameof(RondasController.Generar));
