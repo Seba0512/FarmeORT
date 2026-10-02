@@ -118,6 +118,7 @@ internal sealed class ServicioRondas(
             Estado = batalla.Estado.ToString(),
             Jugador1 = CrearResponse(batalla.Jugador1),
             Jugador2 = CrearResponse(batalla.Jugador2),
+            GanadorId = batalla.GanadorId,
         };
     }
 
