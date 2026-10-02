@@ -38,6 +38,7 @@ public sealed class ServicioModificacionUsuariosTests
 
         // Por defecto el usuario no tiene torneos, batallas ni inscripciones vigentes que impidan cambiarle el rol.
         _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(false);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(false);
         _servicio = new ServicioUsuarios(
             _repositorioUsuarios.Object,
             _repositorioTorneos.Object,
@@ -210,9 +211,22 @@ public sealed class ServicioModificacionUsuariosTests
         _repositorioTorneos.Verify(r => r.ExisteVigenteDelOrganizador(It.IsAny<int>()), Times.Never);
     }
 
-    private Usuario ConfigurarModificacionValida()
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnJugadorConBatallasSinResolver_LanzaUsuarioConBatallasSinResolverSinActualizar()
     {
-        var usuario = CrearUsuarioExistente();
+        var usuario = ConfigurarModificacionValida(Rol.Jugador);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(true);
+
+        Assert.ThrowsExactly<UsuarioConBatallasSinResolverException>(
+            () => _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId));
+
+        Assert.AreEqual(Rol.Jugador, usuario.Rol);
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    private Usuario ConfigurarModificacionValida(Rol rolActual = Rol.Organizador)
+    {
+        var usuario = CrearUsuarioExistente(rolActual);
         _repositorioUsuarios.Setup(r => r.ObtenerPorId(UsuarioId)).Returns(usuario);
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail("anamaria@farmeort.com")).Returns((Usuario?)null);
         _repositorioUsuarios.Setup(r => r.ExistePorNickname("anamaria")).Returns(false);
@@ -223,9 +237,9 @@ public sealed class ServicioModificacionUsuariosTests
         return usuario;
     }
 
-    private static Usuario CrearUsuarioExistente()
+    private static Usuario CrearUsuarioExistente(Rol rol = Rol.Organizador)
     {
-        return new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Organizador, "hash-anterior", FechaActual)
+        return new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), rol, "hash-anterior", FechaActual)
         {
             Id = UsuarioId,
         };
