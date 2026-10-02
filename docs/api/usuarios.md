@@ -17,7 +17,7 @@ Conflictos (409):
 | `EMAIL_ALREADY_EXISTS` / `NICKNAME_ALREADY_EXISTS` | No | Sí | El email o el nickname ya es de otro usuario |
 | `USER_ORGANIZES_ACTIVE_TOURNAMENT` | Sí | Solo si cambia el rol | Organiza un torneo que no está Finalizado ni Cancelado |
 | `USER_HAS_UNRESOLVED_BATTLES` | Sí | Solo si cambia el rol | Juega una batalla Pendiente o En arbitraje |
-| `USER_HAS_ACTIVE_REGISTRATION` | No | Solo si cambia el rol | Tiene una inscripción Aceptada en un torneo que no está Finalizado ni Cancelado |
+| `USER_HAS_ACTIVE_REGISTRATION` | Sí (supuesto, D-43) | Solo si cambia el rol | Tiene una inscripción Aceptada en un torneo que no está Finalizado ni Cancelado |
 
 Si el `PUT` mantiene el rol, estas tres reglas no se controlan: se pueden corregir los datos de un
 organizador con un torneo en curso. Las reglas se controlan en el orden de la tabla y se responde la

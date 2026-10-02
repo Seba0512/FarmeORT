@@ -6,7 +6,6 @@ package FarmeORT.Servicios {
   class ServicioUsuarios {
     + Modificar(id : int, request : UsuarioAdminRequest, usuarioActualId : int) : UsuarioResponse
     + Eliminar(id : int, usuarioActualId : int) : void
-    - ValidarSinTorneosNiBatallasPendientes(usuario : Usuario) : void
     - ValidarSinParticipacionVigente(usuario : Usuario) : void
   }
 }

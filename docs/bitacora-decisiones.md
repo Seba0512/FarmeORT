@@ -1447,6 +1447,10 @@ organizado por un Jugador.
 - Cambiar el rol: el integrante eligió las mismas reglas que eliminar, más una inscripción Aceptada en un
   torneo vigente → 409 `USER_HAS_ACTIVE_REGISTRATION`. Solo se controla si el rol cambia: modificar el
   nombre o el email de un organizador con un torneo en curso sigue permitido.
+- **Supuesto (no está en la letra):** eliminar también se rechaza con `USER_HAS_ACTIVE_REGISTRATION` si el
+  jugador tiene una inscripción Aceptada en un torneo vigente. Si no, quedaría inscripto un usuario dado de
+  baja y las rondas lo emparejarían. El integrante lo eligió frente a cancelar la inscripción en la baja, que
+  agregaba un efecto que la letra no menciona. Así, eliminar y cambiar el rol comparten una sola validación.
 - Consultas al final de las interfaces: `IRepositorioTorneos.ExisteVigenteDelOrganizador` y
   `IRepositorioBatallas.ExisteSinResolverDelJugador` (de B, agregar consultas estaba acordado). Son `Any`
   en la base: no traen entidades para contestar sí o no.
@@ -1466,7 +1470,8 @@ organizado por un Jugador.
 (servicio con mocks y repositorios con SQLite) y refactor sin cambiar comportamiento.
 
 **Evidencia:**
-- `ServicioEliminacionUsuariosTests`: organizador de torneo vigente y jugador con batallas sin resolver.
+- `ServicioEliminacionUsuariosTests`: organizador de torneo vigente, jugador con batallas sin resolver y
+  jugador inscripto en un torneo vigente.
 - `ServicioModificacionUsuariosTests`: las tres reglas al cambiar el rol, el mismo rol sin controles y una
   inscripción de un torneo cancelado que no impide el cambio.
 - `RepositorioTorneosTests` y `RepositorioBatallasTests`: un `DataRow` por estado.
@@ -1474,16 +1479,12 @@ organizado por un Jugador.
 - La carpeta "Usuarios" de Postman, con el organizador de un torneo abierto y el jugador inscripto. Las
   batallas todavía no se pueden crear por la API (las crean las rondas de C).
 
-**Pendiente:** la letra no impide eliminar a un jugador con una inscripción Aceptada en un torneo
-Abierto. Esa inscripción queda Aceptada con un usuario dado de baja y las rondas lo emparejarían. Falta
-decidir si se rechaza (como el cambio de rol) o si la baja cancela la inscripción.
-
 **Participación de IA:**
 - Claude Code (agente de la Persona A) propuso las tres opciones del cambio de rol con una recomendación;
   el integrante eligió las mismas reglas que eliminar. Los nombres de las excepciones y los `errorCode`
   los propuso Claude Code siguiendo la convención UPPER_SNAKE en inglés.
-- Claude Code detectó el riesgo de las inscripciones en la baja (Pendiente), que no está en la letra, y lo
-  dejó para que decida el equipo en lugar de implementarlo.
+- Claude Code detectó el riesgo de las inscripciones en la baja, que no está en la letra, y lo consultó
+  antes de implementarlo; el integrante eligió rechazarla con 409.
 - Problema que apareció: en los tests de modificación el usuario existente era Organizador y el pedido
   cambiaba a Jugador, así que todos cambiaban el rol. Hubo que dejar valores por defecto en
   `[TestInitialize]` para que siguieran describiendo lo mismo con los mocks estrictos.
