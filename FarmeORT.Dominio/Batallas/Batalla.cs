@@ -112,6 +112,11 @@ public sealed class Batalla
         {
             throw new JugadorNoParticipaEnBatallaException();
         }
+
+        if(string.IsNullOrWhiteSpace(comentario) || comentario.Length is < 10 or > 500)
+        {
+            throw new DatosInvalidosException("El comentario debe tener entre 10 y 500 caracteres y no puede estar vacío.");
+        }
     }
 
     public Lanzamiento Lanzar(Usuario jugador, Skill skill, DateTimeOffset fecha)
