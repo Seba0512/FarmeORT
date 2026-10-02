@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using Microsoft.EntityFrameworkCore;
 
@@ -99,7 +100,20 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
     public void Agregar(Inscripcion inscripcion)
     {
         contexto.Inscripciones.Add(inscripcion);
-        contexto.SaveChanges();
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateConcurrencyException)
+        {
+            contexto.ChangeTracker.Clear();
+            if(ExisteAceptada(inscripcion.TorneoId, inscripcion.JugadorId))
+            {
+                throw new InscripcionYaExisteException();
+            }
+
+            throw;
+        }
     }
 
     public Inscripcion? ObtenerAceptada(int torneoId, int jugadorId)
