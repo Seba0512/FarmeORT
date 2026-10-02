@@ -191,6 +191,24 @@ public sealed class RepositorioInscripcionesTests
         Assert.IsEmpty(fueraDeRango);
     }
 
+    [TestMethod]
+    public void Listar_RestringidoAUnJugadorOAUnOrganizador_DevuelveSoloLasQueLeCorresponden()
+    {
+        var torneoPropio = GuardarTorneo("COPAAURA");
+        var otroOrganizadorId = GuardarUsuario("pedroo", Rol.Organizador);
+        var torneoAjeno = GuardarTorneo("COPAFUEGO", otroOrganizadorId);
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        var delJugador = GuardarInscripcion(torneoPropio, jugadorId);
+        var deOtroJugador = GuardarInscripcion(torneoPropio, GuardarUsuario("brunolopez", Rol.Jugador));
+        var delJugadorEnTorneoAjeno = GuardarInscripcion(torneoAjeno, jugadorId);
+
+        var delJugadorListadas = _repositorio.Listar(Filtro(jugadorId: jugadorId));
+        var delOrganizadorListadas = _repositorio.Listar(Filtro(organizadorId: _organizadorId));
+
+        CollectionAssert.AreEqual(new[] { delJugador, delJugadorEnTorneoAjeno }, delJugadorListadas.Select(i => i.Id).ToArray());
+        CollectionAssert.AreEqual(new[] { delJugador, deOtroJugador }, delOrganizadorListadas.Select(i => i.Id).ToArray());
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroInscripciones Filtro(
         int? torneoId = null,
@@ -224,9 +242,9 @@ public sealed class RepositorioInscripcionesTests
         return new Inscripcion(torneo, jugador, Ahora);
     }
 
-    private int GuardarTorneo(string codigo)
+    private int GuardarTorneo(string codigo, int? organizadorId = null)
     {
-        var organizador = _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == _organizadorId);
+        var organizador = _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == (organizadorId ?? _organizadorId));
         var torneo = new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.", new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 30), 8, organizador, FechaActual);
         _baseDeDatos.Contexto.Torneos.Add(torneo);
         _baseDeDatos.Contexto.SaveChanges();
