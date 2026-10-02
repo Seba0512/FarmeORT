@@ -96,8 +96,24 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId)
     {
-        _ = jugadorIds;
         _ = torneoId;
-        throw new NotImplementedException();
+        var finalizadas = contexto.Batallas.Where(b => b.Estado == EstadoBatalla.Finalizada && b.GanadorId != null);
+        var ganadas = finalizadas
+            .Where(b => jugadorIds.Contains(b.GanadorId!.Value))
+            .GroupBy(b => b.GanadorId!.Value)
+            .ToDictionary(g => g.Key, g => g.Count());
+        var perdidasComoJugador1 = finalizadas
+            .Where(b => jugadorIds.Contains(b.Jugador1Id) && b.GanadorId != b.Jugador1Id)
+            .GroupBy(b => b.Jugador1Id)
+            .ToDictionary(g => g.Key, g => g.Count());
+        var perdidasComoJugador2 = finalizadas
+            .Where(b => jugadorIds.Contains(b.Jugador2Id) && b.GanadorId != b.Jugador2Id)
+            .GroupBy(b => b.Jugador2Id)
+            .ToDictionary(g => g.Key, g => g.Count());
+        return ganadas.Keys.Union(perdidasComoJugador1.Keys).Union(perdidasComoJugador2.Keys).ToDictionary(
+            id => id,
+            id => new ResultadosDeBatallas(
+                ganadas.GetValueOrDefault(id),
+                perdidasComoJugador1.GetValueOrDefault(id) + perdidasComoJugador2.GetValueOrDefault(id)));
     }
 }
