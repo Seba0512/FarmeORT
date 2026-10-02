@@ -13,7 +13,7 @@ public sealed class HistorialLanzamientosController(IServicioBatallas servicioBa
     [HttpGet]
     public IActionResult Listar(int id)
     {
-        _ = servicioBatallas;
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        return Ok(servicioBatallas.ListarLanzamientos(id, sesion.UsuarioId, sesion.Rol));
     }
 }
