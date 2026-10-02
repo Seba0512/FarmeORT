@@ -1,6 +1,7 @@
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Elo;
 using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Batallas;
@@ -39,6 +40,27 @@ public sealed class ServicioFallosTests
         sorteo.Setup(s => s.ElegirEntre(jugador1, jugador2)).Returns(jugador1);
         _batalla = new Batalla(torneo, 1, jugador1, jugador2, sorteo.Object) { Id = 12 };
         _inscripcion = new Inscripcion(torneo, jugador2, FechaActual.ToDateTime(TimeOnly.MinValue)) { Id = 20 };
+    }
+
+    [TestMethod]
+    public void Fallar_BatallaConLanzamientos_DevuelveHistorialOrdenado()
+    {
+        ConfigurarFalloValido();
+        var skill = new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2) { Id = 3 };
+        _batalla.Jugador1.DeclararSkill(skill, 4, FechaActual);
+        _batalla.Jugador2.DeclararSkill(skill, 4, FechaActual);
+        var fecha = new DateTimeOffset(2026, 10, 2, 16, 30, 0, TimeSpan.Zero);
+        _batalla.Lanzar(_batalla.Jugador1, skill, fecha);
+        _batalla.Lanzar(_batalla.Jugador2, skill, fecha.AddMinutes(1));
+
+        var resultado = _servicio.Fallar(12, 2, RequestValido());
+
+        CollectionAssert.AreEqual(new[] { 1, 2 }, resultado.Lanzamientos.Select(l => l.Turno).ToArray());
+        Assert.AreEqual(7, resultado.Lanzamientos[0].JugadorId);
+        Assert.AreEqual("usuario7", resultado.Lanzamientos[0].Nickname);
+        Assert.AreEqual(3, resultado.Lanzamientos[0].SkillId);
+        Assert.AreEqual("Six-Seven", resultado.Lanzamientos[0].Skill);
+        Assert.AreEqual(fecha, resultado.Lanzamientos[0].Fecha);
     }
 
     [TestMethod]

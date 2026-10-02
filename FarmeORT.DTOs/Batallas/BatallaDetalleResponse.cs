@@ -23,4 +23,6 @@ public sealed class BatallaDetalleResponse
     public int? CambioEloJugador1 { get; init; }
 
     public int? CambioEloJugador2 { get; init; }
+
+    public IReadOnlyList<LanzamientoResponse> Lanzamientos { get; init; } = [];
 }
