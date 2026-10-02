@@ -78,8 +78,8 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
 
     public bool ExisteVigenteDelOrganizador(int organizadorId)
     {
-        _ = organizadorId;
-        throw new NotImplementedException();
+        return contexto.Torneos.Any(t => t.OrganizadorId == organizadorId
+            && t.Estado != EstadoTorneo.Finalizado && t.Estado != EstadoTorneo.Cancelado);
     }
 
     // Otro torneo puede ocupar el código entre la validación del servicio y el guardado (D-23).
