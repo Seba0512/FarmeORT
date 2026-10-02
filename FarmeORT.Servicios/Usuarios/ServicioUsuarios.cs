@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
@@ -70,7 +71,12 @@ internal sealed class ServicioUsuarios(
             throw new UsuarioConBatallasSinResolverException();
         }
 
-        _ = repositorioInscripciones;
+        if(usuario.Rol != rol && repositorioInscripciones.ListarAceptadasDelJugador(usuario.Id)
+            .Any(i => i.Torneo.Estado != EstadoTorneo.Finalizado && i.Torneo.Estado != EstadoTorneo.Cancelado))
+        {
+            throw new UsuarioConInscripcionVigenteException();
+        }
+
         if(!MismoTexto(usuario.Email, request.Email))
         {
             ValidarEmailDisponible(request.Email);
