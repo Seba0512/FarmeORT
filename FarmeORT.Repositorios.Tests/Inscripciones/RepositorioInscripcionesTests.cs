@@ -174,6 +174,23 @@ public sealed class RepositorioInscripcionesTests
         Assert.AreEqual(segunda, _repositorio.Listar(Filtro(limite: 1, desplazamiento: 1)).Single().Id);
     }
 
+    [TestMethod]
+    public void Listar_FiltrosPorTorneoEstadoYFechas_DevuelveLasQueCumplenTodos()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var otroTorneoId = GuardarTorneo("COPAFUEGO");
+        var buscada = GuardarInscripcion(torneoId, GuardarUsuario("anaperez", Rol.Jugador));
+        GuardarInscripcion(torneoId, GuardarUsuario("brunolopez", Rol.Jugador), i => i.Cancelar());
+        GuardarInscripcion(otroTorneoId, GuardarUsuario("carlagomez", Rol.Jugador));
+        var dia = DateOnly.FromDateTime(Ahora);
+
+        var inscripciones = _repositorio.Listar(Filtro(torneoId, EstadoInscripcion.Aceptada, dia, dia));
+        var fueraDeRango = _repositorio.Listar(Filtro(fechaDesde: dia.AddDays(1)));
+
+        CollectionAssert.AreEqual(new[] { buscada }, inscripciones.Select(i => i.Id).ToArray());
+        Assert.IsEmpty(fueraDeRango);
+    }
+
     // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
     private static FiltroInscripciones Filtro(
         int? torneoId = null,
