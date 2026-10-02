@@ -52,6 +52,19 @@ public sealed class ServicioFinalizacionesTests
         Assert.AreEqual("usuario7", finalizacion.Campeon.Nickname);
     }
 
+    [TestMethod]
+    public void Finalizar_TorneoConUnSoloJugadorSinEliminar_LoDejaFinalizadoConSuCampeonYGuardaUnaVez()
+    {
+        PrepararTorneoListoParaFinalizar();
+
+        _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador);
+
+        Assert.AreEqual(EstadoTorneo.Finalizado, _torneo.Estado);
+        Assert.AreEqual(7, _torneo.CampeonId);
+        Assert.AreSame(_campeon, _torneo.Campeon);
+        _repositorioTorneos.Verify(r => r.Actualizar(_torneo), Times.Once);
+    }
+
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.
     private void PrepararTorneoListoParaFinalizar()
     {

@@ -62,6 +62,11 @@ public sealed class Torneo
 
     public IReadOnlyCollection<Skill> SkillsObligatorias => _skillsObligatorias;
 
+    // Un torneo tiene a lo sumo un campeón (0..1): el que queda sin eliminar al finalizarlo (D-64).
+    public int? CampeonId { get; private set; }
+
+    public Usuario? Campeon { get; private set; }
+
     // El anónimo solo ve torneos Abiertos, En curso o Finalizados (letra 1.3).
     public bool EsVisibleParaAnonimos => Estado != EstadoTorneo.Cancelado;
 
