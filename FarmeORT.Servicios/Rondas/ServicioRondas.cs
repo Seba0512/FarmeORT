@@ -23,30 +23,7 @@ internal sealed class ServicioRondas(
     {
         var torneo = ObtenerTorneoDelOrganizador(torneoId, usuarioId, rol);
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
-        var numero = 1;
-        if(torneo.Estado == EstadoTorneo.EnCurso)
-        {
-            // La ronda anterior tiene que estar resuelta: todas sus batallas Finalizadas o Canceladas.
-            var anteriores = repositorioBatallas.ListarDelTorneo(torneoId);
-            var ultima = anteriores.Max(b => b.NumeroRonda);
-            if(anteriores.Any(b => b.NumeroRonda == ultima && b.Estado != EstadoBatalla.Finalizada && b.Estado != EstadoBatalla.Cancelada))
-            {
-                throw new RondaSinResolverException();
-            }
-
-            // Con un solo jugador sin eliminar ya hay campeón: corresponde finalizar el torneo, no otra ronda.
-            if(jugadores.Count < 2)
-            {
-                throw new TorneoListoParaFinalizarException();
-            }
-
-            numero = ultima + 1;
-        }
-        else
-        {
-            torneo.Iniciar(jugadores.Count);
-        }
-
+        var numero = PrepararRonda(torneo, jugadores.Count);
         var batallas = CrearBatallas(torneo, numero, estrategiaEmparejamiento.Emparejar(jugadores));
 
         // Un solo guardado: las batallas nuevas y el cambio de estado del torneo quedan juntos o no queda nada.
@@ -108,6 +85,37 @@ internal sealed class ServicioRondas(
         {
             throw new TorneoNoEncontradoException();
         }
+    }
+
+    // La primera ronda inicia el torneo. Las siguientes exigen que la anterior esté resuelta y que queden al menos dos
+    // jugadores sin eliminar: con uno solo ya hay campeón y corresponde finalizar el torneo.
+    private int PrepararRonda(Torneo torneo, int jugadoresQueSiguen)
+    {
+        if(torneo.Estado != EstadoTorneo.EnCurso)
+        {
+            torneo.Iniciar(jugadoresQueSiguen);
+            return 1;
+        }
+
+        var anteriores = repositorioBatallas.ListarDelTorneo(torneo.Id);
+        var ultima = anteriores.Max(b => b.NumeroRonda);
+        if(anteriores.Any(b => b.NumeroRonda == ultima && !EstaResuelta(b)))
+        {
+            throw new RondaSinResolverException();
+        }
+
+        if(jugadoresQueSiguen < 2)
+        {
+            throw new TorneoListoParaFinalizarException();
+        }
+
+        return ultima + 1;
+    }
+
+    // Una batalla está resuelta si ya se falló o si se canceló con el torneo.
+    private static bool EstaResuelta(Batalla batalla)
+    {
+        return batalla.Estado == EstadoBatalla.Finalizada || batalla.Estado == EstadoBatalla.Cancelada;
     }
 
     // Crea una batalla Pendiente por par y la deja lista para guardarse junto con el torneo.
