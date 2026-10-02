@@ -1955,14 +1955,15 @@ entidad, dónde vive el emparejamiento, cómo se cruzan los jugadores y cómo se
   1. Valida el torneo y quién llama (D-63).
   2. Trae a los jugadores con inscripción Aceptada.
   3. Prepara la ronda. Si el torneo no está En curso, es la primera: llama a `Iniciar`. Si está En curso, es una
-     siguiente: la última ronda tiene que estar resuelta (todas sus batallas Finalizadas o Canceladas, si no 409
-     `ROUND_NOT_RESOLVED`) y tienen que quedar al menos dos jugadores. Con uno solo ya hay campeón y responde 409
-     `TOURNAMENT_READY_TO_FINISH`, porque corresponde finalizar el torneo.
+     siguiente: tiene que tener batallas (si no, 409 `TOURNAMENT_NOT_OPEN`), la última ronda tiene que estar
+     resuelta (todas sus batallas Finalizadas o Canceladas, si no 409 `ROUND_NOT_RESOLVED`) y tienen que quedar al
+     menos dos jugadores. Con uno solo ya hay campeón y responde 409 `TOURNAMENT_READY_TO_FINISH`, porque
+     corresponde finalizar el torneo.
   4. Empareja y crea una batalla por par con el constructor de Batalla y el `ISorteo` inyectado (empieza el de
      mayor ELO; si empatan, el sorteo).
-  5. Agrega cada batalla con `IRepositorioBatallas.Agregar`, que no guarda, y guarda todo una sola vez con
-     `IRepositorioTorneos.Actualizar`: las batallas y el cambio de estado del torneo quedan juntos o no queda nada
-     (como D-42).
+  5. Guarda todo con `IRepositorioBatallas.GuardarRonda(torneo, batallas)`, que agrega las batallas y actualiza el
+     torneo en un solo `SaveChanges`: las batallas y el cambio de estado del torneo quedan juntos o no queda nada
+     (como D-42). La firma deja la atomicidad a la vista en el contrato de la interfaz.
 - **Consultas:** `GET /torneos/{id}/rondas` y `GET /torneos/{id}/rondas/{numero}`, con autenticación opcional. El
   anónimo no ve las rondas de un torneo Cancelado (D-36). Un número que el torneo no tiene responde 404
   `ROUND_NOT_FOUND`. `IRepositorioBatallas.ListarDelTorneo` trae las batallas con sus jugadores, ordenadas por
@@ -1973,8 +1974,14 @@ entidad, dónde vive el emparejamiento, cómo se cruzan los jugadores y cómo se
 - **Cuadro:** el detalle del torneo trae `rondas` con todas las rondas y sus batallas, así una sola llamada alcanza
   para dibujar el cuadro (letra). El armado de las rondas lo comparten `ServicioRondas` y `ServicioTorneos` en
   `RespuestasRondas`.
-- Un torneo En curso sin batallas (cargado a mano) arranca por la ronda 1 en lugar de fallar.
-- Las consultas nuevas van al final de `IRepositorioBatallas`, la interfaz de la persona B, como estaba acordado.
+- Un torneo En curso sin batallas (por ejemplo, cargado a mano) responde 409 `TOURNAMENT_NOT_OPEN`: generar su
+  ronda 1 se saltearía la regla de que la primera ronda exige el torneo Abierto y el cupo completo.
+- `EmparejamientoPorElo` rechaza una cantidad impar de jugadores con `InvalidOperationException`, que responde 500.
+  Por la API no pasa (el cupo es potencia de 2 y cada batalla elimina a uno), así que sería un error de datos y no
+  del cliente; sin la excepción, un jugador quedaría afuera sin aviso.
+- `TOURNAMENT_NOT_OPEN` (de la persona A) dice "El torneo no está abierto.", que sirve para las inscripciones y
+  para las rondas. Antes decía "...a inscripciones"; se cambió con el acuerdo de la persona A.
+- Los métodos nuevos van al final de `IRepositorioBatallas`, la interfaz de la persona B, como estaba acordado.
 
 **Justificación:**
 - La ronda derivada evita duplicar un dato que Batalla ya tiene: con una tabla aparte, el número de ronda podría
@@ -1992,22 +1999,20 @@ atomicidad con un solo `SaveChanges`, REST (sub-recurso `/rondas`), status 404 y
 
 **Evidencia:**
 - Dominio: `IEstrategiaEmparejamiento`, `EmparejamientoPorElo`, `ParDeJugadores`, `Torneo.Iniciar`;
-  `EmparejamientoPorEloTests` (dos jugadores, ELO igual con desempate por id, ELO distinto) y
+  `EmparejamientoPorEloTests` (dos jugadores, ELO igual con desempate por id, ELO distinto, cantidad impar) y
   `TorneoRondasTests`.
 - `ServicioRondas` y `ServicioRondasTests`: primera ronda, estado En curso con un solo guardado, torneo
   inexistente, organizador no asignado, administrador, torneo incompleto, rondas siguientes, ronda sin resolver,
-  un solo jugador, batalla cancelada como resuelta, consultas, anónimo y ganador.
+  un solo jugador, batalla cancelada como resuelta, torneo En curso sin batallas, consultas, anónimo y ganador.
 - `RondasController` y `RondasControllerTests` (201 con `Location`, 200 y la seguridad por reflexión).
-- `RepositorioBatallas.Agregar` y `ListarDelTorneo`, y `RepositorioRondasTests`, que incluye que actualizar el
-  torneo guarda junto con él las batallas de la ronda.
+- `RepositorioBatallas.GuardarRonda` y `ListarDelTorneo`, y `RepositorioRondasTests`, que incluye que las batallas
+  de la ronda se guardan junto con el estado del torneo.
 - `FiltroExcepcionesRondasTests` y `docs/api/rondas.md`.
 
 **Supuestos y pendientes:**
 - Dos pedidos simultáneos de generar la misma ronda podrían crear batallas repetidas: `Torneo` no tiene token de
   concurrencia. Se acepta el riesgo, porque la ronda la genera una sola persona (el organizador asignado o un
   administrador).
-- `TOURNAMENT_NOT_OPEN` reusa el mensaje de las inscripciones ("El torneo no está abierto a inscripciones."), que
-  en las rondas se lee algo forzado. Cambiarlo toca el mapeo de la persona A.
 - La secuencia de generar ronda y las clases que participan están en `docs/uml/generar-ronda.puml` y
   `docs/uml/rondas-clases.puml`; falta sumarlas al diagrama de clases general del informe.
 
@@ -2022,6 +2027,9 @@ atomicidad con un solo `SaveChanges`, REST (sub-recurso `/rondas`), status 404 y
     probando la consulta sin desempate antes del GREEN y agregó el índice de prueba.
   - `dotnet format` convierte las lambdas de los `Assert.ThrowsExactly` en method groups; un script de edición dejó
     de coincidir con el archivo y hubo que rehacerlo sobre el archivo real.
+- La review técnica del PR #25 pidió cuatro cambios: rechazar el torneo En curso sin batallas, que la interfaz
+  muestre la atomicidad (`GuardarRonda` en lugar de un `Agregar` que no guardaba), el mensaje de
+  `TOURNAMENT_NOT_OPEN` y la cantidad impar. Claude Code los hizo con ciclos RED/GREEN y un REFACTOR.
 
 ---
 
@@ -2039,7 +2047,7 @@ el organizador asignado, que es lo que dice la letra).
 - El servicio decide si el Organizador es el asignado a ese torneo; si no, 403 `NOT_TOURNAMENT_ORGANIZER` (se
   reusa `NoEsOrganizadorDelTorneoException`, D-40). Un Administrador pasa sin esa comprobación.
 - Es un supuesto: si una aclaración docente dice que solo el organizador, alcanza con sacar el rol del atributo
-  y la condición del servicio. Se aplica igual a finalizar el torneo.
+  y la condición del servicio. Queda para consultar en el foro del curso.
 
 **Justificación:** mantiene la regla de D-40 para los organizadores y le da al Administrador, que ya crea y cancela
 torneos, la posibilidad de destrabar uno.

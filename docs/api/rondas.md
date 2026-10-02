@@ -25,7 +25,8 @@ Primera ronda:
 Rondas siguientes (torneo En curso):
 - Todas las batallas de la última ronda tienen que estar resueltas: Finalizadas (falladas) o Canceladas.
 - Se empareja, con la misma estrategia, a los jugadores con inscripción todavía Aceptada: el fallo de una batalla deja Eliminada la inscripción del perdedor.
-- Crea las batallas en la ronda siguiente (la última más uno). El torneo sigue En curso. Un torneo En curso que todavía no tiene batallas (por ejemplo, cargado a mano con los scripts de `Datos`) arranca por la ronda 1.
+- Crea las batallas en la ronda siguiente (la última más uno). El torneo sigue En curso.
+- Un torneo En curso que todavía no tiene batallas (por ejemplo, cargado a mano con los scripts de `Datos`) responde 409 `TOURNAMENT_NOT_OPEN`: sería una primera ronda, que exige el torneo Abierto y el cupo completo.
 - Si queda un solo jugador sin eliminar, ya hay campeón: no se genera otra ronda y corresponde finalizar el torneo (`POST /torneos/{torneoId}/finalizaciones`).
 
 | Estado | errorCode | Cuándo |
@@ -34,7 +35,7 @@ Rondas siguientes (torneo En curso):
 | 403 | `FORBIDDEN` | Quien llama no es Organizador ni Administrador |
 | 403 | `NOT_TOURNAMENT_ORGANIZER` | Es Organizador, pero no el asignado a este torneo |
 | 404 | `TOURNAMENT_NOT_FOUND` | No existe el torneo |
-| 409 | `TOURNAMENT_NOT_OPEN` | El torneo está Finalizado o Cancelado |
+| 409 | `TOURNAMENT_NOT_OPEN` | El torneo está Finalizado o Cancelado, o está En curso sin batallas |
 | 409 | `TOURNAMENT_NOT_FULL` | Primera ronda con menos inscripciones Aceptadas que el cupo |
 | 409 | `ROUND_NOT_RESOLVED` | La última ronda todavía tiene batallas Pendientes o En arbitraje |
 | 409 | `TOURNAMENT_READY_TO_FINISH` | Queda un solo jugador sin eliminar: corresponde finalizar el torneo |
