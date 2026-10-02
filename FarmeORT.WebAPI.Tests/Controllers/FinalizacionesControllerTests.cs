@@ -43,4 +43,15 @@ public sealed class FinalizacionesControllerTests
         Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
         Assert.AreSame(finalizacion, resultado.Value);
     }
+
+    [TestMethod]
+    public void Finalizar_ContratoDeSeguridad_PermiteSoloOrganizadorYAdministrador()
+    {
+        var metodo = typeof(FinalizacionesController).GetMethod(nameof(FinalizacionesController.Finalizar));
+
+        var atributo = metodo?.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true).OfType<AutorizacionAttribute>().SingleOrDefault();
+
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEquivalent(new[] { Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
+    }
 }
