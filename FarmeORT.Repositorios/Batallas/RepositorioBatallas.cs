@@ -56,7 +56,10 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Batalla> ListarSinResolverDelTorneo(int torneoId)
     {
-        _ = torneoId;
-        throw new NotImplementedException();
+        return contexto.Batallas
+            .Where(b => b.TorneoId == torneoId
+                && (b.Estado == EstadoBatalla.Pendiente || b.Estado == EstadoBatalla.EnArbitraje))
+            .OrderBy(b => b.Id)
+            .ToList();
     }
 }
