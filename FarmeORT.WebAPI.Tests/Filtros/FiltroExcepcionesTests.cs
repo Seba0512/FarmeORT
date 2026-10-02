@@ -87,6 +87,9 @@ public sealed class FiltroExcepcionesTests
     [DataRow(typeof(TorneoCompletoException), StatusCodes.Status409Conflict, "TOURNAMENT_FULL", "El torneo ya alcanzó su cupo de inscripciones aceptadas.")]
     [DataRow(typeof(InscripcionNoActivaException), StatusCodes.Status409Conflict, "REGISTRATION_NOT_ACTIVE", "La inscripción ya no está aceptada.")]
     [DataRow(typeof(SkillObligatoriaEnUsoException), StatusCodes.Status409Conflict, "MANDATORY_SKILL_IN_USE", "No podés quitar la skill: es obligatoria en un torneo en el que estás inscripto.")]
+    [DataRow(typeof(UsuarioOrganizaTorneoVigenteException), StatusCodes.Status409Conflict, "USER_ORGANIZES_ACTIVE_TOURNAMENT", "El usuario organiza un torneo que no está Finalizado ni Cancelado.")]
+    [DataRow(typeof(UsuarioConBatallasSinResolverException), StatusCodes.Status409Conflict, "USER_HAS_UNRESOLVED_BATTLES", "El usuario tiene batallas Pendientes o En arbitraje.")]
+    [DataRow(typeof(UsuarioConInscripcionVigenteException), StatusCodes.Status409Conflict, "USER_HAS_ACTIVE_REGISTRATION", "El usuario está inscripto en un torneo que no está Finalizado ni Cancelado.")]
     public void OnException_ErrorMapeado_DevuelveSuStatusYCodigo(Type tipo, int status, string codigo, string mensaje)
     {
         var contexto = CrearContexto((Exception)Activator.CreateInstance(tipo)!);

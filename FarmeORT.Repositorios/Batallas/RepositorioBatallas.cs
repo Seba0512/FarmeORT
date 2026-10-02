@@ -62,4 +62,10 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             .OrderBy(b => b.Id)
             .ToList();
     }
+
+    public bool ExisteSinResolverDelJugador(int jugadorId)
+    {
+        return contexto.Batallas.Any(b => (b.Jugador1Id == jugadorId || b.Jugador2Id == jugadorId)
+            && (b.Estado == EstadoBatalla.Pendiente || b.Estado == EstadoBatalla.EnArbitraje));
+    }
 }

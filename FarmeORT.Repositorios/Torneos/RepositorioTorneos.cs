@@ -76,6 +76,12 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
         Guardar(torneo);
     }
 
+    public bool ExisteVigenteDelOrganizador(int organizadorId)
+    {
+        return contexto.Torneos.Any(t => t.OrganizadorId == organizadorId
+            && t.Estado != EstadoTorneo.Finalizado && t.Estado != EstadoTorneo.Cancelado);
+    }
+
     // Otro torneo puede ocupar el código entre la validación del servicio y el guardado (D-23).
     private void Guardar(Torneo torneo)
     {

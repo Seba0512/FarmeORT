@@ -1,6 +1,11 @@
+using FarmeORT.Dominio.Inscripciones;
+using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
+using FarmeORT.IRepositorios.Inscripciones;
+using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.IServicios.Seguridad;
 using FarmeORT.Servicios.Usuarios;
@@ -19,6 +24,9 @@ public sealed class ServicioModificacionUsuariosTests
     private static readonly DateOnly FechaActual = new(2026, 9, 30);
 
     private Mock<IRepositorioUsuarios> _repositorioUsuarios = null!;
+    private Mock<IRepositorioTorneos> _repositorioTorneos = null!;
+    private Mock<IRepositorioBatallas> _repositorioBatallas = null!;
+    private Mock<IRepositorioInscripciones> _repositorioInscripciones = null!;
     private Mock<IHasheadorContrasenas> _hasheadorContrasenas = null!;
     private Mock<TimeProvider> _reloj = null!;
     private ServicioUsuarios _servicio = null!;
@@ -27,9 +35,23 @@ public sealed class ServicioModificacionUsuariosTests
     public void Inicializar()
     {
         _repositorioUsuarios = new Mock<IRepositorioUsuarios>(MockBehavior.Strict);
+        _repositorioTorneos = new Mock<IRepositorioTorneos>(MockBehavior.Strict);
+        _repositorioBatallas = new Mock<IRepositorioBatallas>(MockBehavior.Strict);
+        _repositorioInscripciones = new Mock<IRepositorioInscripciones>(MockBehavior.Strict);
         _hasheadorContrasenas = new Mock<IHasheadorContrasenas>(MockBehavior.Strict);
         _reloj = new Mock<TimeProvider>(MockBehavior.Strict);
-        _servicio = new ServicioUsuarios(_repositorioUsuarios.Object, _hasheadorContrasenas.Object, _reloj.Object);
+
+        // Por defecto el usuario no tiene torneos, batallas ni inscripciones vigentes que impidan cambiarle el rol.
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(false);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(false);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId)).Returns([]);
+        _servicio = new ServicioUsuarios(
+            _repositorioUsuarios.Object,
+            _repositorioTorneos.Object,
+            _repositorioBatallas.Object,
+            _repositorioInscripciones.Object,
+            _hasheadorContrasenas.Object,
+            _reloj.Object);
     }
 
     [TestMethod]
@@ -171,9 +193,86 @@ public sealed class ServicioModificacionUsuariosTests
         Assert.AreEqual("La fecha de nacimiento es obligatoria.", excepcion.Message);
     }
 
-    private Usuario ConfigurarModificacionValida()
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnOrganizadorConTorneoVigente_LanzaUsuarioOrganizaTorneoVigenteSinActualizar()
     {
-        var usuario = CrearUsuarioExistente();
+        var usuario = ConfigurarModificacionValida();
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(true);
+
+        Assert.ThrowsExactly<UsuarioOrganizaTorneoVigenteException>(
+            () => _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Jugador), AdministradorActualId));
+
+        Assert.AreEqual(Rol.Organizador, usuario.Rol);
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_MismoRolConTorneoVigente_ActualizaSinControlarSusTorneos()
+    {
+        var usuario = ConfigurarModificacionValida();
+        _repositorioTorneos.Setup(r => r.ExisteVigenteDelOrganizador(UsuarioId)).Returns(true);
+
+        _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId);
+
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.Is<Usuario>(u => u == usuario && u.Rol == Rol.Organizador)), Times.Once);
+        _repositorioTorneos.Verify(r => r.ExisteVigenteDelOrganizador(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnJugadorConBatallasSinResolver_LanzaUsuarioConBatallasSinResolverSinActualizar()
+    {
+        var usuario = ConfigurarModificacionValida(Rol.Jugador);
+        _repositorioBatallas.Setup(r => r.ExisteSinResolverDelJugador(UsuarioId)).Returns(true);
+
+        Assert.ThrowsExactly<UsuarioConBatallasSinResolverException>(
+            () => _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId));
+
+        Assert.AreEqual(Rol.Jugador, usuario.Rol);
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnJugadorInscriptoEnTorneoVigente_LanzaUsuarioConInscripcionVigenteSinActualizar()
+    {
+        var usuario = ConfigurarModificacionValida(Rol.Jugador);
+        var torneo = CrearTorneo();
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId))
+            .Returns([new Inscripcion(torneo, usuario, new DateTime(2026, 9, 30, 12, 0, 0))]);
+
+        Assert.ThrowsExactly<UsuarioConInscripcionVigenteException>(
+            () => _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId));
+
+        Assert.AreEqual(Rol.Jugador, usuario.Rol);
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_CambiaElRolDeUnJugadorConInscripcionDeTorneoCancelado_ActualizaElRol()
+    {
+        var usuario = ConfigurarModificacionValida(Rol.Jugador);
+        var torneo = CrearTorneo();
+        var inscripcion = new Inscripcion(torneo, usuario, new DateTime(2026, 9, 30, 12, 0, 0));
+        torneo.Cancelar();
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelJugador(UsuarioId)).Returns([inscripcion]);
+
+        _servicio.Modificar(UsuarioId, CrearRequest(rol: Roles.Organizador), AdministradorActualId);
+
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.Is<Usuario>(u => u == usuario && u.Rol == Rol.Organizador)), Times.Once);
+    }
+
+    private static Torneo CrearTorneo()
+    {
+        var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
+        {
+            Id = 2,
+        };
+        return new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
+            FechaActual.AddDays(1), FechaActual.AddDays(30), 8, organizador, FechaActual);
+    }
+
+    private Usuario ConfigurarModificacionValida(Rol rolActual = Rol.Organizador)
+    {
+        var usuario = CrearUsuarioExistente(rolActual);
         _repositorioUsuarios.Setup(r => r.ObtenerPorId(UsuarioId)).Returns(usuario);
         _repositorioUsuarios.Setup(r => r.ObtenerPorEmail("anamaria@farmeort.com")).Returns((Usuario?)null);
         _repositorioUsuarios.Setup(r => r.ExistePorNickname("anamaria")).Returns(false);
@@ -184,9 +283,9 @@ public sealed class ServicioModificacionUsuariosTests
         return usuario;
     }
 
-    private static Usuario CrearUsuarioExistente()
+    private static Usuario CrearUsuarioExistente(Rol rol = Rol.Organizador)
     {
-        return new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), Rol.Organizador, "hash-anterior", FechaActual)
+        return new Usuario("Ana", "Pérez", "ana@farmeort.com", "anaperez", new DateOnly(2000, 1, 15), rol, "hash-anterior", FechaActual)
         {
             Id = UsuarioId,
         };
