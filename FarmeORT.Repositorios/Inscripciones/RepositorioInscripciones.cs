@@ -27,6 +27,16 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
             consulta = consulta.Where(i => i.Estado == filtro.Estado.Value);
         }
 
+        if(filtro.JugadorId != null)
+        {
+            consulta = consulta.Where(i => i.JugadorId == filtro.JugadorId.Value);
+        }
+
+        if(filtro.OrganizadorId != null)
+        {
+            consulta = consulta.Where(i => i.Torneo.OrganizadorId == filtro.OrganizadorId.Value);
+        }
+
         // Las fechas del filtro son días completos: hasta incluye todo ese día.
         if(filtro.FechaDesde != null)
         {
