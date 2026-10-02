@@ -167,6 +167,19 @@ public sealed class ServicioRondasTests
         Assert.HasCount(1, rondas);
     }
 
+    [TestMethod]
+    public void ObtenerPorNumero_RondaExistente_DevuelveSoloSusBatallas()
+    {
+        IReadOnlyList<Batalla> batallas = [CrearBatalla(10, 1, 0, 3), CrearBatalla(11, 1, 1, 2), CrearBatalla(12, 2, 0, 1)];
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns(batallas);
+
+        var ronda = _servicio.ObtenerPorNumero(TorneoId, 2, true);
+
+        Assert.AreEqual(2, ronda.Numero);
+        CollectionAssert.AreEqual(new[] { 12 }, ronda.Batallas.Select(b => b.Id).ToArray());
+    }
+
     // Torneo Abierto con los cuatro aceptados que pide el cupo; la estrategia cruza 7-10 y 8-9 y, como todos
     // tienen el mismo ELO, el sorteo elige al primero de cada par para empezar. Todo se guarda con el torneo.
     private void PrepararPrimeraRondaCompleta()
