@@ -1352,6 +1352,71 @@ uniforme, consultas sin N+1, Code First y migraciones.
 
 ---
 
+### D-43 — Restricciones para eliminar a un usuario o cambiarle el rol
+
+**Problema:** la letra (usuarios) dice que un usuario no se puede eliminar si tiene batallas sin resolver
+o si organiza un torneo que no está Finalizado ni Cancelado. `DELETE /usuarios/{id}` (D-27) no lo
+controlaba porque esas entidades no existían. Además quedaba pendiente qué pasa al cambiar el rol
+(`PUT /usuarios/{id}`) de un usuario con datos asociados: un inscripto que pasa a Organizador rompería la
+creación de batallas, que exige rol Jugador, y un organizador que pasa a Jugador dejaría un torneo
+organizado por un Jugador.
+
+**Alternativas consideradas:**
+- Errores: una excepción genérica con mensajes distintos, o una por caso con su `errorCode`.
+- Cambio de rol: sin restricciones (supuesto documentado), las mismas reglas que eliminar, o bloquearlo
+  si el usuario tiene cualquier dato asociado, incluso histórico.
+- Dónde vive "vigente": filtrar en el repositorio por estado, o pedirle a la entidad.
+
+**Decisión adoptada:**
+- `Eliminar` → 409 si organiza un torneo vigente (`USER_ORGANIZES_ACTIVE_TOURNAMENT`) o si juega una
+  batalla Pendiente o EnArbitraje (`USER_HAS_UNRESOLVED_BATTLES`). Una excepción por caso, como pidió el
+  equipo.
+- Cambiar el rol: el integrante eligió las mismas reglas que eliminar, más una inscripción Aceptada en un
+  torneo vigente → 409 `USER_HAS_ACTIVE_REGISTRATION`. Solo se controla si el rol cambia: modificar el
+  nombre o el email de un organizador con un torneo en curso sigue permitido.
+- Consultas al final de las interfaces: `IRepositorioTorneos.ExisteVigenteDelOrganizador` y
+  `IRepositorioBatallas.ExisteSinResolverDelJugador` (de B, agregar consultas estaba acordado). Son `Any`
+  en la base: no traen entidades para contestar sí o no.
+- La inscripción vigente la decide `Inscripcion.EstaVigente` (Aceptada y torneo no Finalizado ni
+  Cancelado), extraída en un REFACTOR de `ExigeSkill`, que ya tenía esa regla. El servicio reusa
+  `ListarAceptadasDelJugador`.
+- Los tres mensajes son genéricos: sirven tanto para la baja como para el cambio de rol.
+
+**Justificación:**
+- Un `errorCode` por caso le dice al cliente qué tiene que resolver antes de reintentar.
+- Las mismas reglas que eliminar cubren los dos riesgos del cambio de rol sin bloquear para siempre a
+  quien solo tiene historial (torneos finalizados, batallas resueltas).
+- `EstaVigente` evita repetir la regla de estados en el servicio (Information Expert, DRY). Para torneos y
+  batallas el filtro queda en la consulta: es una consulta de existencia, y `Torneo` es de C en esta ola.
+
+**Conceptos del curso:** contrato REST (409 con `errorCode`), Information Expert, SRP, TDD Outside-In
+(servicio con mocks y repositorios con SQLite) y refactor sin cambiar comportamiento.
+
+**Evidencia:**
+- `ServicioEliminacionUsuariosTests`: organizador de torneo vigente y jugador con batallas sin resolver.
+- `ServicioModificacionUsuariosTests`: las tres reglas al cambiar el rol, el mismo rol sin controles y una
+  inscripción de un torneo cancelado que no impide el cambio.
+- `RepositorioTorneosTests` y `RepositorioBatallasTests`: un `DataRow` por estado.
+- `FiltroExcepcionesTests`: los tres códigos.
+- La carpeta "Usuarios" de Postman, con el organizador de un torneo abierto y el jugador inscripto. Las
+  batallas todavía no se pueden crear por la API (las crean las rondas de C).
+
+**Pendiente:** la letra no impide eliminar a un jugador con una inscripción Aceptada en un torneo
+Abierto. Esa inscripción queda Aceptada con un usuario dado de baja y las rondas lo emparejarían. Falta
+decidir si se rechaza (como el cambio de rol) o si la baja cancela la inscripción.
+
+**Participación de IA:**
+- Claude Code (agente de la Persona A) propuso las tres opciones del cambio de rol con una recomendación;
+  el integrante eligió las mismas reglas que eliminar. Los nombres de las excepciones y los `errorCode`
+  los propuso Claude Code siguiendo la convención UPPER_SNAKE en inglés.
+- Claude Code detectó el riesgo de las inscripciones en la baja (Pendiente), que no está en la letra, y lo
+  dejó para que decida el equipo en lugar de implementarlo.
+- Problema que apareció: en los tests de modificación el usuario existente era Organizador y el pedido
+  cambiaba a Jugador, así que todos cambiaban el rol. Hubo que dejar valores por defecto en
+  `[TestInitialize]` para que siguieran describiendo lo mismo con los mocks estrictos.
+
+---
+
 ### D-50 — Coordinación del alcance de Persona B
 
 **Problema:** A, B y C trabajan en paralelo sobre un modelo compartido. Numerar decisiones y mantener migraciones sin coordinación puede causar conflictos y respuestas distintas para la misma autorización por torneo.
@@ -1593,13 +1658,13 @@ de repositorio con SQLite, TDD (un RED que falle por la razón correcta), FIRST 
   - ~~Postman: carpeta Torneos con los casos de alta, modificación, cancelación y consulta (anónimo y
     autenticado).~~ Resuelto en el PR de torneos. Diagrama de clases con `Torneo`, `EstadoTorneo`, `IRepositorioTorneos`,
     `FiltroTorneos` y las excepciones nuevas.
-- Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
+- ~~Restricciones de eliminación de usuarios que dependen de entidades que todavía no existen: no se puede
   eliminar si tiene batallas sin resolver o si organiza un torneo que no está Finalizado ni Cancelado.
   `DELETE /usuarios/{id}` ya existe (D-27): al implementar batallas y torneos hay que agregar estas
-  precondiciones a `ServicioUsuarios.Eliminar` (409) con sus ciclos TDD.
-- Cambiar el rol de un usuario con datos asociados (por ejemplo, un Organizador con torneos activos
+  precondiciones a `ServicioUsuarios.Eliminar` (409) con sus ciclos TDD.~~ Resuelto en D-43.
+- ~~Cambiar el rol de un usuario con datos asociados (por ejemplo, un Organizador con torneos activos
   que pasa a Jugador) no tiene restricciones porque esas entidades todavía no existen. Revisarlo junto
-  con torneos e inscripciones.
+  con torneos e inscripciones.~~ Resuelto en D-43.
 - ~~Si dos altas con el mismo email o nickname llegan al mismo tiempo, la segunda terminaba en 500.~~
   Resuelto en D-23: conflicto detectado al guardar → 409; se desasocia el alta fallida y otros errores
   de base se propagan al tratamiento seguro de 500.
