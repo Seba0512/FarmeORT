@@ -49,11 +49,14 @@ internal sealed class ServicioRondas(
         return CrearResponse(1, batallas);
     }
 
+    // Una ronda son las batallas del torneo con el mismo número; el repositorio ya las trae ordenadas (D-62).
     public IReadOnlyList<RondaResponse> Listar(int torneoId, bool esAnonimo)
     {
-        _ = torneoId;
-        _ = esAnonimo;
-        throw new NotImplementedException();
+        var batallas = repositorioBatallas.ListarDelTorneo(torneoId);
+        return batallas
+            .GroupBy(b => b.NumeroRonda)
+            .Select(ronda => CrearResponse(ronda.Key, ronda.ToList()))
+            .ToList();
     }
 
     public RondaResponse ObtenerPorNumero(int torneoId, int numero, bool esAnonimo)
