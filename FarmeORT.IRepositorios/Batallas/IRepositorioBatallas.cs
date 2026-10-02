@@ -17,6 +17,10 @@ public interface IRepositorioBatallas
     // Persona B: filtros y paginación de batallas de un torneo ya autorizado.
     IReadOnlyList<Batalla> Listar(FiltroBatallas filtro);
 
+    // Persona A: ganadas y perdidas de los jugadores del ranking en una sola consulta, opcionalmente de un torneo.
+    // Un jugador sin batallas Finalizadas no figura.
+    IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId);
+
     // Persona C: deja la batalla nueva rastreada para guardarla junto con el torneo (D-62).
     void Agregar(Batalla batalla);
 
