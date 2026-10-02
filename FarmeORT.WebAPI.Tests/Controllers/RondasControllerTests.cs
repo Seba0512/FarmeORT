@@ -44,6 +44,17 @@ public sealed class RondasControllerTests
         Assert.AreSame(ronda, resultado.Value);
     }
 
+    [TestMethod]
+    public void Generar_ContratoDeSeguridad_PermiteSoloOrganizadorYAdministrador()
+    {
+        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.Generar));
+
+        var atributo = metodo?.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true).OfType<AutorizacionAttribute>().SingleOrDefault();
+
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEquivalent(new[] { Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
+    }
+
     private void Autenticar(int usuarioId, string rol)
     {
         var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = usuarioId, Rol = rol };
