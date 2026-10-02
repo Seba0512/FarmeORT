@@ -42,6 +42,20 @@ public sealed class ServicioFallosTests
     }
 
     [TestMethod]
+    [DataRow(null)]
+    [DataRow(0)]
+    [DataRow(-1)]
+    public void Fallar_GanadorAusenteONoPositivo_RechazaSinConsultar(int? ganadorId)
+    {
+        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
+        var request = new FalloRequest { GanadorId = ganadorId, Comentario = "Victoria por abandono." };
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Fallar(12, 2, request));
+
+        _batallas.Verify(r => r.ObtenerPorId(It.IsAny<int>()), Times.Never);
+    }
+
+    [TestMethod]
     public void Fallar_OrganizadorAjeno_RechazaSinEfectos()
     {
         _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
