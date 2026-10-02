@@ -74,6 +74,15 @@ public sealed class ServicioFinalizacionesTests
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
     }
 
+    [TestMethod]
+    public void Finalizar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneo()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+
+        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() => _servicio.Finalizar(TorneoId, 5, Roles.Organizador));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.
     private void PrepararTorneoListoParaFinalizar()
     {
