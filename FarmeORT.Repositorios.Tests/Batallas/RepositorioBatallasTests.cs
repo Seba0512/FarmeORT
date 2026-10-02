@@ -4,6 +4,7 @@ using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.Repositorios.Batallas;
 using Microsoft.EntityFrameworkCore;
 
@@ -29,6 +30,50 @@ public sealed class RepositorioBatallasTests
     public void Limpiar()
     {
         _baseDeDatos.Dispose();
+    }
+
+    [TestMethod]
+    [DataRow(null, null, null, 20, 0, "14,11,12,16,15")]
+    [DataRow(EstadoBatalla.Pendiente, null, null, 20, 0, "14,12")]
+    [DataRow(EstadoBatalla.Cancelada, null, null, 20, 0, "11")]
+    [DataRow(EstadoBatalla.Finalizada, null, null, 20, 0, "15")]
+    [DataRow(EstadoBatalla.EnArbitraje, null, null, 20, 0, "16")]
+    [DataRow(null, 2, null, 20, 0, "11,12,16")]
+    [DataRow(null, null, 7, 20, 0, "14,11,12,15")]
+    [DataRow(null, null, 8, 20, 0, "14,11,12,15")]
+    [DataRow(null, null, 9, 20, 0, "16")]
+    [DataRow(EstadoBatalla.Pendiente, 2, 8, 20, 0, "12")]
+    [DataRow(null, null, null, 2, 1, "11,12")]
+    [DataRow(null, 99, null, 20, 0, "")]
+    public void Listar_FiltrosYPagina_OrdenaPorRondaEIdEnLaConsulta(
+        EstadoBatalla? estado, int? ronda, int? jugadorId, int limite, int desplazamiento, string idsEsperados)
+    {
+        var original = GuardarBatallaConHistorial();
+        var torneo = original.Torneo;
+        var jugador1 = original.Jugador1;
+        var jugador2 = original.Jugador2;
+        var primera = new Batalla(torneo, 1, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 14 };
+        var cancelada = new Batalla(torneo, 2, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 11 };
+        cancelada.Cancelar();
+        var finalizada = new Batalla(torneo, 3, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 15 };
+        finalizada.Fallar(8, "Victoria por abandono.", -16, 16);
+        var otroJugador = CrearUsuario(9, Rol.Jugador);
+        var otros = new Batalla(torneo, 2, otroJugador, CrearUsuario(10, Rol.Jugador), new SorteoInicial(otroJugador)) { Id = 16 };
+        var otroTorneo = new Torneo("COPAFUEGO", "Copa Fuego", "Otro torneo eliminatorio de batallas.",
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 4, torneo.Organizador, FechaActual) { Id = 6 };
+        var ajena = new Batalla(otroTorneo, 1, jugador1, jugador2, new SorteoInicial(jugador1)) { Id = 17 };
+        _baseDeDatos.Contexto.Batallas.AddRange(primera, cancelada, finalizada, otros, ajena);
+        _baseDeDatos.Contexto.Entry(otros).Property(b => b.Estado).CurrentValue = EstadoBatalla.EnArbitraje;
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultado = _repositorio.Listar(new FiltroBatallas(5, estado, ronda, jugadorId, limite, desplazamiento));
+
+        var esperados = idsEsperados.Length == 0 ? Array.Empty<int>() : idsEsperados.Split(',').Select(int.Parse).ToArray();
+        CollectionAssert.AreEqual(esperados, resultado.Select(b => b.Id).ToArray());
+        Assert.IsTrue(resultado.All(b => b.Jugador1.Nickname == $"usuario{b.Jugador1Id}" && b.Jugador2.Nickname == $"usuario{b.Jugador2Id}"));
+        Assert.IsTrue(resultado.All(b => b.TorneoId == 5));
+        Assert.AreEqual(0, _baseDeDatos.Contexto.ChangeTracker.Entries().Count());
     }
 
     [TestMethod]
