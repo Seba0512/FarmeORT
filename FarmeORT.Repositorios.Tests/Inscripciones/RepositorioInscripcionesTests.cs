@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.Repositorios.Inscripciones;
 using Microsoft.EntityFrameworkCore;
 
@@ -155,6 +156,36 @@ public sealed class RepositorioInscripcionesTests
         var inscripcion = aceptadas.Single();
         Assert.AreEqual(torneoId, inscripcion.TorneoId);
         Assert.AreEqual("SIXSEVEN", inscripcion.Torneo.SkillsObligatorias.Single().Codigo);
+    }
+
+    [TestMethod]
+    public void Listar_SinFiltrosConPaginacion_DevuelveLaPaginaEnOrdenDeIdConTorneoYJugador()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var primera = GuardarInscripcion(torneoId, GuardarUsuario("anaperez", Rol.Jugador));
+        var segunda = GuardarInscripcion(torneoId, GuardarUsuario("brunolopez", Rol.Jugador));
+        GuardarInscripcion(torneoId, GuardarUsuario("carlagomez", Rol.Jugador));
+
+        var inscripciones = _repositorio.Listar(Filtro(limite: 2));
+
+        CollectionAssert.AreEqual(new[] { primera, segunda }, inscripciones.Select(i => i.Id).ToArray());
+        Assert.AreEqual("COPAAURA", inscripciones[0].Torneo.Codigo);
+        Assert.AreEqual("anaperez", inscripciones[0].Jugador.Nickname);
+        Assert.AreEqual(segunda, _repositorio.Listar(Filtro(limite: 1, desplazamiento: 1)).Single().Id);
+    }
+
+    // Arma el filtro del repositorio indicando solo lo que cada test necesita; el resto no filtra.
+    private static FiltroInscripciones Filtro(
+        int? torneoId = null,
+        EstadoInscripcion? estado = null,
+        DateOnly? fechaDesde = null,
+        DateOnly? fechaHasta = null,
+        int? jugadorId = null,
+        int? organizadorId = null,
+        int limite = 20,
+        int desplazamiento = 0)
+    {
+        return new FiltroInscripciones(torneoId, estado, fechaDesde, fechaHasta, jugadorId, organizadorId, limite, desplazamiento);
     }
 
     // Guarda una inscripción directamente con el contexto, sin usar métodos del repositorio (FIRST).
