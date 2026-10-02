@@ -96,8 +96,12 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId)
     {
-        _ = torneoId;
         var finalizadas = contexto.Batallas.Where(b => b.Estado == EstadoBatalla.Finalizada && b.GanadorId != null);
+        if(torneoId != null)
+        {
+            finalizadas = finalizadas.Where(b => b.TorneoId == torneoId.Value);
+        }
+
         var ganadas = finalizadas
             .Where(b => jugadorIds.Contains(b.GanadorId!.Value))
             .GroupBy(b => b.GanadorId!.Value)
