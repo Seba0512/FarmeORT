@@ -20,6 +20,11 @@ internal sealed class ServicioFallos(
             throw new BatallaNoEncontradaException();
         }
 
+        if(batalla.Torneo.OrganizadorId != organizadorId)
+        {
+            throw new NoEsOrganizadorDelTorneoException();
+        }
+
         _ = repositorioInscripciones;
         _ = calculadorElo;
         throw new NotImplementedException();
