@@ -51,6 +51,19 @@ public sealed class RegistroWebApiTests
         Assert.IsTrue(opciones.SuppressMapClientErrors);
     }
 
+    // Un tipo mal formado en la query (limit=abc) sigue siendo 400, pero el detalle lo ve el usuario: en español.
+    [TestMethod]
+    public void AgregarControllersConFiltros_ValorQueNoSeConvierte_LoExplicaEnEspanol()
+    {
+        var servicios = new ServiceCollection().AddLogging();
+
+        servicios.AgregarControllersConFiltros();
+
+        using var proveedor = servicios.BuildServiceProvider();
+        var mensajes = proveedor.GetRequiredService<IOptions<MvcOptions>>().Value.ModelBindingMessageProvider;
+        Assert.AreEqual("El valor 'abc' no es válido.", mensajes.AttemptedValueIsInvalidAccessor("abc", "Limit"));
+    }
+
     // Una excepción en un filtro de autenticación no pasa por FiltroExcepciones: no puede llegar al cliente.
     [TestMethod]
     public async Task UsarManejoDeErrores_ExcepcionFueraDelController_Devuelve500SinDetallesInternos()
