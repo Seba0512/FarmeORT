@@ -79,6 +79,26 @@ public sealed class RegistroWebApiTests
         Assert.AreEqual(mensaje, error.UserMessage);
     }
 
+    [TestMethod]
+    public async Task UsarManejoDeErrores_ErrorSinCuerpoNoPrevisto_ConservaElEstadoConUnErrorGenerico()
+    {
+        await using var aplicacion = WebApplication.CreateBuilder().Build();
+        aplicacion.UsarManejoDeErrores();
+        aplicacion.Run(peticion =>
+        {
+            peticion.Response.StatusCode = StatusCodes.Status406NotAcceptable;
+            return Task.CompletedTask;
+        });
+        var contexto = CrearContexto(aplicacion);
+
+        await ((IApplicationBuilder)aplicacion).Build()(contexto);
+
+        Assert.AreEqual(StatusCodes.Status406NotAcceptable, contexto.Response.StatusCode);
+        var error = LeerError(contexto);
+        Assert.AreEqual("REQUEST_NOT_PROCESSED", error.ErrorCode);
+        Assert.AreEqual("No se pudo procesar la solicitud.", error.UserMessage);
+    }
+
     private static DefaultHttpContext CrearContexto(WebApplication aplicacion)
     {
         var contexto = new DefaultHttpContext { RequestServices = aplicacion.Services };
