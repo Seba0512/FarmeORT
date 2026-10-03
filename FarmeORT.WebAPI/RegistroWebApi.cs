@@ -28,7 +28,8 @@ internal static class RegistroWebApi
     private static Task ResponderErrorSinCuerpo(StatusCodeContext contexto)
     {
         var respuesta = contexto.HttpContext.Response;
-        return respuesta.WriteAsJsonAsync(ErroresGenerales.SinCuerpo[respuesta.StatusCode]);
+        var error = ErroresGenerales.SinCuerpo.GetValueOrDefault(respuesta.StatusCode, ErroresGenerales.SinCuerpoNoPrevisto);
+        return respuesta.WriteAsJsonAsync(error);
     }
 
     private static Task ResponderErrorInesperado(HttpContext contexto)

@@ -9,6 +9,10 @@ internal static class ErroresGenerales
 
     public const string MensajeInesperado = "Ocurrió un error inesperado.";
 
+    // Caso base para un error sin cuerpo que no está en la tabla.
+    public static readonly ErrorResponse SinCuerpoNoPrevisto =
+        new() { ErrorCode = "REQUEST_NOT_PROCESSED", UserMessage = "No se pudo procesar la solicitud." };
+
     // Errores que el enrutamiento y MVC responden sin cuerpo.
     public static readonly IReadOnlyDictionary<int, ErrorResponse> SinCuerpo = new Dictionary<int, ErrorResponse>
     {
