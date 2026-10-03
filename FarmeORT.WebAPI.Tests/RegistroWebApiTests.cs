@@ -55,6 +55,30 @@ public sealed class RegistroWebApiTests
         Assert.AreEqual("Ocurrió un error inesperado.", error.UserMessage);
     }
 
+    // El enrutamiento y MVC responden algunos errores sin cuerpo (ruta inexistente, método no admitido, sin JSON).
+    [TestMethod]
+    [DataRow(StatusCodes.Status404NotFound, "NOT_FOUND", "No existe el recurso solicitado.")]
+    [DataRow(StatusCodes.Status405MethodNotAllowed, "METHOD_NOT_ALLOWED", "El recurso no admite esa operación.")]
+    [DataRow(StatusCodes.Status415UnsupportedMediaType, "UNSUPPORTED_MEDIA_TYPE", "El cuerpo tiene que enviarse en formato JSON.")]
+    public async Task UsarManejoDeErrores_ErrorSinCuerpo_LeAgregaElErrorDelEquipo(int status, string codigo, string mensaje)
+    {
+        await using var aplicacion = WebApplication.CreateBuilder().Build();
+        aplicacion.UsarManejoDeErrores();
+        aplicacion.Run(peticion =>
+        {
+            peticion.Response.StatusCode = status;
+            return Task.CompletedTask;
+        });
+        var contexto = CrearContexto(aplicacion);
+
+        await ((IApplicationBuilder)aplicacion).Build()(contexto);
+
+        Assert.AreEqual(status, contexto.Response.StatusCode);
+        var error = LeerError(contexto);
+        Assert.AreEqual(codigo, error.ErrorCode);
+        Assert.AreEqual(mensaje, error.UserMessage);
+    }
+
     private static DefaultHttpContext CrearContexto(WebApplication aplicacion)
     {
         var contexto = new DefaultHttpContext { RequestServices = aplicacion.Services };
@@ -64,6 +88,7 @@ public sealed class RegistroWebApiTests
 
     private static ErrorResponse LeerError(HttpContext contexto)
     {
+        Assert.IsGreaterThan(0L, contexto.Response.Body.Length, "La respuesta de error no tiene cuerpo.");
         contexto.Response.Body.Position = 0;
         var error = JsonSerializer.Deserialize<ErrorResponse>(contexto.Response.Body, new JsonSerializerOptions(JsonSerializerDefaults.Web));
         Assert.IsNotNull(error);
