@@ -11,6 +11,7 @@ namespace FarmeORT.WebAPI.Tests.Validaciones;
 [TestClass]
 public sealed class RespuestaValidacionTests
 {
+    // Los campos van en camelCase, como en el JSON del contrato.
     [TestMethod]
     public void Crear_ModeloInvalido_Devuelve400ConErrorValidationError()
     {
@@ -27,6 +28,6 @@ public sealed class RespuestaValidacionTests
         Assert.AreEqual("VALIDATION_ERROR", error.ErrorCode);
         Assert.AreEqual("Los datos enviados no son válidos.", error.UserMessage);
         Assert.IsNotNull(error.Detalles);
-        Assert.Contains("Email: El email no tiene un formato válido.", error.Detalles);
+        Assert.Contains("email: El email no tiene un formato válido.", error.Detalles);
     }
 }
