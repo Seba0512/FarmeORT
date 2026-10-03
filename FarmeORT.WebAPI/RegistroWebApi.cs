@@ -1,6 +1,7 @@
 using FarmeORT.DTOs.Errores;
 using FarmeORT.WebAPI.Filtros;
 using FarmeORT.WebAPI.Validaciones;
+using Microsoft.AspNetCore.Diagnostics;
 
 namespace FarmeORT.WebAPI;
 
@@ -19,7 +20,15 @@ internal static class RegistroWebApi
     public static IApplicationBuilder UsarManejoDeErrores(this IApplicationBuilder aplicacion)
     {
         aplicacion.UseExceptionHandler(errores => errores.Run(ResponderErrorInesperado));
+        aplicacion.UseStatusCodePages(ResponderErrorSinCuerpo);
         return aplicacion;
+    }
+
+    // Una ruta inexistente o un método no admitido llegan sin cuerpo: se les agrega el error de la API.
+    private static Task ResponderErrorSinCuerpo(StatusCodeContext contexto)
+    {
+        var respuesta = contexto.HttpContext.Response;
+        return respuesta.WriteAsJsonAsync(ErroresGenerales.SinCuerpo[respuesta.StatusCode]);
     }
 
     private static Task ResponderErrorInesperado(HttpContext contexto)
