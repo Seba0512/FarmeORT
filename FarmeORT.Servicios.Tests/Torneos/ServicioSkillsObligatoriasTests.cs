@@ -187,6 +187,22 @@ public sealed class ServicioSkillsObligatoriasTests
         Assert.IsEmpty(_torneo.SkillsObligatorias);
     }
 
+    // Letra 2.2: la skill inactiva tiene su propio rechazo, aunque además haya inscriptos que no la tienen.
+    [TestMethod]
+    public void Asociar_SkillInactivaConInscriptosSinLaSkill_LanzaSkillInactivaSinGuardar()
+    {
+        _skill.Desactivar();
+        var sinLaSkill = CrearJugador(8, "brunolopez");
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioSkills.Setup(r => r.ObtenerPorId(SkillId)).Returns(_skill);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId))
+            .Returns([new Inscripcion(_torneo, sinLaSkill, new DateTime(2026, 10, 1))]);
+
+        Assert.ThrowsExactly<SkillInactivaException>(
+            () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     [TestMethod]
     public void Asociar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneoSinGuardar()
     {
