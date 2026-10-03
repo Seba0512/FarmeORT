@@ -40,6 +40,8 @@ internal sealed class ServicioSkillsObligatorias(
             throw new SkillNoEncontradaException();
         }
 
+        // Primero las reglas del torneo y de la skill: una skill inactiva se rechaza con su propio mensaje (letra 2.2).
+        torneo.ValidarSkillObligatoriaNueva(skill);
         ValidarQueLaTenganLosInscriptos(torneoId, skill);
         torneo.AsociarSkillObligatoria(skill);
         repositorioTorneos.Actualizar(torneo);
