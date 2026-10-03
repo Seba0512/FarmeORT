@@ -1,0 +1,63 @@
+@startuml
+hide circle
+title Finalizar torneo: clases que participan (D-64)
+
+package FarmeORT.WebAPI {
+  class FinalizacionesController {
+    + Finalizar(torneoId : int) : IActionResult
+  }
+}
+
+package FarmeORT.IServicios {
+  interface IServicioFinalizaciones {
+    + Finalizar(torneoId : int, usuarioId : int, rol : string) : FinalizacionResponse
+  }
+}
+
+package FarmeORT.Servicios {
+  class ServicioFinalizaciones
+  class PermisosDelTorneo <<static>> {
+    + ValidarOrganizadorOAdministrador(torneo : Torneo, usuarioId : int, rol : string) : void
+  }
+}
+
+package FarmeORT.Dominio {
+  class Torneo {
+    + Estado : EstadoTorneo
+    + CampeonId : int?
+    + Campeon : Usuario?
+    + Finalizar(campeon : Usuario) : void
+  }
+  class Usuario
+}
+
+package FarmeORT.IRepositorios {
+  interface IRepositorioTorneos {
+    + ObtenerPorId(id : int) : Torneo
+    + Actualizar(torneo : Torneo) : void
+  }
+  interface IRepositorioBatallas {
+    + ListarSinResolverDelTorneo(torneoId : int) : IReadOnlyList<Batalla>
+  }
+  interface IRepositorioInscripciones {
+    + ListarAceptadasDelTorneo(torneoId : int) : IReadOnlyList<Inscripcion>
+  }
+}
+
+package FarmeORT.DTOs {
+  class FinalizacionResponse {
+    + TorneoId : int
+    + Estado : string
+    + Campeon : JugadorBatallaResponse
+  }
+}
+
+FinalizacionesController ..> IServicioFinalizaciones : <<use>>
+IServicioFinalizaciones <|.. ServicioFinalizaciones
+ServicioFinalizaciones ..> PermisosDelTorneo : <<use>>
+ServicioFinalizaciones ..> IRepositorioTorneos : <<use>>
+ServicioFinalizaciones ..> IRepositorioBatallas : <<use>>
+ServicioFinalizaciones ..> IRepositorioInscripciones : <<use>>
+ServicioFinalizaciones ..> FinalizacionResponse : <<create>>
+Torneo "*" --> "0..1" Usuario : campeón
+@enduml

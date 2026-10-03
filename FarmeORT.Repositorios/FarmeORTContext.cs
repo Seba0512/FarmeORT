@@ -157,6 +157,9 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
         // Persona B: fallo opcional de la batalla.
         ConfigurarFallos(modelBuilder);
+
+        // Persona C: campeón del torneo finalizado (D-64).
+        ConfigurarFinalizacion(modelBuilder);
     }
 
     // Muchos a muchos sin datos propios: una skill puede ser obligatoria en varios torneos (D-40).
@@ -250,5 +253,15 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
                 .HasForeignKey(l => l.SkillId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+    }
+
+    // Un torneo tiene a lo sumo un campeón (0..1). Restrict: un usuario con historial no se borra, se da de baja lógica (D-27).
+    private static void ConfigurarFinalizacion(ModelBuilder modelBuilder)
+    {
+        modelBuilder.Entity<Torneo>()
+            .HasOne(t => t.Campeon)
+            .WithMany()
+            .HasForeignKey(t => t.CampeonId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
 }

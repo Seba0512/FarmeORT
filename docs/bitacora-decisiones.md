@@ -2070,6 +2070,84 @@ asignado; el integrante eligió sumar al Administrador.
 
 ---
 
+### D-64 — Finalizar el torneo: precondiciones en el servicio, campeón 0..1 y un solo guardado
+
+**Problema:** la letra pide finalizar el torneo cuando está En curso, no tiene batallas sin resolver y queda un
+solo jugador sin eliminar, que pasa a ser el campeón. Sin esta operación ningún torneo llegaba a Finalizado: el
+campeón seguía con su inscripción vigente para siempre, lo que le bloqueaba quitar skills obligatorias del
+repertorio y bloqueaba la baja del jugador y del organizador (D-43). Hay que decidir el contrato, dónde viven las
+reglas y cómo se guarda el campeón.
+
+**Alternativas consideradas:**
+- Contrato: `POST /torneos/{id}/finalizaciones` con 200 y la representación, como la cancelación, o 201 con
+  `Location`, como los fallos. No hay un recurso "finalización" que consultar después.
+- Reglas: todas en `Torneo.Finalizar(jugadoresSinEliminar, batallasSinResolver)`, o el estado en el dominio y las
+  que dependen de otras entidades en el servicio, como en las rondas (D-62).
+- Campeón: una propiedad del torneo (`CampeonId` + `Campeon`, 0..1) o deducirlo de la final.
+
+**Decisión adoptada:**
+- **Contrato** (`docs/api/finalizacion.md`): 200 con `FinalizacionResponse`, que tiene `torneoId`, `estado` y
+  `campeon`, este último en el mismo `JugadorBatallaResponse` de las batallas. Controller propio
+  (`FinalizacionesController`), con la misma autorización que las rondas (D-63).
+- **Reglas, en este orden:**
+  1. El torneo existe (404).
+  2. Quien llama es el organizador asignado o un Administrador (403).
+  3. El torneo está En curso: 409 `TOURNAMENT_NOT_IN_PROGRESS`.
+  4. No hay batallas sin resolver: 409 `TOURNAMENT_HAS_UNRESOLVED_BATTLES`.
+  5. Queda exactamente un jugador con inscripción Aceptada: 409 `TOURNAMENT_WITHOUT_CHAMPION`.
+  - El estado lo controla `Torneo.Finalizar(campeon)` (Information Expert), y el servicio lo controla también
+    antes de consultar batallas e inscripciones, así un torneo Cancelado responde que no está en curso. Las
+    batallas y las inscripciones las controla el servicio con consultas que ya existían
+    (`ListarSinResolverDelTorneo` y `ListarAceptadasDelTorneo`), sin agregar métodos a los repositorios de otros.
+- **Campeón:** `Torneo.CampeonId` y `Campeon` (0..1), con FK a `Usuarios` y `Restrict`: un usuario con historial no
+  se borra, se da de baja lógica (D-27). Se configura en un método propio del contexto
+  (`ConfigurarFinalizacion`) y se agrega con la migración de este PR.
+- **Guardado:** un solo `SaveChanges` con `IRepositorioTorneos.Actualizar`.
+- La inscripción del campeón no cambia: con el torneo Finalizado deja de estar vigente, así que ya no le exige las
+  obligatorias ni le bloquea la baja.
+- Se extrajo `PermisosDelTorneo.ValidarOrganizadorOAdministrador`, que comparten las rondas y la finalización.
+
+**Justificación:**
+- La misma forma que la cancelación hace que las dos operaciones sobre el estado del torneo se usen igual desde el
+  cliente.
+- Guardar el campeón deja explícita la relación Torneo → Campeón 0..1 del diagrama de clases. Además, el torneo
+  responde quién ganó sin recorrer las batallas.
+- Reusar las consultas existentes evita tocar interfaces de otras personas.
+
+**Conceptos del curso:** Information Expert, REST (sub-recurso sustantivado), status 403, 404 y 409, persistencia
+con FK opcional y `Restrict`, TDD Outside-In.
+
+**Evidencia:**
+- `FinalizacionesController` y sus tests (200 y la seguridad por reflexión).
+- `ServicioFinalizaciones` y sus tests: campeón, estado y un solo guardado, torneo inexistente, organizador no
+  asignado, administrador, batallas sin resolver y cantidad de jugadores distinta de uno.
+- `Torneo.Finalizar` y `TorneoFinalizacionTests`, que incluyen el pendiente de que un torneo Finalizado no se
+  cancela.
+- `InscripcionFinalizacionTests`: `ExigeSkill` con el torneo En curso y Finalizado (pendiente de D-41).
+- `RepositorioTorneosFinalizacionTests`: el campeón se guarda y la FK es `Restrict`.
+- `FiltroExcepcionesFinalizacionTests`, `docs/uml/finalizar-torneo.puml` y `finalizacion-clases.puml`, y la carpeta
+  Finalización de Postman: 401, 403, 404, cada 409, finalizar dos veces, no cancelar ni generar rondas en un
+  torneo Finalizado.
+
+**Supuestos:**
+- Como en las rondas, también puede finalizar un Administrador (D-63).
+- `TOURNAMENT_NOT_IN_PROGRESS` es un código nuevo: el torneo Abierto, Finalizado o Cancelado no se puede
+  finalizar.
+
+**Participación de IA:**
+- Claude Code propuso el contrato y los códigos de error. Recomendó separar el servicio de la finalización del de
+  torneos de la persona A y reusar sus consultas; el integrante aprobó las etapas en bloque.
+- Problemas que aparecieron:
+  - Un archivo de tests generado desde la consola quedó en Windows-1252 en vez de UTF-8. Compilaba igual, pero se
+    corrigió en un commit aparte.
+  - Por convención, EF mapeaba el campeón con `ClientSetNull`. El test del repositorio lo detectó y la relación se
+    configuró explícitamente con `Restrict`.
+  - La colección completa de Postman, corrida contra la API real (SQL Server LocalDB), encontró que un torneo
+    Cancelado respondía `TOURNAMENT_WITHOUT_CHAMPION`, porque el estado se controlaba al final. Se corrigió como
+    bug: RED que lo reproduce y GREEN que controla el estado primero.
+
+---
+
 ### D-70 — Versionar el torneo para confirmar inscripciones y rondas concurrentes
 
 **Problema:** la auditoría del 02/10/2026 reprodujo dos inscripciones Aceptadas del mismo jugador,
@@ -2181,9 +2259,9 @@ El integrante conserva la revisión humana, el push y la publicación del PR; UM
     ~~Falta el cuadro (rondas y batallas), que agrega la Persona C.~~ Resuelto en D-62.
   - ~~Skills obligatorias (D-40): rechazar asociar una skill si hay inscripciones Aceptadas de jugadores
     que no la tienen declarada, identificándolos (409 `PLAYERS_MISSING_MANDATORY_SKILL`).~~ Resuelto en D-41.
-  - Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya
+  - ~~Agregar el test de que no se cancela un torneo Finalizado cuando exista finalizar torneo. La regla ya
     está en `Torneo.Cancelar`, pero esa rama todavía no se puede cubrir. Lo mismo con
-    `Inscripcion.ExigeSkill` para un torneo Finalizado (D-41).
+    `Inscripcion.ExigeSkill` para un torneo Finalizado (D-41).~~ Resuelto en D-64.
   - ~~Postman: carpeta Torneos con los casos de alta, modificación, cancelación y consulta (anónimo y
     autenticado).~~ Resuelto en el PR de torneos. Diagrama de clases con `Torneo`, `EstadoTorneo`, `IRepositorioTorneos`,
     `FiltroTorneos` y las excepciones nuevas.

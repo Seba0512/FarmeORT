@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Elo;
 using FarmeORT.Dominio.Rondas;
 using FarmeORT.IServicios.Batallas;
+using FarmeORT.IServicios.Finalizaciones;
 using FarmeORT.IServicios.Inscripciones;
 using FarmeORT.IServicios.Ranking;
 using FarmeORT.IServicios.Repertorio;
@@ -12,6 +13,7 @@ using FarmeORT.IServicios.Skills;
 using FarmeORT.IServicios.Torneos;
 using FarmeORT.IServicios.Usuarios;
 using FarmeORT.Servicios.Batallas;
+using FarmeORT.Servicios.Finalizaciones;
 using FarmeORT.Servicios.Inscripciones;
 using FarmeORT.Servicios.Ranking;
 using FarmeORT.Servicios.Repertorio;
@@ -56,6 +58,9 @@ public static class RegistroServicios
         // Persona C: rondas y su estrategia de emparejamiento (D-62).
         servicios.AddScoped<IEstrategiaEmparejamiento, EmparejamientoPorElo>();
         servicios.AddScoped<IServicioRondas, ServicioRondas>();
+
+        // Persona C: finalización del torneo (D-64).
+        servicios.AddScoped<IServicioFinalizaciones, ServicioFinalizaciones>();
         return servicios;
     }
 }

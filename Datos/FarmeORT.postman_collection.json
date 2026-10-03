@@ -19771,6 +19771,53 @@
       "name": "Rondas siguientes",
       "item": [
         {
+          "name": "Finalización - con dos jugadores sin eliminar no hay campeón → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode TOURNAMENT_WITHOUT_CHAMPION\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_WITHOUT_CHAMPION\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Rondas siguientes - con la primera resuelta se genera la final → 201",
           "request": {
             "method": "POST",
@@ -19917,6 +19964,53 @@
           ]
         },
         {
+          "name": "Finalización - con la final sin resolver no se finaliza → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode TOURNAMENT_HAS_UNRESOLVED_BATTLES\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_HAS_UNRESOLVED_BATTLES\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Rondas siguientes - el organizador falla la final → 201",
           "request": {
             "method": "POST",
@@ -20018,6 +20112,483 @@
                 "exec": [
                   "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
                   "pm.test(\"errorCode TOURNAMENT_READY_TO_FINISH\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_READY_TO_FINISH\"));",
+                  "pm.execution.setNextRequest(\"Finalización - finalizar sin token → 401\");"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Finalización",
+      "item": [
+        {
+          "name": "Finalización - finalizar sin token → 401",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"errorCode INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - un jugador no puede finalizar → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{rondasTokenActual}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.collectionVariables.set(\"rondasTokenActual\", JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"))[0]);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"errorCode FORBIDDEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"FORBIDDEN\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - organizador que no es el asignado → 403",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOtroOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"errorCode NOT_TOURNAMENT_ORGANIZER\", () => pm.expect(pm.response.json().errorCode).to.eql(\"NOT_TOURNAMENT_ORGANIZER\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - torneo inexistente → 404",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/999999/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "999999",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"errorCode TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - un torneo cancelado no está en curso → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{rondasTorneoCanceladoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{rondasTorneoCanceladoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode TOURNAMENT_NOT_IN_PROGRESS\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_IN_PROGRESS\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - el organizador finaliza el torneo → 200",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const finalizacion = pm.response.json();",
+                  "pm.test(\"Torneo Finalizado con el ganador de la final como campeón\", () => {",
+                  "    pm.expect(finalizacion.torneoId).to.eql(Number(pm.collectionVariables.get(\"bTorneoId\")));",
+                  "    pm.expect(finalizacion.estado).to.eql(\"Finalizado\");",
+                  "    pm.expect(finalizacion.campeon.id).to.eql(Number(pm.collectionVariables.get(\"rondasFinalGanadorId\")));",
+                  "    pm.expect(finalizacion.campeon.nickname).to.be.a(\"string\");",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - no se finaliza dos veces → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/finalizaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "finalizaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode TOURNAMENT_NOT_IN_PROGRESS\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_IN_PROGRESS\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - un torneo finalizado no se cancela → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/cancelaciones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "cancelaciones"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{adminToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode TOURNAMENT_NOT_CANCELLABLE\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_CANCELLABLE\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - un torneo finalizado no genera rondas → 409",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}/rondas",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}",
+                "rondas"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{bOrganizadorToken}}",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                  "pm.test(\"errorCode TOURNAMENT_NOT_OPEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_OPEN\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Finalización - el detalle muestra el torneo finalizado con su cuadro → 200",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/{{bTorneoId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "{{bTorneoId}}"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                  "const torneo = pm.response.json();",
+                  "pm.test(\"Finalizado con sus dos rondas\", () => { pm.expect(torneo.estado).to.eql(\"Finalizado\"); pm.expect(torneo.rondas.length).to.eql(2); });",
                   "pm.execution.setNextRequest(\"Ranking - anónimo con la cantidad por defecto → 200\");"
                 ]
               }

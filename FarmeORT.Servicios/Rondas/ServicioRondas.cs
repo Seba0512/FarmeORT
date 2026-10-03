@@ -2,12 +2,12 @@ using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Rondas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.DTOs.Rondas;
-using FarmeORT.DTOs.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Batallas;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.IRepositorios.Torneos;
 using FarmeORT.IServicios.Rondas;
+using FarmeORT.Servicios.Torneos;
 
 namespace FarmeORT.Servicios.Rondas;
 
@@ -59,16 +59,10 @@ internal sealed class ServicioRondas(
         return torneo;
     }
 
-    // El filtro solo sabe el rol: si un Organizador es el asignado a este torneo lo decide el servicio (D-40).
-    // Un Administrador puede generar rondas aunque no lo sea (D-63).
     private Torneo ObtenerTorneoDelOrganizador(int torneoId, int usuarioId, string rol)
     {
         var torneo = ObtenerTorneoExistente(torneoId);
-        if(rol != Roles.Administrador && torneo.OrganizadorId != usuarioId)
-        {
-            throw new NoEsOrganizadorDelTorneoException();
-        }
-
+        PermisosDelTorneo.ValidarOrganizadorOAdministrador(torneo, usuarioId, rol);
         return torneo;
     }
 
