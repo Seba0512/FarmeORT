@@ -13,6 +13,12 @@ namespace FarmeORT.WebAPI.Tests.Filtros;
 public sealed class FiltroExcepcionesRondasTests
 {
     [TestMethod]
+    public void OnException_TorneoModificado_Devuelve409ConTOURNAMENT_CHANGED()
+    {
+        VerificarMapa(new TorneoModificadoException(), 409, "TOURNAMENT_CHANGED", "El torneo cambió mientras se procesaba el pedido. Volvé a consultarlo.");
+    }
+
+    [TestMethod]
     public void OnException_TorneoIncompleto_Devuelve409ConTOURNAMENT_NOT_FULL()
     {
         VerificarMapa(new TorneoIncompletoException(), 409, "TOURNAMENT_NOT_FULL", "El torneo todavía no completó su cupo de inscripciones aceptadas.");

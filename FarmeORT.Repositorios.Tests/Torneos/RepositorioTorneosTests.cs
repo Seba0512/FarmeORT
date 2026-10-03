@@ -277,6 +277,29 @@ public sealed class RepositorioTorneosTests
     }
 
     [TestMethod]
+    public void Actualizar_InscripcionConfirmadaMientrasSeCancela_LanzaTorneoModificadoSinGuardarParciales()
+    {
+        var torneo = GuardarTorneoConBatallaEInscripcion();
+        var batalla = _baseDeDatos.Contexto.Batallas.Single(b => b.TorneoId == torneo.Id);
+        var inscripcion = _baseDeDatos.Contexto.Inscripciones.Single(i => i.TorneoId == torneo.Id);
+        using var otro = _baseDeDatos.CrearContexto();
+        var torneoActual = otro.Torneos.Single(t => t.Id == torneo.Id);
+        var jugador = otro.Usuarios.Single(u => u.Id == batalla.Jugador2Id);
+        otro.Inscripciones.Add(new Inscripcion(torneoActual, jugador, new DateTime(2026, 10, 1, 13, 0, 0)));
+        otro.SaveChanges();
+        torneo.Cancelar();
+        batalla.Cancelar();
+        inscripcion.Cancelar();
+
+        Assert.ThrowsExactly<TorneoModificadoException>(() => _repositorio.Actualizar(torneo));
+
+        Assert.AreEqual(EstadoTorneo.Abierto, _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Estado);
+        Assert.AreEqual(EstadoBatalla.Pendiente, _baseDeDatos.Contexto.Batallas.AsNoTracking().Single(b => b.Id == batalla.Id).Estado);
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneo.Id && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.IsEmpty(_baseDeDatos.Contexto.ChangeTracker.Entries().ToList());
+    }
+
+    [TestMethod]
     public void Actualizar_BatallaModificadaPorOtroPedido_LanzaBatallaModificadaSinGuardarNingunCambio()
     {
         var torneo = GuardarTorneoConBatallaEInscripcion();

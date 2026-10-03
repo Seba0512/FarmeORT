@@ -11744,6 +11744,67 @@
               ]
             },
             {
+              "name": "Inscripciones - fechaHasta máxima válida incluye el día completo → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones?torneoId={{torneoId}}&estado=Aceptada&fechaHasta=9999-12-31",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{torneoId}}"
+                    },
+                    {
+                      "key": "estado",
+                      "value": "Aceptada"
+                    },
+                    {
+                      "key": "fechaHasta",
+                      "value": "9999-12-31"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "description": "Regresión de DateOnly.MaxValue: conserva torneo, estado y visibilidad del jugador. No rechaza una fecha válida ni calcula un día posterior a 9999-12-31."
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "pm.test(\"Listado de inscripciones\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));",
+                      "pm.test(\"Conserva el filtro de torneo\", () => pm.response.json().forEach(i => pm.expect(i.torneoId).to.eql(Number(pm.collectionVariables.get(\"torneoId\")))));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
               "name": "Inscripciones - organizador lista las de su torneo → 200",
               "request": {
                 "method": "GET",
@@ -12072,7 +12133,8 @@
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "Si dos pedidos de un jugador se preparan sobre la misma versión, solo uno confirma; el otro responde 409 ALREADY_REGISTERED. Este caso del Runner es secuencial y verifica el contrato; la evidencia concurrente usa servicios reales con contextos independientes y barreras antes de guardar. Otros cambios simultáneos pueden devolver 409 TOURNAMENT_CHANGED: volver a consultar antes de reenviar."
               },
               "event": [
                 {
@@ -13655,7 +13717,8 @@
                       "language": "json"
                     }
                   }
-                }
+                },
+                "description": "Si dos jugadores compiten por la última plaza, solo uno confirma; el otro responde 409 TOURNAMENT_FULL. Este caso del Runner es secuencial y verifica el contrato; la evidencia concurrente usa servicios reales con contextos independientes y barreras antes de guardar. Otros cambios simultáneos pueden devolver 409 TOURNAMENT_CHANGED: volver a consultar antes de reenviar."
               },
               "event": [
                 {
@@ -15778,7 +15841,8 @@
                       "type": "string"
                     }
                   ]
-                }
+                },
+                "description": "Dos pedidos sobre la misma versión no duplican la ronda, incluida una posterior. El perdedor responde 409 ROUND_NOT_RESOLVED mientras queden batallas pendientes. Este caso del Runner es secuencial y verifica el contrato; la evidencia concurrente usa servicios reales con contextos independientes y barreras antes de guardar. Otros cambios simultáneos pueden devolver 409 TOURNAMENT_CHANGED: volver a consultar antes de reenviar."
               },
               "event": [
                 {
@@ -19883,7 +19947,8 @@
                   "type": "string"
                 }
               ]
-            }
+            },
+            "description": "Dos pedidos sobre la misma versión no duplican la ronda, incluida una posterior. El perdedor responde 409 ROUND_NOT_RESOLVED mientras queden batallas pendientes. Este caso del Runner es secuencial y verifica el contrato; la evidencia concurrente usa servicios reales con contextos independientes y barreras antes de guardar. Otros cambios simultáneos pueden devolver 409 TOURNAMENT_CHANGED: volver a consultar antes de reenviar."
           },
           "event": [
             {

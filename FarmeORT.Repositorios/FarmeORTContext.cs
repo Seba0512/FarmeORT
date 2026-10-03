@@ -57,6 +57,27 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
     public DbSet<Lanzamiento> Lanzamientos => Set<Lanzamiento>();
 
+    public override int SaveChanges(bool acceptAllChangesOnSuccess)
+    {
+        ChangeTracker.DetectChanges();
+        foreach(var inscripcion in ChangeTracker.Entries<Inscripcion>().Where(e => e.State == EntityState.Added).ToList())
+        {
+            var torneo = Entry(inscripcion.Entity.Torneo);
+            if(torneo.State != EntityState.Added)
+            {
+                torneo.Property<Guid>("Version").IsModified = true;
+            }
+        }
+
+        // La versión cambia en la misma transacción que las inscripciones o los cambios del torneo.
+        foreach(var torneo in ChangeTracker.Entries<Torneo>().Where(e => e.State == EntityState.Modified))
+        {
+            torneo.Property<Guid>("Version").CurrentValue = Guid.NewGuid();
+        }
+
+        return base.SaveChanges(acceptAllChangesOnSuccess);
+    }
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Usuario>(usuario =>
@@ -114,6 +135,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         modelBuilder.Entity<Torneo>(torneo =>
         {
             torneo.HasKey(t => t.Id);
+            torneo.Property<Guid>("Version").IsConcurrencyToken();
             torneo.Property(t => t.Codigo).HasMaxLength(LargoMaximoCodigoTorneo).IsRequired();
             torneo.HasIndex(t => t.Codigo).IsUnique();
             torneo.Property(t => t.Nombre).HasMaxLength(LargoMaximoNombreTorneo).IsRequired();

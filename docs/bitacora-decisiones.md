@@ -2148,6 +2148,74 @@ con FK opcional y `Restrict`, TDD Outside-In.
 
 ---
 
+### D-70 — Versionar el torneo para confirmar inscripciones y rondas concurrentes
+
+**Problema:** la auditoría del 02/10/2026 reprodujo dos inscripciones Aceptadas del mismo jugador,
+cinco Aceptadas para cupo cuatro y dos generaciones de la misma ronda. Las comprobaciones de D-41
+y el guardado atómico de D-62 no impedían que dos contextos leyeran las mismas precondiciones.
+D-62 aceptó inicialmente ese riesgo; esta decisión registra su corrección, sin reemplazar esa historia.
+
+**Alternativas consideradas:** un lock en el servicio Scoped (no coordina requests ni instancias);
+unicidad absoluta por jugador y torneo (impide reinscribirse conservando Canceladas/Eliminadas y no
+protege cupo); índice único filtrado (protege duplicados pero no cupo ni rondas); transacción serializable
+con relectura de todas las reglas (requiere ampliar los contratos de coordinación); concurrencia optimista
+de EF Core sobre una versión compartida del torneo.
+
+**Decisión adoptada:** una propiedad shadow `Version` de tipo GUID, token de concurrencia, en Torneos.
+`FarmeORTContext.SaveChanges` renueva la versión de los torneos modificados y hace participar al torneo
+de una inscripción nueva. El UPDATE condicionado por la versión leída y la inserción se confirman en
+la misma transacción. `GuardarRonda` actualiza el torneo también en rondas posteriores, aunque su estado
+siga EnCurso. Las reglas siguen en servicios y dominio; los repositorios diagnostican un guardado
+rechazado para reutilizar `ALREADY_REGISTERED`, `TOURNAMENT_FULL` o `ROUND_NOT_RESOLVED` cuando describen
+los datos confirmados. Los demás cambios concurrentes se expresan con 409 `TOURNAMENT_CHANGED`, que pide
+volver a consultar. No hay reintento automático ni respuesta exitosa sin persistencia.
+
+**Justificación:** coordina contextos e instancias mediante la base, conserva los assemblies y lifetimes
+Scoped, los permisos D-63, el historial y el único guardado de D-42/D-62. La columna nueva se inicializa
+sin alterar registros existentes. Un conflicto puede rechazar una inscripción aunque todavía haya cupo;
+el cliente debe volver a consultar y reenviar. La garantía se aplica a las escrituras EF de la aplicación:
+SQL externo que omita renovar Version puede eludirla. No repara datos inconsistentes preexistentes.
+Los tests SQLite intercalan lecturas antes de los dos guardados, de forma determinística y secuencial:
+demuestran la carrera y el rollback, sin confundir bloqueo SQLite con una regla de negocio.
+
+**Conceptos del curso:** concurrencia optimista, atomicidad, persistencia EF Code First, SRP,
+Information Expert, DIP, DI Scoped, TDD Outside-In y conflictos HTTP 409.
+
+**Evidencia:** `RepositorioInscripcionesTests`, `RepositorioRondasTests`, `FiltroExcepcionesRondasTests`;
+ciclos RED/GREEN independientes en `feature/correcciones-concurrencia`. La auditoría privada previa
+es referencia de reproducción, no evidencia TDD. Cierre local: 919 tests correctos, build Release y
+formato verificados; cobertura combinada 1891/1892 líneas y 506/508 ramas, todos los assemblies
+por encima del 90 %, con las exclusiones originales. SQL Server Express 2025 (17.0.5005.3) confirmó
+con servicios reales, contextos independientes y una barrera antes del guardado: una sola inscripción
+del mismo jugador, cuatro aceptadas para cupo cuatro, dos batallas en primera ronda y una en segunda,
+sin jugadores duplicados ni escrituras parciales. La base dedicada también validó la migración
+`20261002233651_AgregaVersionDeConcurrenciaDelTorneo` sobre las nueve migraciones integradas,
+preservando registros Cancelados/Eliminados; la base habitual no se modificó.
+
+La corrección de `fechaHasta=9999-12-31` evita calcular el día siguiente e incluye todo el rango
+representable de DateTime. HTTP sobre esa base confirmó 200 para la fecha máxima, fechaDesde,
+paginación y visibilidad Jugador/Organizador/Administrador según D-41.
+Las fechas mal formadas mantienen 400 `VALIDATION_ERROR`; duplicados, cupo y rondas pendientes
+mantienen 409 con sus códigos existentes. Postman agrega esa fecha límite (371 requests) y documenta
+los conflictos; Newman ejecutó esos cinco requests con sus scripts originales: 11 assertions y cero
+fallos, sobre fixtures aislados. También se verificaron 432 scripts y la conservación de variables,
+fixtures y saltos de las 370 requests previas. Un Runner secuencial no demuestra concurrencia.
+La ejecución completa de las 371 requests queda
+pendiente, igual que Actions y revisión humana al publicar el PR. El equipo deberá reflejar Version,
+la secuencia de confirmación y 409 `TOURNAMENT_CHANGED` en UML y documentación API, fuera de este diff.
+
+**Participación de IA:** Codex comparó estas alternativas y propuso el token mínimo dentro de los
+mecanismos EF autorizados explícitamente por el integrante. Implementó y ejecutó cada RED antes de su
+GREEN, verificó fuente real tras consultas Graphify y mantuvo las skills DA2 y fuentes del proyecto.
+Se descartó una hipótesis exploratoria de conflicto al cancelar una inscripción: EF no modificaba el
+torneo en ese camino y el guardado correcto no requería una regla nueva; esa prueba no es un RED TDD.
+El REFACTOR final sustituye consultas de preparación al repositorio bajo prueba por lecturas directas
+del contexto, mejorando FIRST. Fuentes usadas: AGENTS, preferencias privadas, letra oficial, tabla API,
+auditoría y skills DA2; la declaración académica se mantiene separada de la identidad Git.
+El integrante conserva la revisión humana, el push y la publicación del PR; UML queda a cargo del equipo.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
