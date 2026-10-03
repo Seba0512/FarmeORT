@@ -96,10 +96,8 @@ public sealed class RepositorioInscripcionesTests
         var segunda = new Inscripcion(segundo.Torneos.Single(t => t.Id == torneoId), segundo.Usuarios.Single(u => u.Id == jugadorId), Ahora);
         var primerRepositorio = new RepositorioInscripciones(primero);
         var segundoRepositorio = new RepositorioInscripciones(segundo);
-        Assert.IsFalse(primerRepositorio.ExisteAceptada(torneoId, jugadorId));
-        Assert.IsFalse(segundoRepositorio.ExisteAceptada(torneoId, jugadorId));
-        Assert.AreEqual(0, primerRepositorio.ContarAceptadas(torneoId));
-        Assert.AreEqual(0, segundoRepositorio.ContarAceptadas(torneoId));
+        Assert.AreEqual(0, primero.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.AreEqual(0, segundo.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
         primerRepositorio.Agregar(primera);
 
         Assert.ThrowsExactly<InscripcionYaExisteException>(() => segundoRepositorio.Agregar(segunda));
@@ -127,8 +125,8 @@ public sealed class RepositorioInscripcionesTests
         var segunda = new Inscripcion(segundo.Torneos.Single(t => t.Id == torneoId), segundo.Usuarios.Single(u => u.Id == (invertir ? jugador1 : jugador2)), Ahora);
         var primerRepositorio = new RepositorioInscripciones(primero);
         var segundoRepositorio = new RepositorioInscripciones(segundo);
-        Assert.AreEqual(3, primerRepositorio.ContarAceptadas(torneoId));
-        Assert.AreEqual(3, segundoRepositorio.ContarAceptadas(torneoId));
+        Assert.AreEqual(3, primero.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.AreEqual(3, segundo.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
         primerRepositorio.Agregar(primera);
 
         Assert.ThrowsExactly<TorneoCompletoException>(() => segundoRepositorio.Agregar(segunda));
