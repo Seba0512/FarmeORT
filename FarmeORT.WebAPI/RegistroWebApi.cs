@@ -11,7 +11,13 @@ internal static class RegistroWebApi
     {
         servicios
             .AddControllers(opciones => opciones.Filters.Add<FiltroExcepciones>())
-            .ConfigureApiBehaviorOptions(opciones => opciones.InvalidModelStateResponseFactory = RespuestaValidacion.Crear);
+            .ConfigureApiBehaviorOptions(opciones =>
+            {
+                opciones.InvalidModelStateResponseFactory = RespuestaValidacion.Crear;
+
+                // Sin ProblemDetails: esos errores llegan sin cuerpo y UsarManejoDeErrores les pone el del equipo.
+                opciones.SuppressMapClientErrors = true;
+            });
         return servicios;
     }
 
