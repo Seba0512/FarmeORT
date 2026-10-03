@@ -203,6 +203,21 @@ public sealed class ServicioSkillsObligatoriasTests
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
+    // Un torneo En curso ya no se modifica: ese es el rechazo, aunque sus inscriptos no tengan la skill.
+    [TestMethod]
+    public void Asociar_TorneoEnCursoConInscriptosSinLaSkill_LanzaTorneoNoModificableSinGuardar()
+    {
+        var inscripcion = new Inscripcion(_torneo, CrearJugador(8, "brunolopez"), new DateTime(2026, 10, 1));
+        _torneo.Iniciar(8);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioSkills.Setup(r => r.ObtenerPorId(SkillId)).Returns(_skill);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([inscripcion]);
+
+        Assert.ThrowsExactly<TorneoNoModificableException>(
+            () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     [TestMethod]
     public void Asociar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneoSinGuardar()
     {
