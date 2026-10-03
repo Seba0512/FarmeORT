@@ -325,7 +325,7 @@ de autorización de ASP.NET, así que lanzar una excepción desde ahí terminar�
 `context.Result` con el `ErrorResponse` correspondiente.
 
 **Decisión adoptada:** los filtros asignan `context.Result`: 401 con `INVALID_TOKEN` ("La sesión no es
-válida o expiró.") si falta el header, si no tiene la forma `Bearer {guid}` o si el token no tiene
+válida o expiró."; desde D-65, "La sesión no es válida.") si falta el header, si no tiene la forma `Bearer {guid}` o si el token no tiene
 sesión; 403 con `FORBIDDEN` ("No tenés permisos para realizar esta operación.") si el rol no está
 permitido. El servicio devuelve `null` en lugar de lanzar cuando el token no existe.
 
@@ -2148,6 +2148,114 @@ con FK opcional y `Restrict`, TDD Outside-In.
 
 ---
 
+### D-65 — Errores fuera de los controllers y del framework con el formato del equipo
+
+**Problema:** el formato `{ userMessage, errorCode, moreInfo, detalles }` (D-07) solo lo garantizaban
+`FiltroExcepciones` y los filtros de autenticación (D-14). Contra la API real se reprodujo lo siguiente:
+- Si la base falla mientras el filtro de autenticación valida el token, la excepción no pasa por
+  `FiltroExcepciones`. En Development se devolvía el stack trace, el `SqlException` y el usuario de Windows; en
+  Production, un 500 vacío.
+- El enrutamiento respondía 404 y 405 sin cuerpo (`/usuarios/abc`, rutas inexistentes, métodos no admitidos), y
+  MVC respondía el 415 con ProblemDetails en inglés.
+- Los 400 de validación nombraban los campos en PascalCase (`Email`), mostraban el mensaje técnico del parser con
+  un JSON mal formado y, sin cuerpo, "A non-empty request body is required." y "The request field is required.".
+  También salían en inglés "The value 'abc' is not valid for Limit." y los errores del login.
+- El 401 decía "o expiró", pero las sesiones no vencen.
+
+**Alternativas consideradas:**
+- 500: un try/catch en cada filtro, que se repite y no cubre otras fallas fuera de MVC, o un manejador global con
+  `UseExceptionHandler`.
+- 404, 405 y 415: dejar los cuerpos del framework y documentarlos, o completarlos con `UseStatusCodePages`, con
+  `SuppressMapClientErrors` para que MVC no los convierta en ProblemDetails.
+- Campos: la misma política del serializador (`JsonNamingPolicy.CamelCase`) o una conversión propia.
+- Sesiones: agregar un vencimiento, que la letra no pide y suma estado y tests, o ajustar el mensaje.
+
+**Decisión adoptada:**
+- `RegistroWebApi.UsarManejoDeErrores`, que llama `Program.cs`:
+  - `UseExceptionHandler` responde 500 `INTERNAL_ERROR` con el mismo mensaje que `FiltroExcepciones`.
+  - `UseStatusCodePages` agrega el cuerpo a los errores que llegan sin él: 404 `NOT_FOUND`, 405
+    `METHOD_NOT_ALLOWED`, 415 `UNSUPPORTED_MEDIA_TYPE` y, como caso base, `REQUEST_NOT_PROCESSED` con el mismo
+    estado.
+- `SuppressMapClientErrors = true`: MVC deja sin cuerpo sus errores de cliente y los completa el manejador.
+- `ErroresGenerales` concentra esos errores y las dos respuestas; `FiltroExcepciones` toma de ahí el 500.
+- `RespuestaValidacion`:
+  - Los campos van en camelCase, con `JsonNamingPolicy.CamelCase`.
+  - Si el cuerpo falta o no se puede leer, devuelve un solo detalle, sin el mensaje del parser: "El cuerpo de la
+    solicitud es obligatorio.", "El cuerpo de la solicitud no es un JSON válido." o "campo: El valor no tiene un
+    formato válido.".
+- Mensajes en español: `ErrorMessage` en `LoginRequest`, y "El valor 'abc' no es válido." para un valor de la
+  query que no se convierte. Un tipo mal formado sigue siendo 400 (D-35).
+- 401: "La sesión no es válida.".
+
+**Justificación:**
+- El cliente procesa todos los errores de la misma forma.
+- No se exponen detalles internos (stack trace, SQL, usuario del sistema), que es un requisito de seguridad.
+- Los detalles los lee el usuario: en español y con los nombres del contrato.
+- Se mantiene D-14 (los filtros arman su 401 y su 403): el manejador global es la red para lo que nadie atrapó.
+
+**Conceptos del curso:** manejo de excepciones por capas (filtros y middleware), status codes, contrato REST
+(camelCase), seguridad (no exponer detalles internos), SRP (`ErroresGenerales` responde, `RegistroWebApi` registra).
+
+**Evidencia:**
+- `RegistroWebApiTests`, sobre un pipeline real de `WebApplication`: una excepción → 500; 404, 405, 415 y un estado
+  no previsto; `SuppressMapClientErrors`; el mensaje de conversión.
+- `RespuestaValidacionTests` (camelCase y cuerpo ilegible), `LoginRequestTests` y `AutenticacionAttributeTests`.
+- Carpeta Errores generales de Postman: colección completa contra la API real, 430 requests, 860 assertions, 0
+  fallos.
+- Contra la API real, con la base offline, un endpoint autenticado responde 500 `INTERNAL_ERROR` en JSON, sin stack
+  trace.
+
+**Supuestos:**
+- Las sesiones no vencen, porque la letra no lo pide.
+- Un error sin cuerpo que no está en la tabla conserva su estado y usa `REQUEST_NOT_PROCESSED`.
+
+**Participación de IA:**
+- Claude Code reprodujo cada caso contra la API real, propuso las correcciones y las implementó con un ciclo RED →
+  GREEN por caso. El integrante pidió hacerlas en una rama. Para el 401 se tomó la opción mínima, ajustar el
+  mensaje, en lugar de agregar un vencimiento.
+- Problemas que aparecieron:
+  - Un test que documentaba un caso se commiteó en rojo, por un error en la preparación. Se corrigió antes de
+    publicar la rama y, desde ahí, cada commit quedó condicionado al resultado de `dotnet test`.
+  - 15 tests de Postman de Skills esperaban los campos en PascalCase y se pasaron a camelCase.
+  - StyleCop (SA1515) y los finales de línea CRLF frenaron dos commits hasta corregirlos.
+- Queda pendiente: con el email vacío salen dos detalles (obligatorio y formato).
+
+---
+
+### D-66 — Al asociar una obligatoria, las reglas del torneo y de la skill van antes que los inscriptos
+
+**Problema:** `ServicioSkillsObligatorias.Asociar` controlaba primero que los inscriptos Aceptados tuvieran la
+skill. Con una skill inactiva y un inscripto sin ella respondía `PLAYERS_MISSING_MANDATORY_SKILL`, pero la letra
+(2.2) pide el rechazo específico "no es posible utilizarla porque está inactiva". Con el torneo En curso pasaba lo
+mismo, en lugar de `TOURNAMENT_NOT_MODIFIABLE`. Lo encontró la auditoría del 02/10 y se reprodujo contra la API
+real.
+
+**Alternativas consideradas:**
+- Invertir el orden llamando primero a `AsociarSkillObligatoria`: agrega la skill antes de saber si los inscriptos
+  la tienen, así que un rechazo deja el torneo modificado en memoria, y un test exige que no.
+- Separar en el dominio la validación de la obligatoria nueva.
+
+**Decisión adoptada:** `Torneo.ValidarSkillObligatoriaNueva(skill)` valida sin agregar (torneo Abierto, skill
+activa, no repetida, máximo 2) y `AsociarSkillObligatoria` la usa. El servicio la llama antes de revisar a los
+inscriptos.
+
+**Justificación:** la regla sigue en el dominio (Information Expert), gana el error más específico y un rechazo
+no deja el torneo cambiado.
+
+**Conceptos del curso:** Information Expert, precedencia de reglas, status 409.
+
+**Evidencia:**
+- `ServicioSkillsObligatoriasTests.Asociar_SkillInactivaConInscriptosSinLaSkill_LanzaSkillInactivaSinGuardar` (RED y
+  GREEN) y `Asociar_TorneoEnCursoConInscriptosSinLaSkill_LanzaTorneoNoModificableSinGuardar`, que falla con el
+  código anterior.
+- Contra la API real: 409 `SKILL_INACTIVE`. Con una skill activa sigue respondiendo
+  `PLAYERS_MISSING_MANDATORY_SKILL` con los nicknames.
+
+**Participación de IA:** Claude Code encontró el caso en la auditoría, lo reprodujo y lo corrigió. El código es de
+la persona A (D-40, D-41); por eso queda registrado aparte, para su revisión.
+
+---
+
 ### D-70 — Versionar el torneo para confirmar inscripciones y rondas concurrentes
 
 **Problema:** la auditoría del 02/10/2026 reprodujo dos inscripciones Aceptadas del mismo jugador,
@@ -2220,14 +2328,14 @@ El integrante conserva la revisión humana, el push y la publicación del PR; UM
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
 
-1. **Idioma:** los mensajes de `detalles` salen en inglés (por ejemplo, "The Email field is
-   required."). Se resuelve con `ErrorMessage = "..."` en cada anotación de los DTOs.
-2. **Nombres de campo:** los detalles usan `Email` y `Contrasena`, pero el contrato define el JSON en
-   camelCase (`email`, `contrasena`).
+1. ~~**Idioma:** los mensajes de `detalles` salen en inglés (por ejemplo, "The Email field is
+   required."). Se resuelve con `ErrorMessage = "..."` en cada anotación de los DTOs.~~ Resuelto en D-65.
+2. ~~**Nombres de campo:** los detalles usan `Email` y `Contrasena`, pero el contrato define el JSON en
+   camelCase (`email`, `contrasena`).~~ Resuelto en D-65.
 3. **Mensajes redundantes:** con el body vacío aparecen dos errores para `Email` (requerido y formato
    inválido).
-4. **JSON mal formado:** el detalle incluye el mensaje técnico del parser. No expone datos sensibles,
-   pero no es un mensaje pensado para el usuario.
+4. ~~**JSON mal formado:** el detalle incluye el mensaje técnico del parser. No expone datos sensibles,
+   pero no es un mensaje pensado para el usuario.~~ Resuelto en D-65.
 
 ### Otros
 
@@ -2236,14 +2344,15 @@ El integrante conserva la revisión humana, el push y la publicación del PR; UM
   administrador precargado.~~ Resuelto: `CreaUsuariosYSesiones` (D-11).
 - Explicar en la guía de instalación cómo crear `.env` y `appsettings.Development.json` (D-09) y cuál
   es la contraseña inicial del administrador (D-11).
-- Las sesiones no vencen: un token vale hasta que se hace logout. La letra no pide vencimiento, pero el
-  mensaje del 401 dice "o expiró". Decidir si se agrega un vencimiento o se ajusta el mensaje.
+- ~~Las sesiones no vencen: un token vale hasta que se hace logout. La letra no pide vencimiento, pero el
+  mensaje del 401 dice "o expiró". Decidir si se agrega un vencimiento o se ajusta el mensaje.~~ Resuelto en
+  D-65: se ajustó el mensaje.
 - ~~Cuando más controllers lean la sesión del contexto, extraer esa lectura a un solo lugar (por ejemplo,
   un método de extensión `HttpContext.ObtenerSesionAutenticada()`), para no repetir el cast.~~
   Resuelto en D-26.
-- Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
+- ~~Un id que no es número (`/usuarios/abc`) responde 404 **sin cuerpo**, porque lo resuelve el
   enrutamiento antes de los filtros. Igual con los errores de conversión de la query
-  (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").
+  (`limit=abc`), cuyo detalle sale en inglés ("The value 'abc' is not valid for Limit.").~~ Resuelto en D-65.
 - ~~Repertorio (D-38): quitar una skill tiene que rechazarse (409) si es obligatoria de un torneo donde el
   jugador tiene una inscripción Aceptada y el torneo no está Finalizado ni Cancelado.~~ Resuelto en D-41.
   ~~Pendiente: diagrama de clases con `SkillDeclarada` y la colección
