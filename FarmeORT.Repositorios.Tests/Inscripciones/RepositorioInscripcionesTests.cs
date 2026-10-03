@@ -2,6 +2,7 @@ using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
 using FarmeORT.Repositorios.Inscripciones;
 using Microsoft.EntityFrameworkCore;
@@ -82,6 +83,115 @@ public sealed class RepositorioInscripcionesTests
         Assert.IsNull(_repositorio.ObtenerAceptada(torneoId, eliminadoId));
         Assert.IsNull(_repositorio.ObtenerAceptada(99, jugadorId));
         Assert.IsNull(_repositorio.ObtenerAceptada(torneoId, 99));
+    }
+
+    [TestMethod]
+    public void Agregar_DosPedidosDelMismoJugadorLeenAntesDeGuardar_SoloUnoQuedaAceptado()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        using var primero = _baseDeDatos.CrearContexto();
+        using var segundo = _baseDeDatos.CrearContexto();
+        var primera = new Inscripcion(primero.Torneos.Single(t => t.Id == torneoId), primero.Usuarios.Single(u => u.Id == jugadorId), Ahora);
+        var segunda = new Inscripcion(segundo.Torneos.Single(t => t.Id == torneoId), segundo.Usuarios.Single(u => u.Id == jugadorId), Ahora);
+        var primerRepositorio = new RepositorioInscripciones(primero);
+        var segundoRepositorio = new RepositorioInscripciones(segundo);
+        Assert.AreEqual(0, primero.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.AreEqual(0, segundo.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        primerRepositorio.Agregar(primera);
+
+        Assert.ThrowsExactly<InscripcionYaExisteException>(() => segundoRepositorio.Agregar(segunda));
+
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.IsEmpty(segundo.ChangeTracker.Entries().ToList());
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Agregar_DosJugadoresLeenLaUltimaPlaza_SoloUnoLaOcupa(bool invertir)
+    {
+        var torneoId = GuardarTorneo("COPAAURA", cupo: 4);
+        foreach(var nickname in new[] { "anaperez", "brunolopez", "carlagomez" })
+        {
+            GuardarInscripcion(torneoId, GuardarUsuario(nickname, Rol.Jugador));
+        }
+
+        var jugador1 = GuardarUsuario("diegoruiz", Rol.Jugador);
+        var jugador2 = GuardarUsuario("evasosa", Rol.Jugador);
+        using var primero = _baseDeDatos.CrearContexto();
+        using var segundo = _baseDeDatos.CrearContexto();
+        var primera = new Inscripcion(primero.Torneos.Single(t => t.Id == torneoId), primero.Usuarios.Single(u => u.Id == (invertir ? jugador2 : jugador1)), Ahora);
+        var segunda = new Inscripcion(segundo.Torneos.Single(t => t.Id == torneoId), segundo.Usuarios.Single(u => u.Id == (invertir ? jugador1 : jugador2)), Ahora);
+        var primerRepositorio = new RepositorioInscripciones(primero);
+        var segundoRepositorio = new RepositorioInscripciones(segundo);
+        Assert.AreEqual(3, primero.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.AreEqual(3, segundo.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        primerRepositorio.Agregar(primera);
+
+        Assert.ThrowsExactly<TorneoCompletoException>(() => segundoRepositorio.Agregar(segunda));
+
+        Assert.AreEqual(4, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.IsFalse(_baseDeDatos.Contexto.Inscripciones.Any(i => i.TorneoId == torneoId && i.JugadorId == segunda.JugadorId));
+        Assert.IsEmpty(segundo.ChangeTracker.Entries().ToList());
+    }
+
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Agregar_TorneoCambiaSinDuplicadoNiCupoCompleto_RechazaLaLecturaDesactualizada(bool cancelar)
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        var otroJugadorId = GuardarUsuario("brunolopez", Rol.Jugador);
+        using var primero = _baseDeDatos.CrearContexto();
+        using var segundo = _baseDeDatos.CrearContexto();
+        var torneoActual = primero.Torneos.Single(t => t.Id == torneoId);
+        var inscripcion = new Inscripcion(segundo.Torneos.Single(t => t.Id == torneoId), segundo.Usuarios.Single(u => u.Id == jugadorId), Ahora);
+        if(cancelar)
+        {
+            torneoActual.Cancelar();
+        }
+        else
+        {
+            primero.Inscripciones.Add(new Inscripcion(torneoActual, primero.Usuarios.Single(u => u.Id == otroJugadorId), Ahora));
+        }
+
+        primero.SaveChanges();
+        var repositorio = new RepositorioInscripciones(segundo);
+
+        Assert.ThrowsExactly<TorneoModificadoException>(() => repositorio.Agregar(inscripcion));
+
+        Assert.IsFalse(_baseDeDatos.Contexto.Inscripciones.Any(i => i.TorneoId == torneoId && i.JugadorId == jugadorId));
+        Assert.AreEqual(cancelar ? EstadoTorneo.Cancelado : EstadoTorneo.Abierto, _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneoId).Estado);
+        Assert.IsEmpty(segundo.ChangeTracker.Entries().ToList());
+    }
+
+    [TestMethod]
+    [DataRow(EstadoInscripcion.Cancelada)]
+    [DataRow(EstadoInscripcion.Eliminada)]
+    public void Agregar_InscripcionHistorica_PermiteReinscripcionSinPerderElEstadoAnterior(EstadoInscripcion estado)
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var jugadorId = GuardarUsuario("anaperez", Rol.Jugador);
+        var historicaId = GuardarInscripcion(torneoId, jugadorId, i =>
+        {
+            if(estado == EstadoInscripcion.Cancelada)
+            {
+                i.Cancelar();
+            }
+            else
+            {
+                i.Eliminar();
+            }
+        });
+        var nueva = CrearInscripcion(torneoId, jugadorId);
+
+        _repositorio.Agregar(nueva);
+
+        Assert.AreEqual(estado, _baseDeDatos.Contexto.Inscripciones.AsNoTracking().Single(i => i.Id == historicaId).Estado);
+        Assert.AreEqual(1, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.AreEqual(2, _baseDeDatos.Contexto.Inscripciones.Count(i => i.TorneoId == torneoId));
     }
 
     [TestMethod]
@@ -227,6 +337,22 @@ public sealed class RepositorioInscripcionesTests
     }
 
     [TestMethod]
+    public void Listar_FechaHastaMaxima_IncluyeElUltimoDiaCompletoYConservaDesdeYPaginacion()
+    {
+        var torneoId = GuardarTorneo("COPAAURA");
+        var anterior = GuardarInscripcion(torneoId, GuardarUsuario("anaperez", Rol.Jugador));
+        var inicio = GuardarInscripcion(torneoId, GuardarUsuario("brunolopez", Rol.Jugador), fecha: DateOnly.MaxValue.ToDateTime(TimeOnly.MinValue));
+        var final = GuardarInscripcion(torneoId, GuardarUsuario("carlagomez", Rol.Jugador), fecha: DateTime.MaxValue);
+
+        var resultado = _repositorio.Listar(Filtro(fechaHasta: DateOnly.MaxValue));
+
+        CollectionAssert.AreEqual(new[] { anterior, inicio, final }, resultado.Select(i => i.Id).ToArray());
+        var pagina = _repositorio.Listar(Filtro(fechaDesde: DateOnly.MaxValue, fechaHasta: DateOnly.MaxValue, limite: 1, desplazamiento: 1));
+        Assert.AreEqual(final, pagina.Single().Id);
+        Assert.AreEqual(DateTime.MaxValue, pagina.Single().Fecha);
+    }
+
+    [TestMethod]
     public void Listar_FiltrosPorTorneoEstadoYFechas_DevuelveLasQueCumplenTodos()
     {
         var torneoId = GuardarTorneo("COPAAURA");
@@ -289,9 +415,9 @@ public sealed class RepositorioInscripcionesTests
     }
 
     // Guarda una inscripción directamente con el contexto, sin usar métodos del repositorio (FIRST).
-    private int GuardarInscripcion(int torneoId, int jugadorId, Action<Inscripcion>? cambiar = null)
+    private int GuardarInscripcion(int torneoId, int jugadorId, Action<Inscripcion>? cambiar = null, DateTime? fecha = null)
     {
-        var inscripcion = CrearInscripcion(torneoId, jugadorId);
+        var inscripcion = CrearInscripcion(torneoId, jugadorId, fecha);
         cambiar?.Invoke(inscripcion);
         _baseDeDatos.Contexto.Inscripciones.Add(inscripcion);
         _baseDeDatos.Contexto.SaveChanges();
@@ -300,17 +426,17 @@ public sealed class RepositorioInscripcionesTests
     }
 
     // El torneo y el jugador se toman del contexto, como en la API: el servicio los obtiene con el mismo contexto.
-    private Inscripcion CrearInscripcion(int torneoId, int jugadorId)
+    private Inscripcion CrearInscripcion(int torneoId, int jugadorId, DateTime? fecha = null)
     {
         var torneo = _baseDeDatos.Contexto.Torneos.Include(t => t.SkillsObligatorias).Single(t => t.Id == torneoId);
         var jugador = _baseDeDatos.Contexto.Usuarios.Include(u => u.Repertorio).Single(u => u.Id == jugadorId);
-        return new Inscripcion(torneo, jugador, Ahora);
+        return new Inscripcion(torneo, jugador, fecha ?? Ahora);
     }
 
-    private int GuardarTorneo(string codigo, int? organizadorId = null)
+    private int GuardarTorneo(string codigo, int? organizadorId = null, int cupo = 8)
     {
         var organizador = _baseDeDatos.Contexto.Usuarios.Single(u => u.Id == (organizadorId ?? _organizadorId));
-        var torneo = new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.", new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 30), 8, organizador, FechaActual);
+        var torneo = new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.", new DateOnly(2026, 11, 1), new DateOnly(2026, 11, 30), cupo, organizador, FechaActual);
         _baseDeDatos.Contexto.Torneos.Add(torneo);
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
