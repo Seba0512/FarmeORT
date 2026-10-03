@@ -24,7 +24,7 @@ internal static class RegistroWebApi
 
     private static Task ResponderErrorInesperado(HttpContext contexto)
     {
-        var error = new ErrorResponse { UserMessage = "Ocurrió un error inesperado.", ErrorCode = "INTERNAL_ERROR" };
+        var error = new ErrorResponse { UserMessage = ErroresGenerales.MensajeInesperado, ErrorCode = ErroresGenerales.CodigoInesperado };
         contexto.Response.StatusCode = StatusCodes.Status500InternalServerError;
         return contexto.Response.WriteAsJsonAsync(error);
     }

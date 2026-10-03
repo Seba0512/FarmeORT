@@ -8,7 +8,7 @@ namespace FarmeORT.WebAPI.Filtros;
 internal sealed class FiltroExcepciones : IExceptionFilter
 {
     private static readonly ErrorMapeado ErrorInesperado =
-        new(StatusCodes.Status500InternalServerError, "INTERNAL_ERROR", "Ocurrió un error inesperado.");
+        new(StatusCodes.Status500InternalServerError, ErroresGenerales.CodigoInesperado, ErroresGenerales.MensajeInesperado);
 
     private static readonly Dictionary<Type, ErrorMapeado> Errores = new()
     {
