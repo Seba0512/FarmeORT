@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FarmeORT.DTOs.Errores;
 using Microsoft.AspNetCore.Mvc;
 
@@ -7,8 +8,9 @@ internal static class RespuestaValidacion
 {
     public static IActionResult Crear(ActionContext contexto)
     {
+        // ModelState trae el nombre de la propiedad (FechaNacimiento); el contrato usa el del JSON (fechaNacimiento).
         var detalles = contexto.ModelState
-            .SelectMany(campo => campo.Value!.Errors.Select(error => $"{campo.Key}: {error.ErrorMessage}"))
+            .SelectMany(campo => campo.Value!.Errors.Select(error => $"{JsonNamingPolicy.CamelCase.ConvertName(campo.Key)}: {error.ErrorMessage}"))
             .ToList();
         var error = new ErrorResponse
         {
