@@ -8,7 +8,13 @@ internal static class RegistroWebApi
     public static IServiceCollection AgregarControllersConFiltros(this IServiceCollection servicios)
     {
         servicios
-            .AddControllers(opciones => opciones.Filters.Add<FiltroExcepciones>())
+            .AddControllers(opciones =>
+            {
+                opciones.Filters.Add<FiltroExcepciones>();
+
+                // limit=abc: RespuestaValidacion ya antepone el campo ("limit: El valor 'abc' no es válido.").
+                opciones.ModelBindingMessageProvider.SetAttemptedValueIsInvalidAccessor((valor, _) => $"El valor '{valor}' no es válido.");
+            })
             .ConfigureApiBehaviorOptions(opciones =>
             {
                 opciones.InvalidModelStateResponseFactory = RespuestaValidacion.Crear;
