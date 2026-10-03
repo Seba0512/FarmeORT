@@ -38,6 +38,19 @@ public sealed class RegistroWebApiTests
         Assert.AreEqual<Func<ActionContext, IActionResult>>(RespuestaValidacion.Crear, opciones.InvalidModelStateResponseFactory);
     }
 
+    // Si MVC convierte sus errores en ProblemDetails (en inglés), el 415 nunca llega sin cuerpo al manejador del equipo.
+    [TestMethod]
+    public void AgregarControllersConFiltros_ErroresDeClienteDeMvc_NoLosConvierteEnProblemDetails()
+    {
+        var servicios = new ServiceCollection().AddLogging();
+
+        servicios.AgregarControllersConFiltros();
+
+        using var proveedor = servicios.BuildServiceProvider();
+        var opciones = proveedor.GetRequiredService<IOptions<ApiBehaviorOptions>>().Value;
+        Assert.IsTrue(opciones.SuppressMapClientErrors);
+    }
+
     // Una excepción en un filtro de autenticación no pasa por FiltroExcepciones: no puede llegar al cliente.
     [TestMethod]
     public async Task UsarManejoDeErrores_ExcepcionFueraDelController_Devuelve500SinDetallesInternos()
