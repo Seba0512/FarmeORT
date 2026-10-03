@@ -26,7 +26,7 @@ internal class AutenticacionAttribute : Attribute, IAuthorizationFilter
             : null;
         if(sesion is null)
         {
-            var error = new ErrorResponse { UserMessage = "La sesión no es válida o expiró.", ErrorCode = "INVALID_TOKEN" };
+            var error = new ErrorResponse { UserMessage = "La sesión no es válida.", ErrorCode = "INVALID_TOKEN" };
             context.Result = new ObjectResult(error) { StatusCode = StatusCodes.Status401Unauthorized };
             return;
         }
