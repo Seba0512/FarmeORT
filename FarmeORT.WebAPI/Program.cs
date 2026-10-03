@@ -11,6 +11,7 @@ builder.Services.AgregarDependencias(connectionString);
 
 var app = builder.Build();
 
+app.UsarManejoDeErrores();
 app.MapControllers();
 
 app.Run();

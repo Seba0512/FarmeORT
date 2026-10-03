@@ -4999,7 +4999,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Codigo\"));"
+                      "pm.test(\"Detalle del campo codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"codigo:\"));"
                     ]
                   }
                 }
@@ -5116,7 +5116,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Dificultad\"));"
+                      "pm.test(\"Detalle del campo dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"dificultad:\"));"
                     ]
                   }
                 }
@@ -5175,7 +5175,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Descripcion\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Descripcion\"));"
+                      "pm.test(\"Detalle del campo descripcion\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"descripcion:\"));"
                     ]
                   }
                 }
@@ -5234,7 +5234,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Codigo\"));"
+                      "pm.test(\"Detalle del campo codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"codigo:\"));"
                     ]
                   }
                 }
@@ -5293,7 +5293,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Codigo\"));"
+                      "pm.test(\"Detalle del campo codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"codigo:\"));"
                     ]
                   }
                 }
@@ -5352,7 +5352,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Codigo\"));"
+                      "pm.test(\"Detalle del campo codigo\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"codigo:\"));"
                     ]
                   }
                 }
@@ -5411,7 +5411,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Nombre\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Nombre\"));"
+                      "pm.test(\"Detalle del campo nombre\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"nombre:\"));"
                     ]
                   }
                 }
@@ -5470,7 +5470,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Nombre\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Nombre\"));"
+                      "pm.test(\"Detalle del campo nombre\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"nombre:\"));"
                     ]
                   }
                 }
@@ -5529,7 +5529,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Descripcion\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Descripcion\"));"
+                      "pm.test(\"Detalle del campo descripcion\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"descripcion:\"));"
                     ]
                   }
                 }
@@ -5588,7 +5588,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Descripcion\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Descripcion\"));"
+                      "pm.test(\"Detalle del campo descripcion\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"descripcion:\"));"
                     ]
                   }
                 }
@@ -5647,7 +5647,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Categoria\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Categoria\"));"
+                      "pm.test(\"Detalle del campo categoria\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"categoria:\"));"
                     ]
                   }
                 }
@@ -5706,7 +5706,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Dificultad\"));"
+                      "pm.test(\"Detalle del campo dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"dificultad:\"));"
                     ]
                   }
                 }
@@ -5765,7 +5765,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Dificultad\"));"
+                      "pm.test(\"Detalle del campo dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"dificultad:\"));"
                     ]
                   }
                 }
@@ -6262,7 +6262,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Dificultad\"));"
+                      "pm.test(\"Detalle del campo dificultad\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"dificultad:\"));"
                     ]
                   }
                 }
@@ -6381,7 +6381,7 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.test(\"Detalle del campo Activa\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"Activa\"));"
+                      "pm.test(\"Detalle del campo activa\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"activa:\"));"
                     ]
                   }
                 }
@@ -21154,11 +21154,445 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"errorCode VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
-                      "pm.execution.setNextRequest(\"Sesiones - logout administrador → 204\");"
+                      "pm.execution.setNextRequest(\"Errores - ruta inexistente → 404\");"
                     ]
                   }
                 }
               ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Errores generales",
+      "description": "Errores que no dependen de una regla de negocio y que arma el framework o el manejador global (D-65): todos con el formato { userMessage, errorCode, moreInfo, detalles }.",
+      "item": [
+        {
+          "name": "Errores - ruta inexistente → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/no-existe",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "no-existe"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode NOT_FOUND\", () => pm.expect(error.errorCode).to.eql(\"NOT_FOUND\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - id que no es un número → 404",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/torneos/abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "torneos",
+                "abc"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode NOT_FOUND\", () => pm.expect(error.errorCode).to.eql(\"NOT_FOUND\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - método no admitido → 405",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ranking",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ranking"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 405\", () => pm.response.to.have.status(405));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode METHOD_NOT_ALLOWED\", () => pm.expect(error.errorCode).to.eql(\"METHOD_NOT_ALLOWED\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - cuerpo que no es JSON → 415",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "text/plain"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "email=admin"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 415\", () => pm.response.to.have.status(415));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode UNSUPPORTED_MEDIA_TYPE\", () => pm.expect(error.errorCode).to.eql(\"UNSUPPORTED_MEDIA_TYPE\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - JSON mal formado → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\": ",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode VALIDATION_ERROR\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);",
+                  "pm.test(\"Sin el mensaje técnico del parser\", () => pm.expect(error.detalles.join(\" \")).to.not.include(\"LineNumber\"));",
+                  "pm.test(\"Señala el campo donde se cortó el JSON\", () => pm.expect(error.detalles).to.eql([\"email: El valor no tiene un formato válido.\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - cuerpo vacío → 400",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode VALIDATION_ERROR\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);",
+                  "pm.test(\"Un solo detalle, en español\", () => pm.expect(error.detalles).to.eql([\"El cuerpo de la solicitud es obligatorio.\"]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - login sin datos → 400 en español",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode VALIDATION_ERROR\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);",
+                  "pm.test(\"Campos en camelCase y mensajes en español\", () => { pm.expect(error.detalles).to.include(\"email: El email es obligatorio.\"); pm.expect(error.detalles).to.include(\"contrasena: La contraseña es obligatoria.\"); });"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - número mal formado en la query → 400",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/ranking?cantidad=abc",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "ranking"
+              ],
+              "query": [
+                {
+                  "key": "cantidad",
+                  "value": "abc"
+                }
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode VALIDATION_ERROR\", () => pm.expect(error.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);",
+                  "pm.test(\"Detalle en español con el campo de la query\", () => pm.expect(error.detalles).to.include(\"cantidad: El valor 'abc' no es válido.\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Errores - token que no corresponde a una sesión → 401",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/usuarios",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "usuarios"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "00000000-0000-0000-0000-000000000000",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "const error = pm.response.json();",
+                  "pm.test(\"errorCode INVALID_TOKEN\", () => pm.expect(error.errorCode).to.eql(\"INVALID_TOKEN\"));",
+                  "pm.test(\"Mensaje para el usuario\", () => pm.expect(error.userMessage).to.be.a(\"string\").and.not.empty);",
+                  "pm.test(\"No dice que la sesión expiró: las sesiones no vencen\", () => pm.expect(error.userMessage).to.eql(\"La sesión no es válida.\"));",
+                  "pm.execution.setNextRequest(\"Sesiones - logout administrador → 204\");"
+                ]
+              }
             }
           ]
         }

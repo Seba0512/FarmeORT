@@ -104,6 +104,13 @@ public sealed class Torneo
 
     public void AsociarSkillObligatoria(Skill skill)
     {
+        ValidarSkillObligatoriaNueva(skill);
+        _skillsObligatorias.Add(skill);
+    }
+
+    // Valida sin agregar: el servicio la usa antes de revisar a los inscriptos (letra 2.2 y 2.4).
+    public void ValidarSkillObligatoriaNueva(Skill skill)
+    {
         ValidarModificable();
 
         // Una skill inactiva no se agrega como obligatoria nueva; las ya asociadas se conservan (no es retroactivo).
@@ -122,8 +129,6 @@ public sealed class Torneo
         {
             throw new LimiteSkillsObligatoriasException();
         }
-
-        _skillsObligatorias.Add(skill);
     }
 
     public void QuitarSkillObligatoria(int skillId)

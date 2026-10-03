@@ -187,6 +187,37 @@ public sealed class ServicioSkillsObligatoriasTests
         Assert.IsEmpty(_torneo.SkillsObligatorias);
     }
 
+    // Letra 2.2: la skill inactiva tiene su propio rechazo, aunque además haya inscriptos que no la tienen.
+    [TestMethod]
+    public void Asociar_SkillInactivaConInscriptosSinLaSkill_LanzaSkillInactivaSinGuardar()
+    {
+        _skill.Desactivar();
+        var sinLaSkill = CrearJugador(8, "brunolopez");
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioSkills.Setup(r => r.ObtenerPorId(SkillId)).Returns(_skill);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId))
+            .Returns([new Inscripcion(_torneo, sinLaSkill, new DateTime(2026, 10, 1))]);
+
+        Assert.ThrowsExactly<SkillInactivaException>(
+            () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    // Un torneo En curso ya no se modifica: ese es el rechazo, aunque sus inscriptos no tengan la skill.
+    [TestMethod]
+    public void Asociar_TorneoEnCursoConInscriptosSinLaSkill_LanzaTorneoNoModificableSinGuardar()
+    {
+        var inscripcion = new Inscripcion(_torneo, CrearJugador(8, "brunolopez"), new DateTime(2026, 10, 1));
+        _torneo.Iniciar(8);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioSkills.Setup(r => r.ObtenerPorId(SkillId)).Returns(_skill);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([inscripcion]);
+
+        Assert.ThrowsExactly<TorneoNoModificableException>(
+            () => _servicio.Asociar(TorneoId, new SkillObligatoriaRequest { SkillId = SkillId }, OrganizadorId));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     [TestMethod]
     public void Asociar_OrganizadorNoAsignado_LanzaNoEsOrganizadorDelTorneoSinGuardar()
     {

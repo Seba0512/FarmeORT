@@ -23,6 +23,7 @@ public sealed class AutenticacionAttributeTests
         _filtro = new AutenticacionAttribute();
     }
 
+    // Las sesiones no vencen (la letra no lo pide): el mensaje no puede decir que expiró.
     [TestMethod]
     public void OnAuthorization_SinHeaderAuthorization_Devuelve401ConInvalidToken()
     {
@@ -36,7 +37,7 @@ public sealed class AutenticacionAttributeTests
         var error = resultado.Value as ErrorResponse;
         Assert.IsNotNull(error);
         Assert.AreEqual("INVALID_TOKEN", error.ErrorCode);
-        Assert.AreEqual("La sesión no es válida o expiró.", error.UserMessage);
+        Assert.AreEqual("La sesión no es válida.", error.UserMessage);
     }
 
     [TestMethod]
