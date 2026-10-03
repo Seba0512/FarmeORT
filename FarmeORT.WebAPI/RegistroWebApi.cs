@@ -12,4 +12,9 @@ internal static class RegistroWebApi
             .ConfigureApiBehaviorOptions(opciones => opciones.InvalidModelStateResponseFactory = RespuestaValidacion.Crear);
         return servicios;
     }
+
+    public static IApplicationBuilder UsarManejoDeErrores(this IApplicationBuilder aplicacion)
+    {
+        throw new NotImplementedException();
+    }
 }
