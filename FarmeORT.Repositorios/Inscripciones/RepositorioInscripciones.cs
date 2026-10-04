@@ -137,6 +137,17 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
     public void Actualizar(Inscripcion inscripcion)
     {
         contexto.Inscripciones.Update(inscripcion);
-        contexto.SaveChanges();
+
+        // El retiro individual participa de la misma versión que el alta y el inicio del torneo (D-71).
+        contexto.Entry(inscripcion.Torneo).Property<Guid>("Version").IsModified = true;
+        try
+        {
+            contexto.SaveChanges();
+        }
+        catch(DbUpdateConcurrencyException)
+        {
+            contexto.ChangeTracker.Clear();
+            throw new TorneoModificadoException();
+        }
     }
 }
