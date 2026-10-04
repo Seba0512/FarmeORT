@@ -2324,6 +2324,85 @@ El integrante conserva la revisión humana, el push y la publicación del PR; UM
 
 ---
 
+### D-71 — Coordinar el retiro individual con el inicio del torneo (H-001)
+
+**Problema:** la auditoría del 03/10, actualizada el 04/10/2026 sobre `bd966a3`, confirmó que
+`ServicioInscripciones.Cancelar` podía leer Abierto y confirmar el retiro después de que otra petición
+generara la primera ronda. El torneo quedaba EnCurso con tres Aceptadas y dos batallas, una de ellas
+con un jugador retirado. En el orden inverso, una ronda preparada con cuatro Aceptadas podía guardarse
+después del retiro. La letra §1.5 permite cancelar la propia inscripción solo mientras siga Abierto;
+§2.5 exige exactamente el cupo al iniciar. Un guardado atómico no preserva esas lecturas anteriores.
+
+**Alternativas consideradas:** repetir el chequeo de estado antes de guardar (conserva un intervalo
+de carrera); lock del servicio Scoped (no coordina contextos ni instancias); transacción serializable
+con relectura de todas las precondiciones (amplía la coordinación de servicios y repositorios);
+hacer que todo cambio de inscripción renueve automáticamente la versión del torneo (afecta también
+el fallo y la cancelación global); incorporar específicamente el retiro individual a la versión de D-70.
+
+**Decisión adoptada:** `RepositorioInscripciones.Actualizar`, utilizado actualmente por el retiro
+individual, marca únicamente la propiedad shadow `Version` del torneo como modificada además del
+guardado existente de la inscripción. `FarmeORTContext.SaveChanges` renueva esa versión mediante el
+mecanismo existente. La actualización condicionada por la versión leída y la cancelación se confirman
+en la misma transacción. Ante `DbUpdateConcurrencyException`, se limpia el tracking del intento fallido
+y se lanza `TorneoModificadoException`, ya mapeada a 409 `TOURNAMENT_CHANGED`, sin reintento automático.
+
+Si confirma primero la ronda, se revierte el retiro: siguen cuatro Aceptadas y dos batallas Pendientes.
+Si confirma primero el retiro, se revierten el inicio y todas las batallas nuevas: siguen Abierto y
+tres Aceptadas. El cliente vuelve a consultar antes de reenviar. Si una nueva lectura encuentra EnCurso,
+el retiro mantiene 409 `TOURNAMENT_NOT_OPEN`; un retiro válido mantiene 200 `InscripcionResponse`.
+
+**Justificación:** extiende la coordinación ya aprobada en D-70 sin cambiar capas, contratos de
+servicios/repositorios, rutas, roles, DTOs ni modelo de tablas. No necesita migración: reutiliza Version.
+No se cambia `Inscripcion.Cancelar`, porque la cancelación global también debe cancelar Aceptadas
+con torneo EnCurso. Tampoco se modifica el guardado del fallo, que elimina al perdedor mediante el
+contexto compartido y `IRepositorioBatallas.Guardar`. El punto de escritura se verificó en el código
+real antes de ampliarlo. No se marcan automáticamente todos los torneos cargados ni sus navegaciones.
+Un cambio concurrente del mismo torneo puede rechazar un retiro aunque siga Abierto; es un conflicto
+conservador y requiere releer. La garantía cubre estas escrituras de la aplicación, no SQL externo que
+omita renovar Version ni inconsistencias previas. H-002 requiere una corrección independiente.
+
+**Conceptos del curso:** concurrencia optimista, atomicidad de persistencia, EF Code First,
+SRP, DIP, DI Scoped, Information Expert, TDD de regresión y conflictos HTTP 409.
+
+**Evidencia:** `RepositorioInscripcionesTests.Actualizar_RetiroYPrimeraRondaLeenTorneoAbierto_SoloConfirmaElPrimerGuardado`,
+un método con dos DataRow y contextos independientes. RED `6507573`: ambas variantes ejecutadas
+fallaron porque no se lanzó la excepción esperada. GREEN `a5854fc`: ambas pasan y verifican el estado
+persistido, cantidades y tracking limpio; 163 tests de repositorios correctos. REFACTOR evaluado:
+no se agregó una modificación sin una mejora concreta. La suite completa tiene 959 tests correctos
+(206 Dominio, 292 Servicios, 163 Repositorios, 288 WebAPI, 10 Fabrica), build Release y formato verificados.
+Cobertura combinada de la misma ejecución: 1988/1989 líneas y 524/526 ramas; todos los assemblies
+superan el 90 % en métricas aplicables, con las exclusiones originales.
+
+SQL Server Express 2025 (17.0.5005.3) confirmó ambos órdenes mediante HTTP sobre controllers,
+autenticación, servicios y repositorios reales. Un interceptor exclusivo del fixture intercaló el
+servicio competidor en un contexto independiente antes del guardado. Los dos pedidos perdedores
+respondieron 409 `TOURNAMENT_CHANGED` con el mensaje existente, sin detalles técnicos; las consultas
+independientes confirmaron rollback y el estado descrito. La base exclusiva fue migrada desde cero
+con las once migraciones existentes y eliminada al terminar. Los fixtures privados no se distribuyen
+ni reemplazan pruebas de instalación. El request Postman de retiro documenta el conflicto; su ejecución
+secuencial no prueba concurrencia. La evidencia de ejecución queda separada de la auditoría histórica.
+
+El Runner completo de la colección actual sobre otra base exclusiva Express 2025 ejecutó 430 requests
+y 860 assertions sin fallos, incluyendo cancelación global, reinscripción, fallos y rondas siguientes.
+Son 392 requests definidos; los saltos de fixtures producen las 430 ejecuciones. La segunda base y
+la credencial sintética del fixture se eliminaron al cerrar. Build Release: cero errores; formato en
+modo verificación: correcto. Actions y aprobación humana del futuro PR todavía no fueron verificadas.
+
+**Participación de IA:** Codex leyó el informe completo, la letra §§1.5/2.5 y el contrato del equipo,
+consultó Graphify para localizar las relaciones y verificó el código real. Propuso ampliar D-70 en el
+punto concreto de guardado, implementó el test antes de la corrección y conservó las ejecuciones RED
+y GREEN en commits separados. Se descartaron los chequeos repetidos y locks por no cerrar la carrera,
+y el versionado automático de toda inscripción por ampliar innecesariamente el alcance. La observación
+exploratoria de D-70 sobre un retiro sin conflicto no había demostrado esta intercalación: esta entrada
+registra la reproducción específica y su corrección, sin reescribir aquella evidencia. Se usaron AGENTS,
+preferencias y contexto privados, skills DA2 de funcionalidad, dominio, arquitectura, TDD, Git, API,
+especificación, Postman y documentación, y el skill Graphify. Un test existente de logging no pudo
+acceder al registro de eventos desde el sandbox; la suite se reejecutó con los permisos necesarios sin
+cambiar tests ni configuración. El integrante conserva el push, el PR y la revisión humana; el equipo
+debe reflejar esta coordinación en sus entregables API/UML. No se generaron diagramas automáticamente.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
