@@ -104,13 +104,23 @@ public sealed class ServicioSesionesTests
     }
 
     [TestMethod]
-    public void CerrarSesion_Token_EliminaLaSesion()
+    public void CerrarSesion_SesionPropia_EliminaLaSesion()
     {
+        _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns(new Sesion(Token, CrearUsuario()));
         _repositorioSesiones.Setup(r => r.Eliminar(Token));
 
-        _servicio.CerrarSesion(Token);
+        _servicio.CerrarSesion(Token, UsuarioId);
 
         _repositorioSesiones.Verify(r => r.Eliminar(Token), Times.Once);
+    }
+
+    [TestMethod]
+    public void CerrarSesion_SesionDeOtroUsuario_LanzaNoEsDuenoDeLaSesionSinEliminarla()
+    {
+        _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns(new Sesion(Token, CrearUsuario()));
+
+        Assert.ThrowsExactly<NoEsDuenoDeLaSesionException>(() => _servicio.CerrarSesion(Token, 8));
+        _repositorioSesiones.Verify(r => r.Eliminar(It.IsAny<Guid>()), Times.Never);
     }
 
     [TestMethod]

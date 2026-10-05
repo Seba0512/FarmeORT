@@ -6,7 +6,7 @@ public interface IServicioSesiones
 {
     SesionResponse IniciarSesion(LoginRequest request);
 
-    void CerrarSesion(Guid token);
+    void CerrarSesion(Guid token, int usuarioId);
 
     SesionAutenticada? ObtenerSesionAutenticada(Guid token);
 }

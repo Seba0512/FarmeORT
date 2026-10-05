@@ -21,7 +21,7 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
     public IActionResult Eliminar()
     {
         var sesion = HttpContext.ObtenerSesionAutenticada();
-        servicioSesiones.CerrarSesion(sesion.Token);
+        servicioSesiones.CerrarSesion(sesion.Token, sesion.UsuarioId);
         return NoContent();
     }
 }

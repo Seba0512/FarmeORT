@@ -46,12 +46,12 @@ public sealed class SesionesControllerTests
         var sesion = new SesionAutenticada { Token = token, UsuarioId = 7, Rol = Roles.Jugador };
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         _controller.HttpContext.Items[ClavesContexto.SesionAutenticada] = sesion;
-        _servicioSesiones.Setup(s => s.CerrarSesion(token));
+        _servicioSesiones.Setup(s => s.CerrarSesion(token, 7));
 
         var resultado = _controller.Eliminar();
 
         Assert.IsInstanceOfType<NoContentResult>(resultado);
-        _servicioSesiones.Verify(s => s.CerrarSesion(token), Times.Once);
+        _servicioSesiones.Verify(s => s.CerrarSesion(token, 7), Times.Once);
     }
 
     [TestMethod]

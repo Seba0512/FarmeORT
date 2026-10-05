@@ -32,7 +32,7 @@ internal sealed class ServicioSesiones(
         };
     }
 
-    public void CerrarSesion(Guid token)
+    public void CerrarSesion(Guid token, int usuarioId)
     {
         repositorioSesiones.Eliminar(token);
     }
