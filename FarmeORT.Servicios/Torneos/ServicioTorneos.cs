@@ -96,6 +96,12 @@ internal sealed class ServicioTorneos(
             ValidarCodigoDisponible(request.Codigo);
         }
 
+        // El cupo no baja de las inscripciones Aceptadas: no se cancelan inscripciones para hacer lugar (foro, debate 13).
+        if(datos.Cupo < repositorioInscripciones.ContarAceptadas(torneo.Id))
+        {
+            throw new CupoMenorQueInscripcionesAceptadasException();
+        }
+
         torneo.Modificar(
             request.Codigo,
             request.Nombre,
