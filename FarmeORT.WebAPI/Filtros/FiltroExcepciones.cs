@@ -18,6 +18,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status401Unauthorized, "INVALID_CREDENTIALS", "Email o contraseña incorrectos."),
         [typeof(UsuarioNoEncontradoException)] =
             new(StatusCodes.Status404NotFound, "USER_NOT_FOUND", "No existe un usuario con ese id."),
+        [typeof(SesionNoEncontradaException)] =
+            new(StatusCodes.Status404NotFound, "SESSION_NOT_FOUND", "No existe una sesión con ese token."),
+        [typeof(NoEsDuenoDeLaSesionException)] =
+            new(StatusCodes.Status403Forbidden, "NOT_SESSION_OWNER", "La sesión no es tuya."),
         [typeof(SkillNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "SKILL_NOT_FOUND", "No existe una skill con ese id."),
         [typeof(SkillNoDeclaradaException)] =
