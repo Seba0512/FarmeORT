@@ -27,14 +27,14 @@ public sealed class SesionesControllerTests
     public void Crear_CredencialesValidas_Devuelve201ConLocationYSesion()
     {
         var request = new LoginRequest { Email = "jugador@farmeort.com", Contrasena = "Clave123!" };
-        var sesion = new SesionResponse { Token = "token-opaco", UsuarioId = 7, Rol = "Jugador" };
+        var sesion = new SesionResponse { Token = "3f2b8c1e-5d4a-4e7b-9c6f-1a2b3c4d5e6f", UsuarioId = 7, Rol = Roles.Jugador };
         _servicioSesiones.Setup(s => s.IniciarSesion(request)).Returns(sesion);
 
         var resultado = _controller.Crear(request) as CreatedResult;
 
         Assert.IsNotNull(resultado);
         Assert.AreEqual(StatusCodes.Status201Created, resultado.StatusCode);
-        Assert.AreEqual("/api/v1/sesiones/actual", resultado.Location);
+        Assert.AreEqual("/api/v1/sesiones/3f2b8c1e-5d4a-4e7b-9c6f-1a2b3c4d5e6f", resultado.Location);
         Assert.AreSame(sesion, resultado.Value);
         _servicioSesiones.Verify(s => s.IniciarSesion(request), Times.Once);
     }
