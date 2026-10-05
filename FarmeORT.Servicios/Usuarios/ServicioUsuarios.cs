@@ -35,7 +35,7 @@ internal sealed class ServicioUsuarios(
 
     public UsuarioResponse ObtenerPorId(int id)
     {
-        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        var usuario = ObtenerUsuarioExistente(id);
         return CrearResponse(usuario);
     }
 
@@ -46,7 +46,7 @@ internal sealed class ServicioUsuarios(
 
         var filtroRepositorio = new FiltroUsuarios(filtro.Nombre, filtro.Apellido, filtro.Nickname, limite, desplazamiento);
         var usuarios = repositorioUsuarios.Listar(filtroRepositorio);
-        return [.. usuarios.Select(CrearResponse)];
+        return usuarios.Select(CrearResponse).ToList();
     }
 
     public UsuarioResponse Modificar(int id, UsuarioAdminRequest request, int usuarioActualId)
@@ -59,7 +59,7 @@ internal sealed class ServicioUsuarios(
         ReglaContrasena.Validar(request.Contrasena);
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
-        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        var usuario = ObtenerUsuarioExistente(id);
         if(usuario.Rol != rol)
         {
             ValidarSinParticipacionVigente(usuario);
@@ -97,7 +97,7 @@ internal sealed class ServicioUsuarios(
             throw new OperacionSobreSiMismoException();
         }
 
-        var usuario = repositorioUsuarios.ObtenerPorId(id) ?? throw new UsuarioNoEncontradoException();
+        var usuario = ObtenerUsuarioExistente(id);
         ValidarSinParticipacionVigente(usuario);
         usuario.Eliminar();
         repositorioUsuarios.Eliminar(usuario);
@@ -123,10 +123,20 @@ internal sealed class ServicioUsuarios(
         }
     }
 
+    private Usuario ObtenerUsuarioExistente(int id)
+    {
+        var usuario = repositorioUsuarios.ObtenerPorId(id);
+        if(usuario == null)
+        {
+            throw new UsuarioNoEncontradoException();
+        }
+
+        return usuario;
+    }
+
     private static DateOnly ObtenerFechaNacimiento(RegistroJugadorRequest request)
     {
-        return request.FechaNacimiento
-            ?? throw new DatosInvalidosException("La fecha de nacimiento es obligatoria.");
+        return DatosObligatorios.Obtener(request.FechaNacimiento, "La fecha de nacimiento es obligatoria.");
     }
 
     private UsuarioResponse CrearUsuario(RegistroJugadorRequest request, Rol rol, DateOnly fechaNacimiento)
@@ -150,7 +160,7 @@ internal sealed class ServicioUsuarios(
 
     private void ValidarEmailDisponible(string email)
     {
-        if(repositorioUsuarios.ObtenerPorEmail(email) is not null)
+        if(repositorioUsuarios.ObtenerPorEmail(email) != null)
         {
             throw new EmailYaExisteException();
         }
