@@ -38,6 +38,7 @@ public sealed class FiltroExcepcionesTests
     [DataRow(typeof(CodigoTorneoYaExisteException), StatusCodes.Status409Conflict, "TOURNAMENT_CODE_ALREADY_EXISTS", "Ya existe un torneo con ese código.")]
     [DataRow(typeof(TorneoNoModificableException), StatusCodes.Status409Conflict, "TOURNAMENT_NOT_MODIFIABLE", "Solo se puede modificar un torneo Abierto.")]
     [DataRow(typeof(TorneoNoCancelableException), StatusCodes.Status409Conflict, "TOURNAMENT_NOT_CANCELLABLE", "Solo se puede cancelar un torneo Abierto o En curso.")]
+    [DataRow(typeof(CupoMenorQueInscripcionesAceptadasException), StatusCodes.Status409Conflict, "TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS", "El cupo no puede ser menor que las inscripciones aceptadas del torneo.")]
     [DataRow(typeof(OperacionSobreSiMismoException), StatusCodes.Status409Conflict, "SELF_OPERATION_NOT_ALLOWED", "Un usuario no puede modificarse ni eliminarse a sí mismo.")]
     [DataRow(typeof(NoEsOrganizadorDelTorneoException), StatusCodes.Status403Forbidden, "NOT_TOURNAMENT_ORGANIZER", "No sos el organizador asignado a este torneo.")]
     [DataRow(typeof(SkillObligatoriaYaAsociadaException), StatusCodes.Status409Conflict, "MANDATORY_SKILL_ALREADY_ADDED", "La skill ya es obligatoria en este torneo.")]
