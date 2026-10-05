@@ -16,10 +16,13 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
         return Created("/api/v1/sesiones/actual", response);
     }
 
-    [HttpDelete("actual")]
+    // El token identifica a la sesión; el servicio controla que sea del usuario autenticado.
+    [HttpDelete("{token:guid}")]
     [Autenticacion]
     public IActionResult Eliminar(Guid token)
     {
-        throw new NotImplementedException();
+        var sesion = HttpContext.ObtenerSesionAutenticada();
+        servicioSesiones.CerrarSesion(token, sesion.UsuarioId);
+        return NoContent();
     }
 }
