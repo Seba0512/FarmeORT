@@ -56,11 +56,11 @@ ServicioTorneos ..> IRepositorioInscripciones : <<use>>
 IRepositorioTorneos <|.. RepositorioTorneos
 IRepositorioBatallas <|.. RepositorioBatallas
 IRepositorioInscripciones <|.. RepositorioInscripciones
-RepositorioTorneos --> "1" FarmeORTContext
-RepositorioBatallas --> "1" FarmeORTContext
-RepositorioInscripciones --> "1" FarmeORTContext
-Batalla "0..*" --> "1" Torneo
-Inscripcion "0..*" --> "1" Torneo
+RepositorioTorneos --> "1" FarmeORTContext : contexto
+RepositorioBatallas --> "1" FarmeORTContext : contexto
+RepositorioInscripciones --> "1" FarmeORTContext : contexto
+Batalla "0..*" --> "1" Torneo : torneo
+Inscripcion "0..*" --> "1" Torneo : torneo
 
 note bottom of FarmeORTContext
   Scoped: una instancia por pedido, compartida por los tres

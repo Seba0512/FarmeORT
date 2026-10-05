@@ -111,7 +111,7 @@ ServicioTorneos ..> IRepositorioBatallas : <<use>>
 RespuestasRondas ..> RespuestasBatallas : <<use>>
 RespuestasRondas ..> RondaResponse : <<create>>
 EmparejamientoPorElo ..> ParDeJugadores : <<create>>
-Batalla "*" --> "1" Torneo
-RondaResponse "1" *-- "*" BatallaResponse
+Batalla "*" --> "1" Torneo : torneo
+RondaResponse "1" *-- "*" BatallaResponse : batallas
 TorneoDetalleResponse "1" *-- "*" RondaResponse : cuadro
 @enduml

@@ -49,8 +49,8 @@ package FarmeORT.IRepositorios {
 }
 
 TorneoResponse <|-- TorneoDetalleResponse
-TorneoDetalleResponse --> "0..2" SkillResponse
-TorneoDetalleResponse --> "0..*" JugadorAceptadoResponse
+TorneoDetalleResponse --> "0..2" SkillResponse : skillsObligatorias
+TorneoDetalleResponse --> "0..*" JugadorAceptadoResponse : jugadoresAceptados
 ServicioTorneos ..> IRepositorioTorneos : <<use>>
 ServicioTorneos ..> IRepositorioInscripciones : <<use>>
 ServicioTorneos ..> RespuestasSkills : <<use>>
