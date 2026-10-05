@@ -347,6 +347,32 @@ public sealed class ServicioTorneosTests
         _repositorioTorneos.Verify(r => r.ExistePorCodigo(It.IsAny<string>()), Times.Never);
     }
 
+    // Foro (debate 13): el cupo no baja de las inscripciones Aceptadas; no se cancelan inscripciones para hacer lugar.
+    [TestMethod]
+    public void Modificar_CupoMenorQueLasInscripcionesAceptadas_LanzaCupoMenorQueInscripcionesAceptadasSinGuardar()
+    {
+        var torneo = CrearTorneo();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(OrganizadorId)).Returns(_organizador);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo));
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(6);
+        ConfigurarFechaActual();
+        var request = new TorneoRequest
+        {
+            Codigo = Codigo,
+            Nombre = Nombre,
+            Descripcion = Descripcion,
+            FechaInicio = FechaInicio,
+            FechaFin = FechaFin,
+            Cupo = 4,
+            OrganizadorId = OrganizadorId,
+        };
+
+        Assert.ThrowsExactly<CupoMenorQueInscripcionesAceptadasException>(() => _servicio.Modificar(TorneoId, request));
+
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
     [TestMethod]
     [DataRow(nameof(TorneoRequest.FechaInicio), "La fecha de inicio es obligatoria.")]
     [DataRow(nameof(TorneoRequest.FechaFin), "La fecha de fin es obligatoria.")]

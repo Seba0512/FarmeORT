@@ -96,6 +96,8 @@ internal sealed class ServicioTorneos(
             ValidarCodigoDisponible(request.Codigo);
         }
 
+        // El torneo controla que el cupo no baje de sus inscripciones Aceptadas, después de controlar que esté Abierto.
+        var inscripcionesAceptadas = repositorioInscripciones.ContarAceptadas(torneo.Id);
         torneo.Modificar(
             request.Codigo,
             request.Nombre,
@@ -104,9 +106,12 @@ internal sealed class ServicioTorneos(
             datos.FechaFin,
             datos.Cupo,
             organizador,
-            ObtenerFechaActual());
+            ObtenerFechaActual(),
+            inscripcionesAceptadas);
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+
+        // Modificar el torneo no cambia sus inscripciones: la cantidad ya contada sigue valiendo para la respuesta.
+        return CrearResponse(torneo, inscripcionesAceptadas);
     }
 
     public TorneoResponse Cancelar(int id)

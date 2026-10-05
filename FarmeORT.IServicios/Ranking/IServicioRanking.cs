@@ -4,5 +4,5 @@ namespace FarmeORT.IServicios.Ranking;
 
 public interface IServicioRanking
 {
-    IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro);
+    IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro, bool esAnonimo);
 }

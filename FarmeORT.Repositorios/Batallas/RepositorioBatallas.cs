@@ -95,19 +95,14 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             .Skip(filtro.Desplazamiento).Take(filtro.Limite).ToList();
     }
 
-    public IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId)
+    public IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds)
     {
-        var consulta = contexto.Batallas.AsNoTracking()
-            .Where(b => b.Estado == EstadoBatalla.Finalizada && b.GanadorId != null)
-            .Where(b => jugadorIds.Contains(b.Jugador1Id) || jugadorIds.Contains(b.Jugador2Id));
-        if(torneoId != null)
-        {
-            consulta = consulta.Where(b => b.TorneoId == torneoId.Value);
-        }
-
         // Una sola consulta trae las batallas Finalizadas de los jugadores pedidos y se cuentan en memoria: agrupar
         // por el perdedor dentro de la consulta dio un conteo incorrecto en los tests con SQLite (D-46).
-        var finalizadas = consulta.ToList();
+        var finalizadas = contexto.Batallas.AsNoTracking()
+            .Where(b => b.Estado == EstadoBatalla.Finalizada && b.GanadorId != null)
+            .Where(b => jugadorIds.Contains(b.Jugador1Id) || jugadorIds.Contains(b.Jugador2Id))
+            .ToList();
         Dictionary<int, ResultadosDeBatallas> resultados = [];
         foreach(var jugadorId in jugadorIds)
         {

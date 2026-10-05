@@ -44,6 +44,10 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_MODIFIABLE", "Solo se puede modificar un torneo Abierto."),
         [typeof(TorneoNoCancelableException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_CANCELLABLE", "Solo se puede cancelar un torneo Abierto o En curso."),
+
+        // Foro (debate 13): el cupo no baja de las inscripciones Aceptadas.
+        [typeof(CupoMenorQueInscripcionesAceptadasException)] =
+            new(StatusCodes.Status409Conflict, "TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS", "El cupo no puede ser menor que las inscripciones aceptadas del torneo."),
         [typeof(OperacionSobreSiMismoException)] =
             new(StatusCodes.Status409Conflict, "SELF_OPERATION_NOT_ALLOWED", "Un usuario no puede modificarse ni eliminarse a sí mismo."),
 

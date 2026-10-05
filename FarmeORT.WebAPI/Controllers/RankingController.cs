@@ -1,5 +1,6 @@
 using FarmeORT.DTOs.Ranking;
 using FarmeORT.IServicios.Ranking;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FarmeORT.WebAPI.Controllers;
@@ -9,8 +10,10 @@ namespace FarmeORT.WebAPI.Controllers;
 public sealed class RankingController(IServicioRanking servicioRanking) : ControllerBase
 {
     [HttpGet]
+    [AutenticacionOpcional]
     public IActionResult Obtener([FromQuery] FiltroRankingRequest filtro)
     {
-        return Ok(servicioRanking.Obtener(filtro));
+        var esAnonimo = HttpContext.EsAnonimo();
+        return Ok(servicioRanking.Obtener(filtro, esAnonimo));
     }
 }

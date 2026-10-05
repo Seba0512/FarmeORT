@@ -1,6 +1,8 @@
 using System.Reflection;
 using FarmeORT.DTOs.Ranking;
+using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Ranking;
+using FarmeORT.IServicios.Sesiones;
 using FarmeORT.WebAPI.Controllers;
 using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
@@ -19,15 +21,21 @@ public sealed class RankingControllerTests
     public void Inicializar()
     {
         _servicioRanking = new Mock<IServicioRanking>(MockBehavior.Strict);
-        _controller = new RankingController(_servicioRanking.Object);
+        _controller = new RankingController(_servicioRanking.Object)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+        };
     }
 
     [TestMethod]
-    public void Obtener_ConCantidad_Devuelve200ConElRanking()
+    [DataRow(false)]
+    [DataRow(true)]
+    public void Obtener_ConCantidad_Devuelve200IndicandoSiConsultaUnAnonimo(bool autenticado)
     {
+        AutenticarSi(autenticado);
         var filtro = new FiltroRankingRequest { Cantidad = 5 };
         IReadOnlyList<JugadorRankingResponse> ranking = [new JugadorRankingResponse { Posicion = 1, Nickname = "aurafarmer", Elo = 1500 }];
-        _servicioRanking.Setup(s => s.Obtener(filtro)).Returns(ranking);
+        _servicioRanking.Setup(s => s.Obtener(filtro, !autenticado)).Returns(ranking);
 
         var resultado = _controller.Obtener(filtro) as OkObjectResult;
 
@@ -36,18 +44,28 @@ public sealed class RankingControllerTests
         Assert.AreSame(ranking, resultado.Value);
     }
 
+    // Público, pero si llega un token se valida: el autenticado ve también los torneos cancelados (foro, debate 11).
     [TestMethod]
-    public void Obtener_ContratoPublico_ExponeGetRankingSinAutenticacion()
+    public void Obtener_ContratoDeSeguridad_ExponeGetRankingConAutenticacionOpcional()
     {
         var tipo = typeof(RankingController);
         var metodo = tipo.GetMethod(nameof(RankingController.Obtener))!;
 
-        var ruta = tipo.GetCustomAttribute<RouteAttribute>();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
 
-        Assert.IsNotNull(ruta);
-        Assert.AreEqual("api/v1/rankings", ruta.Template);
+        Assert.AreEqual("api/v1/rankings", tipo.GetCustomAttribute<RouteAttribute>()!.Template);
         Assert.IsNotNull(metodo.GetCustomAttribute<HttpGetAttribute>());
         Assert.IsNull(tipo.GetCustomAttribute<AutenticacionAttribute>());
-        Assert.IsNull(metodo.GetCustomAttribute<AutenticacionAttribute>());
+        Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
+    }
+
+    // Sin sesión en el contexto, el controller trata la consulta como anónima.
+    private void AutenticarSi(bool autenticado)
+    {
+        if(autenticado)
+        {
+            var sesion = new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = 7, Rol = Roles.Jugador };
+            _controller.HttpContext.Items[ClavesContexto.SesionAutenticada] = sesion;
+        }
     }
 }

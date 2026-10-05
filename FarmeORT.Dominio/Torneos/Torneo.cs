@@ -78,7 +78,8 @@ public sealed class Torneo
         DateOnly fechaFin,
         int cupo,
         Usuario organizador,
-        DateOnly fechaActual)
+        DateOnly fechaActual,
+        int inscripcionesAceptadas)
     {
         ValidarModificable();
 
@@ -86,6 +87,12 @@ public sealed class Torneo
         if(fechaInicio != FechaInicio)
         {
             ValidarInicioNoPasado(fechaInicio, fechaActual);
+        }
+
+        // El cupo no baja de las inscripciones Aceptadas: no se cancelan inscripciones para hacer lugar (foro, debate 13).
+        if(cupo < inscripcionesAceptadas)
+        {
+            throw new CupoMenorQueInscripcionesAceptadasException();
         }
 
         AsignarDatos(codigo, nombre, descripcion, fechaInicio, fechaFin, cupo, organizador);
