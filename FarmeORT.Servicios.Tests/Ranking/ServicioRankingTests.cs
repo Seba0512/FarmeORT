@@ -111,7 +111,7 @@ public sealed class ServicioRankingTests
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
         _repositorioUsuarios.Setup(r => r.ListarRanking(5)).Returns([CrearJugador(9, "otrotorneo")]);
         _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 5)).Returns([CrearJugador(4, "aurafarmer"), CrearJugador(2, "sixseven")]);
-        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 }, TorneoId)).Returns(new Dictionary<int, ResultadosDeBatallas>());
+        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 }, null)).Returns(new Dictionary<int, ResultadosDeBatallas>());
 
         var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5, TorneoId = TorneoId });
 

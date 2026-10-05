@@ -24,7 +24,8 @@ internal sealed class ServicioRanking(
             return [];
         }
 
-        var resultados = repositorioBatallas.ContarResultadosPorJugador(jugadores.Select(j => j.Id).ToList(), filtro.TorneoId);
+        // Aunque se filtre por torneo, ganadas y perdidas son las globales de cada jugador (foro, debate 06).
+        var resultados = repositorioBatallas.ContarResultadosPorJugador(jugadores.Select(j => j.Id).ToList(), null);
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
