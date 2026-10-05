@@ -95,7 +95,11 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
                 .Where(e => e.State == EntityState.Added)
                 .Select(e => e.Entity)
                 .ToList();
-            agregadas.ForEach(d => contexto.Entry(d).State = EntityState.Detached);
+            foreach(var declarada in agregadas)
+            {
+                contexto.Entry(declarada).State = EntityState.Detached;
+            }
+
             if(agregadas.Any(EstaGuardada))
             {
                 throw new SkillYaDeclaradaException();

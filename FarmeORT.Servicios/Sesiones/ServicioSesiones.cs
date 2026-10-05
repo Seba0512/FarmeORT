@@ -17,7 +17,7 @@ internal sealed class ServicioSesiones(
     public SesionResponse IniciarSesion(LoginRequest request)
     {
         var usuario = repositorioUsuarios.ObtenerPorEmail(request.Email);
-        if(usuario is null || usuario.Eliminado || !hasheadorContrasenas.Verificar(request.Contrasena, usuario.ContrasenaHash))
+        if(usuario == null || usuario.Eliminado || !hasheadorContrasenas.Verificar(request.Contrasena, usuario.ContrasenaHash))
         {
             throw new CredencialesInvalidasException();
         }
@@ -40,7 +40,7 @@ internal sealed class ServicioSesiones(
     public SesionAutenticada? ObtenerSesionAutenticada(Guid token)
     {
         var sesion = repositorioSesiones.ObtenerPorToken(token);
-        if(sesion is null)
+        if(sesion == null)
         {
             return null;
         }

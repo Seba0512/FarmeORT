@@ -1,5 +1,5 @@
 @startuml
-title Inscripción a un torneo (D-41)
+title Inscripción a un torneo (D-41, D-67)
 actor Jugador
 participant ":InscripcionesController" as C
 participant ":ServicioInscripciones" as S
@@ -33,6 +33,12 @@ opt jugador == null
   S --> C : UsuarioNoEncontradoException
   C --> Jugador : 404 USER_NOT_FOUND
 end
+S -> To : Estado
+To --> S : estado
+opt estado != Abierto
+  S --> C : TorneoNoAbiertoException
+  C --> Jugador : 409 TOURNAMENT_NOT_OPEN
+end
 S -> RI : ExisteAceptada(torneoId, jugadorId)
 RI --> S : bool
 opt ya tiene una Aceptada
@@ -51,11 +57,11 @@ create participant "inscripcion:Inscripcion" as I
 S -> I : new Inscripcion(torneo, jugador, fecha)
 I -> To : Estado
 To --> I : estado
-opt estado != Abierto
-  I --> S : TorneoNoAbiertoException
-  S --> C : excepción
-  C --> Jugador : 409 TOURNAMENT_NOT_OPEN
-end
+note right of I
+  El constructor vuelve a exigir el torneo Abierto:
+  es la invariante del dominio para cualquier otro
+  llamador. Desde el servicio ya está controlado.
+end note
 I -> To : SkillsObligatorias
 To --> I : obligatorias
 I -> U : SkillsFaltantes(obligatorias)

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Batallas;
@@ -31,11 +32,11 @@ public sealed class BatallasControllerTests
     [TestMethod]
     public void Consultas_RequierenAutenticacionYLosTresRoles()
     {
-        var atributo = typeof(BatallasController).GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>().SingleOrDefault();
+        var controller = typeof(BatallasController);
+
+        var atributo = controller.GetCustomAttribute<AutorizacionAttribute>();
 
         Assert.IsNotNull(atributo);
-        Assert.IsInstanceOfType<AutenticacionAttribute>(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Jugador, Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
 

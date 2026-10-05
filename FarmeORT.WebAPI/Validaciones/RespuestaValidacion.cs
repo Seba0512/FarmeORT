@@ -20,9 +20,14 @@ internal static class RespuestaValidacion
 
     private static List<string> ArmarDetalles(ModelStateDictionary estadoDelModelo)
     {
-        var errores = estadoDelModelo
-            .SelectMany(campo => campo.Value!.Errors.Select(error => new ErrorDeCampo(campo.Key, error.ErrorMessage)))
-            .ToList();
+        List<ErrorDeCampo> errores = [];
+        foreach(var campo in estadoDelModelo)
+        {
+            foreach(var error in campo.Value!.Errors)
+            {
+                errores.Add(new ErrorDeCampo(campo.Key, error.ErrorMessage));
+            }
+        }
 
         // Sin cuerpo (clave vacía) o con un JSON que no se puede leer (clave "$..."), el resto de los errores es
         // consecuencia de eso: se informa solo el problema del cuerpo, sin el mensaje técnico del parser.
@@ -48,8 +53,9 @@ internal static class RespuestaValidacion
             return "El cuerpo de la solicitud no es un JSON válido.";
         }
 
-        // "$.cupo": el JSON se leyó, pero ese dato no tiene el tipo esperado.
-        return $"{campo[2..]}: El valor no tiene un formato válido.";
+        // "$.cupo": el JSON se leyó, pero ese dato no tiene el tipo esperado. Se saca el "$." del principio.
+        var nombreDelDato = campo.Substring(2);
+        return $"{nombreDelDato}: El valor no tiene un formato válido.";
     }
 
     private sealed record ErrorDeCampo(string Campo, string Mensaje);

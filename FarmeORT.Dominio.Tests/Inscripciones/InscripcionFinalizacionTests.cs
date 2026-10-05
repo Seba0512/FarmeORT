@@ -5,7 +5,7 @@ using FarmeORT.Dominio.Usuarios;
 
 namespace FarmeORT.Dominio.Tests.Inscripciones;
 
-// Pendiente de D-41: ExigeSkill con el torneo En curso y Finalizado, que recién existen con las rondas y la finalización.
+// ExigeSkill con el torneo En curso y Finalizado: solo una inscripción de un torneo vigente exige las obligatorias (D-41).
 [TestClass]
 public sealed class InscripcionFinalizacionTests
 {

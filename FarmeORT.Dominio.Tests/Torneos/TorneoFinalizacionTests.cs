@@ -55,7 +55,6 @@ public sealed class TorneoFinalizacionTests
         Assert.ThrowsExactly<TorneoNoEnCursoException>(() => _torneo.Finalizar(_campeon));
     }
 
-    // Pendiente de D-36/D-37: la regla ya estaba en Torneo.Cancelar, pero no había forma de tener un torneo Finalizado.
     [TestMethod]
     public void Cancelar_TorneoFinalizado_LanzaTorneoNoCancelable()
     {
@@ -63,6 +62,18 @@ public sealed class TorneoFinalizacionTests
         _torneo.Finalizar(_campeon);
 
         Assert.ThrowsExactly<TorneoNoCancelableException>(_torneo.Cancelar);
+        Assert.AreEqual(EstadoTorneo.Finalizado, _torneo.Estado);
+    }
+
+    [TestMethod]
+    public void Modificar_TorneoFinalizado_LanzaTorneoNoModificable()
+    {
+        _torneo.Iniciar(4);
+        _torneo.Finalizar(_campeon);
+
+        Assert.ThrowsExactly<TorneoNoModificableException>(
+            () => _torneo.Modificar("COPAFUEGO", "Copa Fuego", "Torneo eliminatorio de batallas de aura.", FechaActual, FechaActual.AddDays(10), 8, _torneo.Organizador, FechaActual));
+        Assert.AreEqual("COPAAURA", _torneo.Codigo);
         Assert.AreEqual(EstadoTorneo.Finalizado, _torneo.Estado);
     }
 }

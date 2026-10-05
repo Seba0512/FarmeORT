@@ -8,6 +8,9 @@ namespace FarmeORT.Dominio.Batallas;
 public sealed class Batalla
 {
     private const int LanzamientosTotales = 8;
+    private const int LanzamientosPorJugador = 4;
+    private const int LargoMinimoComentario = 10;
+    private const int LargoMaximoComentario = 500;
 
     private readonly List<Lanzamiento> _lanzamientos = [];
 
@@ -36,13 +39,7 @@ public sealed class Batalla
         Jugador2 = jugador2;
         Jugador2Id = jugador2.Id;
         Estado = EstadoBatalla.Pendiente;
-        var jugadorInicial = jugador1.Elo.CompareTo(jugador2.Elo) switch
-        {
-            > 0 => jugador1,
-            < 0 => jugador2,
-            _ => sorteo.ElegirEntre(jugador1, jugador2),
-        };
-        JugadorInicialId = jugadorInicial.Id;
+        JugadorInicialId = ElegirJugadorInicial(jugador1, jugador2, sorteo).Id;
         JugadorTurnoId = JugadorInicialId;
     }
 
@@ -113,7 +110,9 @@ public sealed class Batalla
             throw new JugadorNoParticipaEnBatallaException();
         }
 
-        if(string.IsNullOrWhiteSpace(comentario) || comentario.Length is < 10 or > 500)
+        if(string.IsNullOrWhiteSpace(comentario)
+            || comentario.Length < LargoMinimoComentario
+            || comentario.Length > LargoMaximoComentario)
         {
             throw new DatosInvalidosException("El comentario debe tener entre 10 y 500 caracteres y no puede estar vacío.");
         }
@@ -173,13 +172,50 @@ public sealed class Batalla
             throw new SkillYaLanzadaException();
         }
 
-        var propios = _lanzamientos.Where(l => l.JugadorId == jugador.Id).ToList();
-        var pendientes = Torneo.SkillsObligatorias
-            .Where(obligatoria => propios.All(l => l.SkillId != obligatoria.Id)).ToList();
-        var turnosRestantes = (LanzamientosTotales / 2) - propios.Count;
-        if(pendientes.Count == turnosRestantes && pendientes.All(obligatoria => obligatoria.Id != skill.Id))
+        // Si le quedan tantas obligatorias pendientes como turnos, solo puede lanzar una obligatoria (letra 1.8).
+        var pendientes = ObligatoriasPendientes(jugador);
+        var turnosRestantes = LanzamientosPorJugador - CantidadDeLanzamientos(jugador);
+        var lanzaUnaPendiente = pendientes.Any(obligatoria => obligatoria.Id == skill.Id);
+        if(pendientes.Count == turnosRestantes && !lanzaUnaPendiente)
         {
             throw new SkillObligatoriaPendienteException();
         }
+    }
+
+    // Empieza el de mayor ELO; si empatan, decide el sorteo.
+    private static Usuario ElegirJugadorInicial(Usuario jugador1, Usuario jugador2, ISorteo sorteo)
+    {
+        if(jugador1.Elo > jugador2.Elo)
+        {
+            return jugador1;
+        }
+
+        if(jugador2.Elo > jugador1.Elo)
+        {
+            return jugador2;
+        }
+
+        return sorteo.ElegirEntre(jugador1, jugador2);
+    }
+
+    // Las obligatorias del torneo que el jugador todavía no lanzó en esta batalla.
+    private List<Skill> ObligatoriasPendientes(Usuario jugador)
+    {
+        List<Skill> pendientes = [];
+        foreach(var obligatoria in Torneo.SkillsObligatorias)
+        {
+            var yaLaLanzo = _lanzamientos.Any(l => l.JugadorId == jugador.Id && l.SkillId == obligatoria.Id);
+            if(!yaLaLanzo)
+            {
+                pendientes.Add(obligatoria);
+            }
+        }
+
+        return pendientes;
+    }
+
+    private int CantidadDeLanzamientos(Usuario jugador)
+    {
+        return _lanzamientos.Count(l => l.JugadorId == jugador.Id);
     }
 }

@@ -217,9 +217,9 @@ public sealed class ServicioTorneosTests
         var filtro = new FiltroTorneos(EstadoTorneo.Cancelado, null, null, null, null, true, 20, 0);
         _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var torneos = _servicio.Listar(new FiltroTorneosRequest { Estado = nameof(EstadoTorneo.Cancelado) }, esAnonimo: true);
+        _servicio.Listar(new FiltroTorneosRequest { Estado = nameof(EstadoTorneo.Cancelado) }, esAnonimo: true);
 
-        Assert.IsEmpty(torneos);
+        _repositorioTorneos.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     [TestMethod]
@@ -230,9 +230,9 @@ public sealed class ServicioTorneosTests
     {
         _repositorioTorneos.Setup(r => r.Listar(new FiltroTorneos(null, null, null, null, null, false, 20, 0))).Returns([]);
 
-        var torneos = _servicio.Listar(new FiltroTorneosRequest { Estado = estado }, esAnonimo: false);
+        _servicio.Listar(new FiltroTorneosRequest { Estado = estado }, esAnonimo: false);
 
-        Assert.IsEmpty(torneos);
+        _repositorioTorneos.Verify(r => r.Listar(new FiltroTorneos(null, null, null, null, null, false, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -243,9 +243,9 @@ public sealed class ServicioTorneosTests
         var filtro = new FiltroTorneos(null, null, null, null, null, false, limiteEsperado, desplazamientoEsperado);
         _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var torneos = _servicio.Listar(new FiltroTorneosRequest { Limit = limit, Offset = offset }, esAnonimo: false);
+        _servicio.Listar(new FiltroTorneosRequest { Limit = limit, Offset = offset }, esAnonimo: false);
 
-        Assert.IsEmpty(torneos);
+        _repositorioTorneos.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     [TestMethod]
@@ -475,6 +475,32 @@ public sealed class ServicioTorneosTests
         _servicio.Cancelar(TorneoId);
 
         Assert.AreEqual(EstadoInscripcion.Cancelada, estadoAlGuardar);
+        _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoEnCurso_CancelaBatallasEInscripcionesEnElMismoGuardado()
+    {
+        var torneo = CrearTorneo();
+        var inscripcion = new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0));
+        torneo.Iniciar(Cupo);
+        var batalla = CrearBatalla(torneo);
+        EstadoBatalla? estadoBatallaAlGuardar = null;
+        EstadoInscripcion? estadoInscripcionAlGuardar = null;
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([batalla]);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([inscripcion]);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo)).Callback(() =>
+        {
+            estadoBatallaAlGuardar = batalla.Estado;
+            estadoInscripcionAlGuardar = inscripcion.Estado;
+        });
+
+        var response = _servicio.Cancelar(TorneoId);
+
+        Assert.AreEqual(nameof(EstadoTorneo.Cancelado), response.Estado);
+        Assert.AreEqual(EstadoBatalla.Cancelada, estadoBatallaAlGuardar);
+        Assert.AreEqual(EstadoInscripcion.Cancelada, estadoInscripcionAlGuardar);
         _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
     }
 

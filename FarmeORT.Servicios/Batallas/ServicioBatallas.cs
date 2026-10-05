@@ -22,15 +22,15 @@ internal sealed class ServicioBatallas(
             throw new DatosInvalidosException("El torneoId es obligatorio y debe ser positivo.");
         }
 
-        var torneo = repositorioTorneos.ObtenerPorId(filtro.TorneoId.Value) ?? throw new TorneoNoEncontradoException();
+        var torneoId = filtro.TorneoId.Value;
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
         ValidarVisibilidad(torneo, usuarioId, rol);
-        var consulta = new FiltroBatallas(
-            filtro.TorneoId.Value,
-            filtro.Estado == null ? null : ValoresPorNombre.Buscar<EstadoBatalla>(filtro.Estado),
-            filtro.Ronda > 0 ? filtro.Ronda : null,
-            filtro.JugadorId > 0 ? filtro.JugadorId : null,
-            Paginacion.AjustarLimite(filtro.Limit),
-            Paginacion.AjustarDesplazamiento(filtro.Offset));
+        var consulta = CrearConsulta(torneoId, filtro);
         return repositorioBatallas.Listar(consulta).Select(RespuestasBatallas.Resumen).ToList();
     }
 
@@ -46,9 +46,44 @@ internal sealed class ServicioBatallas(
         return RespuestasBatallas.Lanzamientos(batalla);
     }
 
+    // Un filtro opcional con un valor inválido no se aplica, en lugar de rechazar el pedido (D-35).
+    private static FiltroBatallas CrearConsulta(int torneoId, FiltroBatallasRequest filtro)
+    {
+        EstadoBatalla? estado = null;
+        if(filtro.Estado != null)
+        {
+            estado = ValoresPorNombre.Buscar<EstadoBatalla>(filtro.Estado);
+        }
+
+        int? ronda = null;
+        if(filtro.Ronda > 0)
+        {
+            ronda = filtro.Ronda;
+        }
+
+        int? jugadorId = null;
+        if(filtro.JugadorId > 0)
+        {
+            jugadorId = filtro.JugadorId;
+        }
+
+        return new FiltroBatallas(
+            torneoId,
+            estado,
+            ronda,
+            jugadorId,
+            Paginacion.AjustarLimite(filtro.Limit),
+            Paginacion.AjustarDesplazamiento(filtro.Offset));
+    }
+
     private Batalla ObtenerAutorizada(int id, int usuarioId, string rol)
     {
-        var batalla = repositorioBatallas.ObtenerPorId(id) ?? throw new BatallaNoEncontradaException();
+        var batalla = repositorioBatallas.ObtenerPorId(id);
+        if(batalla == null)
+        {
+            throw new BatallaNoEncontradaException();
+        }
+
         ValidarVisibilidad(batalla.Torneo, usuarioId, rol);
         return batalla;
     }

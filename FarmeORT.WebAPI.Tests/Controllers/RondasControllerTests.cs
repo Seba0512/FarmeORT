@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Rondas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Rondas;
@@ -79,20 +80,20 @@ public sealed class RondasControllerTests
     [TestMethod]
     public void Generar_ContratoDeSeguridad_PermiteSoloOrganizadorYAdministrador()
     {
-        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.Generar));
+        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.Generar))!;
 
-        var atributo = metodo?.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true).OfType<AutorizacionAttribute>().SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
 
         Assert.IsNotNull(atributo);
-        CollectionAssert.AreEquivalent(new[] { Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
+        CollectionAssert.AreEqual(new[] { Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
 
     [TestMethod]
     public void Listar_ContratoDeSeguridad_UsaAutenticacionOpcional()
     {
-        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.Listar));
+        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.Listar))!;
 
-        var atributo = metodo?.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
 
         Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
     }
@@ -100,9 +101,9 @@ public sealed class RondasControllerTests
     [TestMethod]
     public void ObtenerPorNumero_ContratoDeSeguridad_UsaAutenticacionOpcional()
     {
-        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.ObtenerPorNumero));
+        var metodo = typeof(RondasController).GetMethod(nameof(RondasController.ObtenerPorNumero))!;
 
-        var atributo = metodo?.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
 
         Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
     }

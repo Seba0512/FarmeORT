@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Batallas;
@@ -13,37 +14,75 @@ namespace FarmeORT.WebAPI.Tests.Controllers;
 [TestClass]
 public sealed class LanzamientosControllerTests
 {
-    [TestMethod]
-    public void Lanzar_RequiereAutenticacionYRolJugador()
+    private const int BatallaId = 12;
+    private const int JugadorId = 7;
+
+    private Mock<IServicioLanzamientos> _servicioLanzamientos = null!;
+    private Mock<IServicioBatallas> _servicioBatallas = null!;
+    private LanzamientosController _controller = null!;
+
+    [TestInitialize]
+    public void Inicializar()
     {
-        var atributo = typeof(LanzamientosController).GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>().SingleOrDefault();
+        _servicioLanzamientos = new Mock<IServicioLanzamientos>(MockBehavior.Strict);
+        _servicioBatallas = new Mock<IServicioBatallas>(MockBehavior.Strict);
+        _controller = new LanzamientosController(_servicioLanzamientos.Object, _servicioBatallas.Object)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+        };
+        _controller.HttpContext.Items[ClavesContexto.SesionAutenticada] =
+            new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = JugadorId, Rol = Roles.Jugador };
+    }
+
+    [TestMethod]
+    public void Listar_Seguridad_ExigeRolJugadorOrganizadorOAdministrador()
+    {
+        var metodo = typeof(LanzamientosController).GetMethod(nameof(LanzamientosController.Listar))!;
+
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
 
         Assert.IsNotNull(atributo);
-        Assert.IsInstanceOfType<AutenticacionAttribute>(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Jugador, Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
+    }
+
+    [TestMethod]
+    public void Listar_BatallaVisible_Devuelve200ConElHistorialYUsaLaSesionAutenticada()
+    {
+        IReadOnlyList<LanzamientoResponse> response = [new LanzamientoResponse { Turno = 1, JugadorId = JugadorId, SkillId = 3 }];
+        _servicioBatallas.Setup(s => s.ListarLanzamientos(BatallaId, JugadorId, Roles.Jugador)).Returns(response);
+
+        var resultado = _controller.Listar(BatallaId) as OkObjectResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status200OK, resultado.StatusCode);
+        Assert.AreSame(response, resultado.Value);
+        _servicioBatallas.Verify(s => s.ListarLanzamientos(BatallaId, JugadorId, Roles.Jugador), Times.Once);
+    }
+
+    [TestMethod]
+    public void Lanzar_Seguridad_ExigeRolJugador()
+    {
+        var metodo = typeof(LanzamientosController).GetMethod(nameof(LanzamientosController.Lanzar))!;
+
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
+
+        Assert.IsNotNull(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
     }
 
     [TestMethod]
     public void Lanzar_DatosValidos_Devuelve201ConLocationYUsaJugadorAutenticado()
     {
-        var servicio = new Mock<IServicioLanzamientos>(MockBehavior.Strict);
         var request = new LanzamientoRequest { SkillId = 3 };
         var response = new LanzamientoResultadoResponse { Turno = 1, Estado = "Pendiente", JugadorTurnoId = 8 };
-        servicio.Setup(s => s.Lanzar(12, 7, request)).Returns(response);
-        var controller = new LanzamientosController(servicio.Object)
-        {
-            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
-        };
-        controller.HttpContext.Items[ClavesContexto.SesionAutenticada] =
-            new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = 7, Rol = Roles.Jugador };
+        _servicioLanzamientos.Setup(s => s.Lanzar(BatallaId, JugadorId, request)).Returns(response);
 
-        var resultado = controller.Lanzar(12, request) as CreatedResult;
+        var resultado = _controller.Lanzar(BatallaId, request) as CreatedResult;
 
         Assert.IsNotNull(resultado);
         Assert.AreEqual(StatusCodes.Status201Created, resultado.StatusCode);
         Assert.AreEqual("/api/v1/batallas/12/lanzamientos", resultado.Location);
         Assert.AreSame(response, resultado.Value);
-        servicio.Verify(s => s.Lanzar(12, 7, request), Times.Once);
+        _servicioLanzamientos.Verify(s => s.Lanzar(BatallaId, JugadorId, request), Times.Once);
     }
 }

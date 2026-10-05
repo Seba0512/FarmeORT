@@ -154,6 +154,18 @@ public sealed class TorneoTests
     }
 
     [TestMethod]
+    public void Modificar_TorneoEnCurso_LanzaTorneoNoModificableSinCambiarlo()
+    {
+        var torneo = CrearTorneo();
+        torneo.Iniciar(8);
+
+        Assert.ThrowsExactly<TorneoNoModificableException>(
+            () => torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, CrearOrganizador(Rol.Organizador), FechaActual));
+        Assert.AreEqual("COPAAURA", torneo.Codigo);
+        Assert.AreEqual(EstadoTorneo.EnCurso, torneo.Estado);
+    }
+
+    [TestMethod]
     [DataRow("COPA", "Copa Fuego", Descripcion, 16, Rol.Organizador)]
     [DataRow("COPAFUEGO", "Copa", Descripcion, 16, Rol.Organizador)]
     [DataRow("COPAFUEGO", "Copa Fuego", "Muy corta", 16, Rol.Organizador)]
@@ -217,6 +229,17 @@ public sealed class TorneoTests
     public void Cancelar_TorneoAbierto_QuedaCancelado()
     {
         var torneo = CrearTorneo();
+
+        torneo.Cancelar();
+
+        Assert.AreEqual(EstadoTorneo.Cancelado, torneo.Estado);
+    }
+
+    [TestMethod]
+    public void Cancelar_TorneoEnCurso_QuedaCancelado()
+    {
+        var torneo = CrearTorneo();
+        torneo.Iniciar(8);
 
         torneo.Cancelar();
 

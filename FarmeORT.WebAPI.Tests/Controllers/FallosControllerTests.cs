@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Reflection;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Batallas;
@@ -36,11 +37,11 @@ public sealed class FallosControllerTests
     [TestMethod]
     public void Fallar_RequiereAutenticacionYRolOrganizador()
     {
-        var atributo = typeof(FallosController).GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>().SingleOrDefault();
+        var controller = typeof(FallosController);
+
+        var atributo = controller.GetCustomAttribute<AutorizacionAttribute>();
 
         Assert.IsNotNull(atributo);
-        Assert.IsInstanceOfType<AutenticacionAttribute>(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Organizador }, atributo.RolesPermitidos.ToArray());
     }
 

@@ -73,7 +73,7 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         [typeof(SkillObligatoriaEnUsoException)] =
             new(StatusCodes.Status409Conflict, "MANDATORY_SKILL_IN_USE", "No podés quitar la skill: es obligatoria en un torneo en el que estás inscripto."),
 
-        // Persona B: batallas y lanzamientos.
+        // Batallas y lanzamientos (D-51, D-52).
         [typeof(BatallaNoEncontradaException)] =
             new(StatusCodes.Status404NotFound, "BATTLE_NOT_FOUND", "No existe una batalla con ese id."),
         [typeof(BatallaNoCancelableException)] =
@@ -93,7 +93,7 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         [typeof(SkillObligatoriaPendienteException)] =
             new(StatusCodes.Status409Conflict, "MANDATORY_SKILL_PENDING", "Debés lanzar una skill obligatoria pendiente para completar tus cuatro turnos."),
 
-        // Persona A: eliminación y cambio de rol de usuarios (D-43).
+        // Eliminación y cambio de rol de usuarios (D-43).
         [typeof(UsuarioOrganizaTorneoVigenteException)] =
             new(StatusCodes.Status409Conflict, "USER_ORGANIZES_ACTIVE_TOURNAMENT", "El usuario organiza un torneo que no está Finalizado ni Cancelado."),
         [typeof(UsuarioConBatallasSinResolverException)] =
@@ -101,15 +101,15 @@ internal sealed class FiltroExcepciones : IExceptionFilter
         [typeof(UsuarioConInscripcionVigenteException)] =
             new(StatusCodes.Status409Conflict, "USER_HAS_ACTIVE_REGISTRATION", "El usuario está inscripto en un torneo que no está Finalizado ni Cancelado."),
 
-        // Persona B: fallo de batalla (D-53).
+        // Fallo de batalla (D-53).
         [typeof(BatallaNoFallableException)] =
             new(StatusCodes.Status409Conflict, "BATTLE_NOT_JUDGEABLE", "Solo se puede fallar una batalla Pendiente o En arbitraje."),
 
-        // Persona B: visibilidad de consultas de batallas (D-55).
+        // Visibilidad de las consultas de batallas (D-55).
         [typeof(JugadorNoInscriptoEnTorneoException)] =
             new(StatusCodes.Status403Forbidden, "PLAYER_NOT_IN_TOURNAMENT", "No tenés una inscripción en este torneo."),
 
-        // Persona C: rondas (D-62).
+        // Rondas (D-62) y torneo cambiado por otro pedido al mismo tiempo (D-70).
         [typeof(TorneoModificadoException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_CHANGED", "El torneo cambió mientras se procesaba el pedido. Volvé a consultarlo."),
         [typeof(TorneoIncompletoException)] =
@@ -120,6 +120,8 @@ internal sealed class FiltroExcepciones : IExceptionFilter
             new(StatusCodes.Status409Conflict, "ROUND_NOT_RESOLVED", "La ronda anterior todavía tiene batallas sin resolver."),
         [typeof(TorneoListoParaFinalizarException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_READY_TO_FINISH", "Queda un solo jugador sin eliminar: corresponde finalizar el torneo."),
+
+        // Finalización del torneo (D-64).
         [typeof(TorneoNoEnCursoException)] =
             new(StatusCodes.Status409Conflict, "TOURNAMENT_NOT_IN_PROGRESS", "El torneo no está en curso."),
         [typeof(TorneoConBatallasSinResolverException)] =
@@ -131,11 +133,24 @@ internal sealed class FiltroExcepciones : IExceptionFilter
     public void OnException(ExceptionContext context)
     {
         var errorMapeado = Errores.GetValueOrDefault(context.Exception.GetType(), ErrorInesperado);
+
+        var mensaje = errorMapeado.UserMessage;
+        if(mensaje == null)
+        {
+            mensaje = context.Exception.Message;
+        }
+
+        IReadOnlyList<string>? detalles = null;
+        if(context.Exception is ExcepcionConDetalles excepcionConDetalles)
+        {
+            detalles = excepcionConDetalles.Detalles;
+        }
+
         var error = new ErrorResponse
         {
-            UserMessage = errorMapeado.UserMessage ?? context.Exception.Message,
+            UserMessage = mensaje,
             ErrorCode = errorMapeado.ErrorCode,
-            Detalles = (context.Exception as ExcepcionConDetalles)?.Detalles,
+            Detalles = detalles,
         };
         context.Result = new ObjectResult(error) { StatusCode = errorMapeado.Status };
     }

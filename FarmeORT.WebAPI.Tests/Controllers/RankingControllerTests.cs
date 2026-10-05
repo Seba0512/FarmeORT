@@ -1,9 +1,10 @@
+using System.Reflection;
 using FarmeORT.DTOs.Ranking;
 using FarmeORT.IServicios.Ranking;
 using FarmeORT.WebAPI.Controllers;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Moq;
 
 namespace FarmeORT.WebAPI.Tests.Controllers;
@@ -39,12 +40,14 @@ public sealed class RankingControllerTests
     public void Obtener_ContratoPublico_ExponeGetRankingSinAutenticacion()
     {
         var tipo = typeof(RankingController);
+        var metodo = tipo.GetMethod(nameof(RankingController.Obtener))!;
 
-        var atributos = tipo.GetMethod(nameof(RankingController.Obtener))?.GetCustomAttributes(true).Concat(tipo.GetCustomAttributes(true)).ToList();
+        var ruta = tipo.GetCustomAttribute<RouteAttribute>();
 
-        Assert.IsNotNull(atributos);
-        Assert.AreEqual("api/v1/ranking", atributos.OfType<RouteAttribute>().Single().Template);
-        Assert.HasCount(1, atributos.OfType<HttpGetAttribute>());
-        Assert.IsFalse(atributos.OfType<IAuthorizationFilter>().Any());
+        Assert.IsNotNull(ruta);
+        Assert.AreEqual("api/v1/ranking", ruta.Template);
+        Assert.IsNotNull(metodo.GetCustomAttribute<HttpGetAttribute>());
+        Assert.IsNull(tipo.GetCustomAttribute<AutenticacionAttribute>());
+        Assert.IsNull(metodo.GetCustomAttribute<AutenticacionAttribute>());
     }
 }

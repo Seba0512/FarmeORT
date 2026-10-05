@@ -127,6 +127,7 @@ public sealed class ServicioUsuariosTests
     [TestMethod]
     [DataRow("Superusuario")]
     [DataRow("5")]
+    [DataRow("1")]
     public void Crear_RolInexistente_LanzaDatosInvalidosSinConsultarLaBase(string rol)
     {
         var request = CrearRequest(rol);
@@ -185,9 +186,9 @@ public sealed class ServicioUsuariosTests
     {
         _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 100, 0))).Returns([]);
 
-        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Limit = 600 });
+        _servicio.Listar(new FiltroUsuariosRequest { Limit = 600 });
 
-        Assert.IsEmpty(usuarios);
+        _repositorioUsuarios.Verify(r => r.Listar(new FiltroUsuarios(null, null, null, 100, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -197,9 +198,9 @@ public sealed class ServicioUsuariosTests
     {
         _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0))).Returns([]);
 
-        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Limit = limit });
+        _servicio.Listar(new FiltroUsuariosRequest { Limit = limit });
 
-        Assert.IsEmpty(usuarios);
+        _repositorioUsuarios.Verify(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -207,9 +208,9 @@ public sealed class ServicioUsuariosTests
     {
         _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0))).Returns([]);
 
-        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Offset = -5 });
+        _servicio.Listar(new FiltroUsuariosRequest { Offset = -5 });
 
-        Assert.IsEmpty(usuarios);
+        _repositorioUsuarios.Verify(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0)), Times.Once);
     }
 
     private void ConfigurarAltaValida()

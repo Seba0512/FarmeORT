@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Finalizaciones;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Finalizaciones;
@@ -47,11 +48,11 @@ public sealed class FinalizacionesControllerTests
     [TestMethod]
     public void Finalizar_ContratoDeSeguridad_PermiteSoloOrganizadorYAdministrador()
     {
-        var metodo = typeof(FinalizacionesController).GetMethod(nameof(FinalizacionesController.Finalizar));
+        var metodo = typeof(FinalizacionesController).GetMethod(nameof(FinalizacionesController.Finalizar))!;
 
-        var atributo = metodo?.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true).OfType<AutorizacionAttribute>().SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
 
         Assert.IsNotNull(atributo);
-        CollectionAssert.AreEquivalent(new[] { Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
+        CollectionAssert.AreEqual(new[] { Roles.Organizador, Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
 }

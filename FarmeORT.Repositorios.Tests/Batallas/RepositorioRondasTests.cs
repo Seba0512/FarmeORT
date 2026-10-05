@@ -144,11 +144,17 @@ public sealed class RepositorioRondasTests
         Assert.AreEqual("usuario10", batallas[0].Jugador2.Nickname);
     }
 
+    // Empareja al primero con el último, al segundo con el penúltimo, y así.
     private static List<Batalla> CrearBatallas(Torneo torneo, int numero, List<Usuario> jugadores)
     {
-        return Enumerable.Range(0, jugadores.Count / 2)
-            .Select(i => new Batalla(torneo, numero, jugadores[i], jugadores[^(i + 1)], new SorteoInicial(jugadores[i])))
-            .ToList();
+        List<Batalla> batallas = [];
+        for(var i = 0; i < jugadores.Count / 2; i++)
+        {
+            var rival = jugadores[jugadores.Count - 1 - i];
+            batallas.Add(new Batalla(torneo, numero, jugadores[i], rival, new SorteoInicial(jugadores[i])));
+        }
+
+        return batallas;
     }
 
     private static Torneo CrearTorneo()

@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Sesiones;
@@ -107,12 +108,10 @@ public sealed class TorneosControllerTests
     [DataRow(nameof(TorneosController.Cancelar))]
     public void Mantenimiento_Torneos_RequiereRolAdministrador(string accion)
     {
-        var metodo = typeof(TorneosController).GetMethod(accion);
+        var metodo = typeof(TorneosController).GetMethod(accion)!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>()
-            .SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
+
         Assert.IsNotNull(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
@@ -122,10 +121,10 @@ public sealed class TorneosControllerTests
     [DataRow(nameof(TorneosController.ObtenerPorId))]
     public void Consultas_IncluidoAnonimo_UsanAutenticacionOpcional(string accion)
     {
-        var metodo = typeof(TorneosController).GetMethod(accion);
+        var metodo = typeof(TorneosController).GetMethod(accion)!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
+
         Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
     }
 

@@ -3,13 +3,13 @@ using FarmeORT.DTOs.Skills;
 
 namespace FarmeORT.DTOs.Torneos;
 
-// Las propiedades propias del detalle tienen set: el servicio las completa después del mapeo que comparte con el
-// resumen del torneo. Rondas es el cuadro: con una sola llamada alcanza para dibujarlo entero (D-62).
+// El detalle suma al resumen del torneo sus skills obligatorias, los jugadores aceptados y el cuadro (Rondas):
+// con una sola llamada alcanza para dibujarlo entero (letra 1.3, D-62).
 public sealed class TorneoDetalleResponse : TorneoResponse
 {
-    public IReadOnlyList<SkillResponse> SkillsObligatorias { get; set; } = [];
+    public IReadOnlyList<SkillResponse> SkillsObligatorias { get; init; } = [];
 
-    public IReadOnlyList<JugadorAceptadoResponse> JugadoresAceptados { get; set; } = [];
+    public IReadOnlyList<JugadorAceptadoResponse> JugadoresAceptados { get; init; } = [];
 
-    public IReadOnlyList<RondaResponse> Rondas { get; set; } = [];
+    public IReadOnlyList<RondaResponse> Rondas { get; init; } = [];
 }

@@ -1,3 +1,4 @@
+using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
@@ -37,7 +38,7 @@ internal sealed class ServicioTorneos(
         repositorioTorneos.Agregar(torneo);
 
         // Un torneo recién creado todavía no tiene inscripciones.
-        return CrearResponse<TorneoResponse>(torneo, 0);
+        return CrearResponse(torneo, 0);
     }
 
     public TorneoDetalleResponse ObtenerPorId(int id, bool esAnonimo)
@@ -52,11 +53,8 @@ internal sealed class ServicioTorneos(
 
         // Una sola consulta de las Aceptadas da la cantidad y la lista de jugadores.
         var aceptadas = repositorioInscripciones.ListarAceptadasDelTorneo(torneo.Id);
-        var detalle = CrearResponse<TorneoDetalleResponse>(torneo, aceptadas.Count);
-        detalle.SkillsObligatorias = torneo.SkillsObligatorias.Select(RespuestasSkills.Crear).ToList();
-        detalle.JugadoresAceptados = aceptadas.Select(CrearJugadorAceptado).ToList();
-        detalle.Rondas = RespuestasRondas.Agrupar(repositorioBatallas.ListarDelTorneo(torneo.Id));
-        return detalle;
+        var batallas = repositorioBatallas.ListarDelTorneo(torneo.Id);
+        return CrearDetalle(torneo, aceptadas, batallas);
     }
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
@@ -83,7 +81,7 @@ internal sealed class ServicioTorneos(
         }
 
         var aceptadas = repositorioInscripciones.ContarAceptadasPorTorneo(torneos.Select(t => t.Id).ToList());
-        return torneos.Select(t => CrearResponse<TorneoResponse>(t, aceptadas.GetValueOrDefault(t.Id))).ToList();
+        return torneos.Select(t => CrearResponse(t, aceptadas.GetValueOrDefault(t.Id))).ToList();
     }
 
     public TorneoResponse Modificar(int id, TorneoRequest request)
@@ -108,7 +106,7 @@ internal sealed class ServicioTorneos(
             organizador,
             ObtenerFechaActual());
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse<TorneoResponse>(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+        return CrearResponse(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }
 
     public TorneoResponse Cancelar(int id)
@@ -130,7 +128,7 @@ internal sealed class ServicioTorneos(
         repositorioTorneos.Actualizar(torneo);
 
         // La cancelación acaba de pasar todas las Aceptadas a Cancelada.
-        return CrearResponse<TorneoResponse>(torneo, 0);
+        return CrearResponse(torneo, 0);
     }
 
     private Torneo ObtenerTorneoExistente(int id)
@@ -177,11 +175,9 @@ internal sealed class ServicioTorneos(
         return DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
     }
 
-    // El detalle repite los datos del resumen: el mismo mapeo sirve para los dos tipos de respuesta.
-    private static T CrearResponse<T>(Torneo torneo, int inscripcionesAceptadas)
-        where T : TorneoResponse, new()
+    private static TorneoResponse CrearResponse(Torneo torneo, int inscripcionesAceptadas)
     {
-        return new T
+        return new TorneoResponse
         {
             Id = torneo.Id,
             Codigo = torneo.Codigo,
@@ -193,8 +189,38 @@ internal sealed class ServicioTorneos(
             Cupo = torneo.Cupo,
             InscripcionesAceptadas = inscripcionesAceptadas,
             OrganizadorId = torneo.OrganizadorId,
-            Organizador = $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}",
+            Organizador = NombreDelOrganizador(torneo),
         };
+    }
+
+    // El detalle repite los datos del resumen y suma las obligatorias, los jugadores aceptados y el cuadro (letra 1.3).
+    private static TorneoDetalleResponse CrearDetalle(
+        Torneo torneo,
+        IReadOnlyList<Inscripcion> aceptadas,
+        IReadOnlyList<Batalla> batallas)
+    {
+        return new TorneoDetalleResponse
+        {
+            Id = torneo.Id,
+            Codigo = torneo.Codigo,
+            Nombre = torneo.Nombre,
+            Descripcion = torneo.Descripcion,
+            Estado = torneo.Estado.ToString(),
+            FechaInicio = torneo.FechaInicio,
+            FechaFin = torneo.FechaFin,
+            Cupo = torneo.Cupo,
+            InscripcionesAceptadas = aceptadas.Count,
+            OrganizadorId = torneo.OrganizadorId,
+            Organizador = NombreDelOrganizador(torneo),
+            SkillsObligatorias = torneo.SkillsObligatorias.Select(RespuestasSkills.Crear).ToList(),
+            JugadoresAceptados = aceptadas.Select(CrearJugadorAceptado).ToList(),
+            Rondas = RespuestasRondas.Agrupar(batallas),
+        };
+    }
+
+    private static string NombreDelOrganizador(Torneo torneo)
+    {
+        return $"{torneo.Organizador.Nombre} {torneo.Organizador.Apellido}";
     }
 
     private static JugadorAceptadoResponse CrearJugadorAceptado(Inscripcion inscripcion)

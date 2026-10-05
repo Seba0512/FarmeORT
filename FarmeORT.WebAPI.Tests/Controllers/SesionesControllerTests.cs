@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Sesiones;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Sesiones;
@@ -54,11 +55,13 @@ public sealed class SesionesControllerTests
     }
 
     [TestMethod]
-    public void Eliminar_RequiereAutenticacion()
+    public void Eliminar_CualquierRol_RequiereAutenticacionObligatoria()
     {
-        var metodo = typeof(SesionesController).GetMethod(nameof(SesionesController.Eliminar));
+        var metodo = typeof(SesionesController).GetMethod(nameof(SesionesController.Eliminar))!;
 
-        Assert.IsNotNull(metodo);
-        Assert.IsNotNull(metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault());
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
+
+        Assert.IsNotNull(atributo);
+        Assert.AreEqual(typeof(AutenticacionAttribute), atributo.GetType());
     }
 }

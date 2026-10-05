@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Sesiones;
 using FarmeORT.IServicios.Usuarios;
@@ -121,15 +122,14 @@ public sealed class UsuariosControllerTests
     }
 
     [TestMethod]
-    public void UsuariosController_TodosLosEndpoints_RequierenRolAdministrador()
+    public void UsuariosController_TodosLosEndpoints_RequierenSoloRolAdministrador()
     {
-        var atributo = typeof(UsuariosController)
-            .GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>()
-            .SingleOrDefault();
+        var controller = typeof(UsuariosController);
+
+        var atributo = controller.GetCustomAttribute<AutorizacionAttribute>();
 
         Assert.IsNotNull(atributo);
-        Assert.Contains(Roles.Administrador, atributo.RolesPermitidos);
+        CollectionAssert.AreEqual(new[] { Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }
 
     private void AutenticarAdministrador(int usuarioId)

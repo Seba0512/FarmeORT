@@ -123,7 +123,7 @@ public sealed class ServicioFinalizacionesTests
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
-    // Bug encontrado con Postman: un torneo Cancelado (sin inscripciones Aceptadas) respondía que no había campeón.
+    // Un torneo Cancelado no tiene inscripciones Aceptadas, pero el motivo del rechazo es el estado, no el campeón.
     [TestMethod]
     public void Finalizar_TorneoCancelado_LanzaTorneoNoEnCurso()
     {
@@ -133,6 +133,26 @@ public sealed class ServicioFinalizacionesTests
         _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([]);
 
         Assert.ThrowsExactly<TorneoNoEnCursoException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
+    }
+
+    [TestMethod]
+    public void Finalizar_TorneoAbierto_LanzaTorneoNoEnCursoSinGuardar()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+
+        Assert.ThrowsExactly<TorneoNoEnCursoException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Finalizar_TorneoYaFinalizado_LanzaTorneoNoEnCursoSinGuardar()
+    {
+        _torneo.Iniciar(4);
+        _torneo.Finalizar(_campeon);
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+
+        Assert.ThrowsExactly<TorneoNoEnCursoException>(() => _servicio.Finalizar(TorneoId, OrganizadorId, Roles.Organizador));
+        _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
     // Torneo En curso, sin batallas sin resolver y con un solo jugador con inscripción Aceptada: el campeón.

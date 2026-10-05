@@ -9,7 +9,7 @@ public static class ReglaContrasena
 
     public static void Validar(string contrasena)
     {
-        if(contrasena.Length is < LargoMinimo or > LargoMaximo)
+        if(contrasena.Length < LargoMinimo || contrasena.Length > LargoMaximo)
         {
             throw new DatosInvalidosException("La contraseña debe tener entre 15 y 25 caracteres.");
         }

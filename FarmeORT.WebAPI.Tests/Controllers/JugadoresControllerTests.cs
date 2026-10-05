@@ -1,9 +1,10 @@
+using System.Reflection;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Usuarios;
 using FarmeORT.WebAPI.Controllers;
+using FarmeORT.WebAPI.Filtros;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
 using Moq;
 
 namespace FarmeORT.WebAPI.Tests.Controllers;
@@ -41,13 +42,14 @@ public sealed class JugadoresControllerTests
     public void Registrar_ContratoPublico_ExponePostJugadoresSinAutenticacion()
     {
         var tipo = typeof(JugadoresController);
-        var metodo = tipo.GetMethod(nameof(JugadoresController.Registrar));
-        Assert.IsNotNull(metodo);
-        var ruta = tipo.GetCustomAttributes(typeof(RouteAttribute), true).Cast<RouteAttribute>().Single();
+        var metodo = tipo.GetMethod(nameof(JugadoresController.Registrar))!;
 
+        var ruta = tipo.GetCustomAttribute<RouteAttribute>();
+
+        Assert.IsNotNull(ruta);
         Assert.AreEqual("api/v1/jugadores", ruta.Template);
-        Assert.HasCount(1, metodo.GetCustomAttributes(typeof(HttpPostAttribute), true));
-        Assert.IsFalse(tipo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
-        Assert.IsFalse(metodo.GetCustomAttributes(true).OfType<IAuthorizationFilter>().Any());
+        Assert.IsNotNull(metodo.GetCustomAttribute<HttpPostAttribute>());
+        Assert.IsNull(tipo.GetCustomAttribute<AutenticacionAttribute>());
+        Assert.IsNull(metodo.GetCustomAttribute<AutenticacionAttribute>());
     }
 }

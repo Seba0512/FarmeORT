@@ -28,14 +28,22 @@ internal sealed class ServicioRanking(
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
-            var resultado = resultados.GetValueOrDefault(jugadores[i].Id);
+            // Un jugador sin batallas Finalizadas no figura en los resultados: tiene 0 ganadas y 0 perdidas.
+            var ganadas = 0;
+            var perdidas = 0;
+            if(resultados.TryGetValue(jugadores[i].Id, out var resultado))
+            {
+                ganadas = resultado.Ganadas;
+                perdidas = resultado.Perdidas;
+            }
+
             ranking.Add(new JugadorRankingResponse
             {
                 Posicion = i + 1,
                 Nickname = jugadores[i].Nickname,
                 Elo = jugadores[i].Elo,
-                BatallasGanadas = resultado?.Ganadas ?? 0,
-                BatallasPerdidas = resultado?.Perdidas ?? 0,
+                BatallasGanadas = ganadas,
+                BatallasPerdidas = perdidas,
             });
         }
 

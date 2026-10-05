@@ -25,9 +25,9 @@ public interface IRepositorioInscripciones
 
     void Actualizar(Inscripcion inscripcion);
 
-    // Persona B: inscripción rastreada del perdedor para el único guardado del fallo.
+    // La inscripción del perdedor, rastreada para guardarla en el mismo SaveChanges que el fallo (D-54).
     Inscripcion? ObtenerAceptada(int torneoId, int jugadorId);
 
-    // Persona B: la inscripción histórica permite consultar batallas aun después de ser eliminado.
+    // Cualquier inscripción, aunque esté Eliminada: un jugador eliminado sigue viendo las batallas del torneo (D-55).
     bool ExisteDelJugador(int torneoId, int jugadorId);
 }

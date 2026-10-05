@@ -22,23 +22,26 @@ internal sealed class HasheadorContrasenas : IHasheadorContrasenas
     public bool Verificar(string contrasena, string hash)
     {
         var partes = hash.Split(Separador);
-        if(partes.Length != 2
-            || !IntentarDecodificar(partes[0], out var sal)
-            || !IntentarDecodificar(partes[1], out var hashEsperado))
+        if(partes.Length != 2)
         {
+            return false;
+        }
+
+        byte[] sal;
+        byte[] hashEsperado;
+        try
+        {
+            sal = Convert.FromBase64String(partes[0]);
+            hashEsperado = Convert.FromBase64String(partes[1]);
+        }
+        catch(FormatException)
+        {
+            // Un hash guardado con otro formato no se puede verificar: cuenta como contraseña incorrecta.
             return false;
         }
 
         var hashCalculado = Derivar(contrasena, sal);
         return CryptographicOperations.FixedTimeEquals(hashCalculado, hashEsperado);
-    }
-
-    private static bool IntentarDecodificar(string base64, out byte[] bytes)
-    {
-        var buffer = new byte[base64.Length];
-        var decodificado = Convert.TryFromBase64String(base64, buffer, out var cantidadBytes);
-        bytes = buffer[..cantidadBytes];
-        return decodificado;
     }
 
     private static byte[] Derivar(string contrasena, byte[] sal)

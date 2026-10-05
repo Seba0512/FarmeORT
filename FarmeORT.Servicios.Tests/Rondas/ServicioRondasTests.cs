@@ -294,7 +294,7 @@ public sealed class ServicioRondasTests
     }
 
     // Por la API no se llega a "En curso sin batallas": sería una primera ronda, que la letra exige con el torneo
-    // Abierto y el cupo completo, así que no se saltea esa regla (review del PR #25).
+    // Abierto y el cupo completo, así que no se saltea esa regla (D-62).
     [TestMethod]
     public void Generar_TorneoEnCursoSinBatallas_LanzaTorneoNoAbierto()
     {
