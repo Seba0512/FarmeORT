@@ -485,6 +485,21 @@ public sealed class RepositorioBatallasTests
         Assert.AreEqual(new ResultadosDeBatallas(1, 0), resultados[7]);
     }
 
+    [TestMethod]
+    public void ContarResultadosPorJugador_JugadorSinBatallasFinalizadas_NoFigura()
+    {
+        var torneo = CrearTorneoConId(5, "COPAAURA", CrearUsuario(2, Rol.Organizador));
+        var jugador7 = CrearUsuario(7, Rol.Jugador);
+        var jugador8 = CrearUsuario(8, Rol.Jugador);
+        _baseDeDatos.Contexto.Batallas.Add(new Batalla(torneo, 1, jugador7, jugador8, new SorteoInicial(jugador7)) { Id = 12 });
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+
+        var resultados = _repositorio.ContarResultadosPorJugador([7, 8], null);
+
+        Assert.IsEmpty(resultados);
+    }
+
     private static Torneo CrearTorneoConId(int id, string codigo, Usuario organizador)
     {
         return new Torneo(codigo, "Copa Aura", "Torneo eliminatorio de batallas de aura.",
