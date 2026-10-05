@@ -5,9 +5,11 @@ using FarmeORT.Excepciones;
 
 namespace FarmeORT.Dominio.Usuarios;
 
-public sealed partial class Usuario
+public sealed class Usuario
 {
     private const int EloInicial = 1200;
+    private const int EloMinimo = 100;
+    private const string PatronNickname = "^[a-zA-Z0-9]{3,20}$";
     private const int LargoMaximoNombre = 50;
     private const int LargoMinimoApellido = 3;
     private const int LargoMaximoApellido = 25;
@@ -126,7 +128,7 @@ public sealed partial class Usuario
 
     public void ActualizarElo(int elo)
     {
-        if(elo < 100)
+        if(elo < EloMinimo)
         {
             throw new DatosInvalidosException("El ELO no puede ser menor que 100.");
         }
@@ -149,7 +151,7 @@ public sealed partial class Usuario
 
     private static void ValidarApellido(string apellido)
     {
-        if(apellido.Length is < LargoMinimoApellido or > LargoMaximoApellido)
+        if(apellido.Length < LargoMinimoApellido || apellido.Length > LargoMaximoApellido)
         {
             throw new DatosInvalidosException("El apellido debe tener entre 3 y 25 caracteres.");
         }
@@ -165,7 +167,7 @@ public sealed partial class Usuario
 
     private static void ValidarNickname(string nickname)
     {
-        if(!PatronNickname().IsMatch(nickname))
+        if(!Regex.IsMatch(nickname, PatronNickname))
         {
             throw new DatosInvalidosException("El nickname debe ser alfanumérico, sin espacios, de 3 a 20 caracteres.");
         }
@@ -183,7 +185,4 @@ public sealed partial class Usuario
             throw new DatosInvalidosException("El usuario debe tener 13 años o más.");
         }
     }
-
-    [GeneratedRegex("^[a-zA-Z0-9]{3,20}$")]
-    private static partial Regex PatronNickname();
 }
