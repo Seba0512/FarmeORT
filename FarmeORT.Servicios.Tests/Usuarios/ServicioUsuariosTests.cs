@@ -127,6 +127,7 @@ public sealed class ServicioUsuariosTests
     [TestMethod]
     [DataRow("Superusuario")]
     [DataRow("5")]
+    [DataRow("1")]
     public void Crear_RolInexistente_LanzaDatosInvalidosSinConsultarLaBase(string rol)
     {
         var request = CrearRequest(rol);
