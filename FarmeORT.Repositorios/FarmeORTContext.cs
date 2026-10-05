@@ -25,6 +25,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     private const int LargoMaximoDescripcionTorneo = 500;
     private const int LargoMaximoEstadoTorneo = 20;
     private const int LargoMaximoEstadoInscripcion = 20;
+    private const int LargoMaximoEstadoBatalla = 20;
+    private const int LargoMaximoComentarioFallo = 500;
 
     // Objeto anónimo porque HasData necesita fijar el Id, que el constructor de Usuario no recibe.
     // Hash PBKDF2 (formato de HasheadorContrasenas) calculado una sola vez, para que la migración no cambie en cada build.
@@ -52,7 +54,6 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
     public DbSet<Inscripcion> Inscripciones => Set<Inscripcion>();
 
-    // Persona B: batallas y lanzamientos.
     public DbSet<Batalla> Batallas => Set<Batalla>();
 
     public DbSet<Lanzamiento> Lanzamientos => Set<Lanzamiento>();
@@ -152,13 +153,8 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
         ConfigurarSkillsObligatorias(modelBuilder);
         ConfigurarInscripciones(modelBuilder);
-
         ConfigurarBatallas(modelBuilder);
-
-        // Persona B: fallo opcional de la batalla.
         ConfigurarFallos(modelBuilder);
-
-        // Persona C: campeón del torneo finalizado (D-64).
         ConfigurarFinalizacion(modelBuilder);
     }
 
@@ -197,13 +193,14 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         });
     }
 
+    // El fallo es opcional y vive en la batalla: ganador, comentario y cambio de ELO de cada jugador (D-53).
     private static void ConfigurarFallos(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Usuario>().Property(u => u.Elo).IsConcurrencyToken();
 
         modelBuilder.Entity<Batalla>(batalla =>
         {
-            batalla.Property(b => b.Comentario).HasMaxLength(500);
+            batalla.Property(b => b.Comentario).HasMaxLength(LargoMaximoComentarioFallo);
             batalla.HasOne(b => b.Ganador)
                 .WithMany()
                 .HasForeignKey(b => b.GanadorId)
@@ -211,13 +208,13 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         });
     }
 
-    // Persona B: configuración independiente de las entidades de A y C.
+    // Los índices únicos de los lanzamientos impiden repetir un turno o una skill también en la base (D-52).
     private static void ConfigurarBatallas(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Batalla>(batalla =>
         {
             batalla.HasKey(b => b.Id);
-            batalla.Property(b => b.Estado).HasConversion<string>().HasMaxLength(20).IsConcurrencyToken();
+            batalla.Property(b => b.Estado).HasConversion<string>().HasMaxLength(LargoMaximoEstadoBatalla).IsConcurrencyToken();
             batalla.HasOne(b => b.Torneo)
                 .WithMany()
                 .HasForeignKey(b => b.TorneoId)
