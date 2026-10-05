@@ -55,7 +55,6 @@ public sealed class TorneoFinalizacionTests
         Assert.ThrowsExactly<TorneoNoEnCursoException>(() => _torneo.Finalizar(_campeon));
     }
 
-    // Pendiente de D-36/D-37: la regla ya estaba en Torneo.Cancelar, pero no había forma de tener un torneo Finalizado.
     [TestMethod]
     public void Cancelar_TorneoFinalizado_LanzaTorneoNoCancelable()
     {

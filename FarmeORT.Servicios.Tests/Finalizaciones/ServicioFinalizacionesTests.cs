@@ -123,7 +123,7 @@ public sealed class ServicioFinalizacionesTests
         _repositorioTorneos.Verify(r => r.Actualizar(It.IsAny<Torneo>()), Times.Never);
     }
 
-    // Bug encontrado con Postman: un torneo Cancelado (sin inscripciones Aceptadas) respondía que no había campeón.
+    // Un torneo Cancelado no tiene inscripciones Aceptadas, pero el motivo del rechazo es el estado, no el campeón.
     [TestMethod]
     public void Finalizar_TorneoCancelado_LanzaTorneoNoEnCurso()
     {
