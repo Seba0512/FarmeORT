@@ -227,7 +227,7 @@ equipo, frenar y proponer agregarlo.
 | Batallas | `GET /batallas` · `GET /batallas/{id}` |
 | Lanzamientos | `GET/POST /batallas/{id}/lanzamientos` |
 | Fallos | `POST /batallas/{id}/fallos` |
-| Ranking | `GET /rankings` (público) |
+| Ranking | `GET /rankings` (público, token opcional) |
 
 - Route = identidad del recurso; query = filtros/orden/paginación (no obligatorios salvo el torneo en
   `GET /batallas`); body = datos de la operación; GET y DELETE sin body.
@@ -265,8 +265,10 @@ La letra oficial manda. Resumen de lo que más se rompe:
   Un admin no se modifica ni elimina a sí mismo.
 - **Torneos**: `Abierto → EnCurso → Finalizado`, o `Cancelado`. **Las fechas son informativas**:
   nada de jobs, timers ni transiciones automáticas. Cupo potencia de 2 entre 4 y 64. No se modifica
-  si está EnCurso, Finalizado o Cancelado. Cancelar (desde Abierto/EnCurso) cancela batallas no
-  finalizadas e inscripciones Aceptadas, atómicamente. El anónimo no ve torneos Cancelados.
+  si está EnCurso, Finalizado o Cancelado, y el cupo no baja de las inscripciones Aceptadas (409, sin
+  cancelar inscripciones; foro). Cancelar (desde Abierto/EnCurso) cancela batallas no finalizadas e
+  inscripciones Aceptadas, atómicamente. El anónimo no ve torneos Cancelados; el autenticado ve todos
+  los estados, sin importar el rol (foro).
 - **Skill inactiva**: no puede declararse en un repertorio nuevo ni agregarse como obligatoria nueva,
   y el rechazo dice que **no es posible utilizarla porque está inactiva**, con `errorCode` propio.
   **No es retroactiva**: sí puede lanzarse en batalla si ya estaba en el repertorio.
@@ -294,7 +296,8 @@ La letra oficial manda. Resumen de lo que más se rompe:
   EnArbitraje al organizador y resultado a ambos jugadores, con tipos nuevos que se agreguen **sin
   modificar el código que dispara los eventos** (OCP).
 - **Ranking**: público; `cantidad` (default 10), `torneo` opcional; ELO DESC con desempate
-  determinístico.
+  determinístico. Solo usuarios con rol Jugador hoy. Con `torneo`: entran Aceptada o Eliminada, se ordena
+  por el ELO global y las batallas ganadas/perdidas son las **globales**, no las del torneo (foro).
 
 Errores: formato/rango → 400; inexistente → 404; rol → 403; estado, unicidad, cupo, turno → 409.
 "No es el organizador asignado": 403 o 409 según la decisión registrada en la bitácora (si no hay,
