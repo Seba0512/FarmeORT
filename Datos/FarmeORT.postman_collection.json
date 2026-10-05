@@ -11984,6 +11984,7 @@
               "name": "Inscripciones - jugador cancela su inscripción → 200",
               "request": {
                 "method": "POST",
+                "description": "El retiro individual solo se permite mientras el torneo siga Abierto y se confirma con la misma versión que las inscripciones y las rondas (D-71, H-001). Si otra petición inicia el torneo después de la lectura, responde 409 TOURNAMENT_CHANGED sin cancelar la inscripción. Si el retiro confirma primero, la ronda preparada sobre la versión anterior se rechaza sin crear batallas. Volver a consultar antes de reenviar; con el torneo ya EnCurso, el retiro responde 409 TOURNAMENT_NOT_OPEN. Este request del Runner es secuencial; la concurrencia se verifica con contextos independientes y una intercalación antes del guardado, también mediante HTTP sobre SQL Server Express 2025.",
                 "header": [
                   {
                     "key": "Accept",

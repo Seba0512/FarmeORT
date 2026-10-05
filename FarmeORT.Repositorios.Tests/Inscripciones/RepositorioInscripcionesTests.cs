@@ -1,9 +1,11 @@
+using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Inscripciones;
+using FarmeORT.Repositorios.Batallas;
 using FarmeORT.Repositorios.Inscripciones;
 using Microsoft.EntityFrameworkCore;
 
@@ -388,6 +390,58 @@ public sealed class RepositorioInscripcionesTests
     }
 
     [TestMethod]
+    [DataRow(true)]
+    [DataRow(false)]
+    public void Actualizar_RetiroYPrimeraRondaLeenTorneoAbierto_SoloConfirmaElPrimerGuardado(bool rondaPrimero)
+    {
+        var torneoId = GuardarTorneo("COPAAURA", cupo: 4);
+        var inscripcionId = 0;
+        foreach(var nickname in new[] { "anaperez", "brunolopez", "carlagomez", "diegoruiz" })
+        {
+            inscripcionId = GuardarInscripcion(torneoId, GuardarUsuario(nickname, Rol.Jugador));
+        }
+
+        using var retiro = _baseDeDatos.CrearContexto();
+        using var inicio = _baseDeDatos.CrearContexto();
+        var inscripcion = retiro.Inscripciones.Include(i => i.Torneo).Include(i => i.Jugador).Single(i => i.Id == inscripcionId);
+        var torneo = inicio.Torneos.Single(t => t.Id == torneoId);
+        var jugadores = inicio.Inscripciones.Include(i => i.Jugador)
+            .Where(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada)
+            .OrderBy(i => i.JugadorId).Select(i => i.Jugador).ToList();
+        Assert.AreEqual(EstadoTorneo.Abierto, inscripcion.Torneo.Estado);
+        torneo.Iniciar(jugadores.Count);
+        List<Batalla> ronda =
+        [
+            new Batalla(torneo, 1, jugadores[0], jugadores[3], new SorteoInicial()),
+            new Batalla(torneo, 1, jugadores[1], jugadores[2], new SorteoInicial()),
+        ];
+        inscripcion.Cancelar();
+        var repositorioRetiro = new RepositorioInscripciones(retiro);
+        var repositorioInicio = new RepositorioBatallas(inicio);
+        if(rondaPrimero)
+        {
+            repositorioInicio.GuardarRonda(torneo, ronda);
+        }
+        else
+        {
+            repositorioRetiro.Actualizar(inscripcion);
+        }
+
+        Action guardarSegundo = rondaPrimero
+            ? () => repositorioRetiro.Actualizar(inscripcion)
+            : () => repositorioInicio.GuardarRonda(torneo, ronda);
+
+        Assert.ThrowsExactly<TorneoModificadoException>(guardarSegundo);
+
+        using var comprobacion = _baseDeDatos.CrearContexto();
+        Assert.AreEqual(rondaPrimero ? EstadoTorneo.EnCurso : EstadoTorneo.Abierto, comprobacion.Torneos.Single(t => t.Id == torneoId).Estado);
+        Assert.AreEqual(rondaPrimero ? EstadoInscripcion.Aceptada : EstadoInscripcion.Cancelada, comprobacion.Inscripciones.Single(i => i.Id == inscripcionId).Estado);
+        Assert.AreEqual(rondaPrimero ? 4 : 3, comprobacion.Inscripciones.Count(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada));
+        Assert.AreEqual(rondaPrimero ? 2 : 0, comprobacion.Batallas.Count(b => b.TorneoId == torneoId));
+        Assert.IsEmpty((rondaPrimero ? retiro : inicio).ChangeTracker.Entries().ToList());
+    }
+
+    [TestMethod]
     public void Actualizar_InscripcionCancelada_GuardaElEstado()
     {
         var id = GuardarInscripcion(GuardarTorneo("COPAAURA"), GuardarUsuario("anaperez", Rol.Jugador));
@@ -450,5 +504,13 @@ public sealed class RepositorioInscripcionesTests
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
         return usuario.Id;
+    }
+
+    private sealed class SorteoInicial : ISorteo
+    {
+        public Usuario ElegirEntre(Usuario jugador1, Usuario jugador2)
+        {
+            return jugador1;
+        }
     }
 }
