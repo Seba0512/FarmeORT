@@ -1,6 +1,6 @@
 # Torneos — endpoints de la Persona A
 
-Contrato: letra (gestión de torneos), especificación de la API del equipo, D-36, D-37 y D-42. Base
+Contrato: letra (gestión de torneos), especificación de la API del equipo, D-36, D-37, D-42 y D-72. Base
 `/api/v1`, HTTP, JSON camelCase, `Accept: application/json`. La identidad sale solo de
 `Authorization: Bearer {token}`.
 
@@ -26,6 +26,36 @@ Rol: todos, incluido el anónimo. Un token enviado pero inválido responde 401 (
 
 Ejemplo: `GET /api/v1/torneos/4` responde 200 con
 `{"id":4,"codigo":"COPAAURA",...,"inscripcionesAceptadas":1,"skillsObligatorias":[{"id":3,"codigo":"SIXSEVEN",...}],"jugadoresAceptados":[{"jugadorId":7,"nickname":"aurafarmer","elo":1200}]}`.
+
+## Modificar un torneo
+
+| Operación | Entrada | Respuesta | Estados |
+|---|---|---|---|
+| PUT `/torneos/{id}` | Id del torneo en la ruta (sale del listado o del alta). Body `TorneoRequest`: `codigo`, `nombre`, `descripcion`, `fechaInicio`, `fechaFin`, `cupo` y `organizadorId`, todos obligatorios. | `TorneoResponse` | 200, 400, 401, 403, 404, 409 |
+
+Rol: Administrador. Reemplaza todos los datos del torneo y solo se permite con el torneo Abierto (D-37).
+
+Reglas:
+- Las mismas validaciones que el alta (D-37). La fecha de inicio solo se controla si cambia.
+- El cupo no puede quedar por debajo de las inscripciones Aceptadas: no se cancelan inscripciones para hacer
+  lugar. Sí se puede subir, o dejarlo igual a la cantidad de Aceptadas (foro, debate 13; D-72).
+
+| Estado | errorCode | Cuándo |
+|---|---|---|
+| 400 | `VALIDATION_ERROR` | Falta un dato o no cumple el formato o el rango del borde (por ejemplo, cupo fuera de 4 a 64) |
+| 400 | `INVALID_DATA` | Cupo que no es potencia de 2, fin no posterior al inicio, inicio nuevo anterior a hoy u organizador sin rol Organizador |
+| 401 | `INVALID_TOKEN` | Falta el token o no corresponde a una sesión activa |
+| 403 | `FORBIDDEN` | El usuario no es Administrador |
+| 404 | `TOURNAMENT_NOT_FOUND` | No existe un torneo con ese id |
+| 404 | `USER_NOT_FOUND` | El organizador no existe o está dado de baja |
+| 409 | `TOURNAMENT_NOT_MODIFIABLE` | El torneo no está Abierto |
+| 409 | `TOURNAMENT_CODE_ALREADY_EXISTS` | Otro torneo ya usa ese código |
+| 409 | `TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS` | El cupo nuevo es menor que las inscripciones Aceptadas del torneo |
+| 409 | `TOURNAMENT_CHANGED` | Otra operación cambió el torneo mientras se modificaba (D-70); se puede reintentar |
+
+Ejemplo: con 6 inscripciones Aceptadas, `PUT /api/v1/torneos/4` con `"cupo": 4` responde 409 con
+`{"userMessage":"El cupo no puede ser menor que las inscripciones aceptadas del torneo.","errorCode":"TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS",...}`;
+con `"cupo": 8` o `16` responde 200.
 
 ## Cancelar un torneo
 
