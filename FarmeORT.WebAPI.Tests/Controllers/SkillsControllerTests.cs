@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Skills;
@@ -123,12 +124,12 @@ public sealed class SkillsControllerTests
     [DataRow(nameof(SkillsController.ObtenerPorId))]
     public void Consultas_CualquierRol_RequierenSoloAutenticacion(string accion)
     {
-        var metodo = typeof(SkillsController).GetMethod(accion);
+        var metodo = typeof(SkillsController).GetMethod(accion)!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
+
         Assert.IsNotNull(atributo);
-        Assert.IsNotInstanceOfType<AutorizacionAttribute>(atributo);
+        Assert.AreEqual(typeof(AutenticacionAttribute), atributo.GetType());
     }
 
     [TestMethod]
