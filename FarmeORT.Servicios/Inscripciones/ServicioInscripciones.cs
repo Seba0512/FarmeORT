@@ -22,6 +22,14 @@ internal sealed class ServicioInscripciones(
         var torneoId = DatosObligatorios.Obtener(request.TorneoId, "El torneo es obligatorio.");
         var torneo = ObtenerTorneoExistente(torneoId);
         var jugador = ObtenerJugadorExistente(jugadorId);
+
+        // El estado va primero, como en la letra (1.5): un torneo En curso tiene el cupo lleno, pero el motivo del
+        // rechazo es que ya no admite inscripciones.
+        if(torneo.Estado != EstadoTorneo.Abierto)
+        {
+            throw new TorneoNoAbiertoException();
+        }
+
         if(repositorioInscripciones.ExisteAceptada(torneoId, jugadorId))
         {
             throw new InscripcionYaExisteException();
