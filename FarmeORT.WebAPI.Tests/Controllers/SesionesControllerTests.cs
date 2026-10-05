@@ -40,18 +40,31 @@ public sealed class SesionesControllerTests
     }
 
     [TestMethod]
-    public void Eliminar_SesionAutenticada_Devuelve204YCierraLaSesion()
+    public void Eliminar_TokenDeLaRuta_Devuelve204YCierraEsaSesionDelUsuarioAutenticado()
     {
-        var token = Guid.Parse("3f2b8c1e-5d4a-4e7b-9c6f-1a2b3c4d5e6f");
-        var sesion = new SesionAutenticada { Token = token, UsuarioId = 7, Rol = Roles.Jugador };
+        var tokenDelEncabezado = Guid.Parse("3f2b8c1e-5d4a-4e7b-9c6f-1a2b3c4d5e6f");
+        var tokenDeLaRuta = Guid.Parse("9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d");
+        var sesion = new SesionAutenticada { Token = tokenDelEncabezado, UsuarioId = 7, Rol = Roles.Jugador };
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
         _controller.HttpContext.Items[ClavesContexto.SesionAutenticada] = sesion;
-        _servicioSesiones.Setup(s => s.CerrarSesion(token, 7));
+        _servicioSesiones.Setup(s => s.CerrarSesion(tokenDeLaRuta, 7));
 
-        var resultado = _controller.Eliminar();
+        var resultado = _controller.Eliminar(tokenDeLaRuta);
 
         Assert.IsInstanceOfType<NoContentResult>(resultado);
-        _servicioSesiones.Verify(s => s.CerrarSesion(token, 7), Times.Once);
+        _servicioSesiones.Verify(s => s.CerrarSesion(tokenDeLaRuta, 7), Times.Once);
+    }
+
+    // El token identifica a la sesión en la ruta, como el id a cualquier otro recurso.
+    [TestMethod]
+    public void Eliminar_Ruta_IdentificaLaSesionPorSuToken()
+    {
+        var metodo = typeof(SesionesController).GetMethod(nameof(SesionesController.Eliminar))!;
+
+        var verbo = metodo.GetCustomAttribute<HttpDeleteAttribute>();
+
+        Assert.IsNotNull(verbo);
+        Assert.AreEqual("{token:guid}", verbo.Template);
     }
 
     [TestMethod]

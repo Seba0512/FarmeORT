@@ -18,10 +18,8 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
 
     [HttpDelete("actual")]
     [Autenticacion]
-    public IActionResult Eliminar()
+    public IActionResult Eliminar(Guid token)
     {
-        var sesion = HttpContext.ObtenerSesionAutenticada();
-        servicioSesiones.CerrarSesion(sesion.Token, sesion.UsuarioId);
-        return NoContent();
+        throw new NotImplementedException();
     }
 }
