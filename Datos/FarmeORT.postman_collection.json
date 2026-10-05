@@ -579,6 +579,10 @@
     {
       "key": "cancelTokenActual",
       "value": ""
+    },
+    {
+      "key": "otraSesionToken",
+      "value": ""
     }
   ],
   "item": [
@@ -1533,6 +1537,126 @@
           "response": []
         },
         {
+          "name": "Sesiones - logout de un token sin sesión → 404",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                  "pm.test(\"Código de error SESSION_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"SESSION_NOT_FOUND\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones/{{$guid}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones",
+                "{{$guid}}"
+              ]
+            },
+            "description": "El token de la ruta no corresponde a ninguna sesión: 404, aunque quien llama esté autenticado."
+          },
+          "response": []
+        },
+        {
+          "name": "Sesiones - logout de la sesión de otro usuario → 403",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Abre una sesión del administrador para que el jugador intente cerrarla.",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/api/v1/sesiones\"),",
+                  "    method: \"POST\",",
+                  "    header: { \"Content-Type\": \"application/json\", \"Accept\": \"application/json\" },",
+                  "    body: { mode: \"raw\", raw: JSON.stringify({ email: pm.variables.get(\"adminEmail\"), contrasena: pm.variables.get(\"adminContrasena\") }) }",
+                  "}, (error, respuesta) => {",
+                  "    pm.collectionVariables.set(\"otraSesionToken\", respuesta.json().token);",
+                  "});"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
+                  "pm.test(\"Código de error NOT_SESSION_OWNER\", () => pm.expect(pm.response.json().errorCode).to.eql(\"NOT_SESSION_OWNER\"));",
+                  "// El administrador cierra su propia sesión para no dejarla abierta.",
+                  "const otraSesion = pm.collectionVariables.get(\"otraSesionToken\");",
+                  "pm.sendRequest({",
+                  "    url: pm.variables.replaceIn(\"{{baseUrl}}/api/v1/sesiones/\") + otraSesion,",
+                  "    method: \"DELETE\",",
+                  "    header: { \"Authorization\": \"Bearer \" + otraSesion }",
+                  "}, () => pm.collectionVariables.unset(\"otraSesionToken\"));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{playerToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/sesiones/{{otraSesionToken}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "sesiones",
+                "{{otraSesionToken}}"
+              ]
+            },
+            "description": "El jugador intenta cerrar una sesión que existe pero es del administrador: 403. Cada usuario solo cierra las suyas."
+          },
+          "response": []
+        },
+        {
           "name": "Logout del jugador → 204",
           "event": [
             {
@@ -1568,7 +1692,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/sesiones/actual",
+              "raw": "{{baseUrl}}/api/v1/sesiones/{{playerToken}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1576,7 +1700,7 @@
                 "api",
                 "v1",
                 "sesiones",
-                "actual"
+                "{{playerToken}}"
               ]
             }
           },
@@ -1629,7 +1753,7 @@
                   "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
                   "const sesion = pm.response.json();",
                   "pm.test(\"Sesión administrativa\", () => { pm.expect(sesion.rol).to.eql(\"Administrador\"); pm.expect(sesion.token).to.be.a(\"string\").and.not.empty; });",
-                  "pm.test(\"Location de sesión\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/sesiones/actual\"));",
+                  "pm.test(\"Location de sesión\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/sesiones/\" + sesion.token));",
                   "pm.collectionVariables.set(\"adminToken\", sesion.token);",
                   "pm.collectionVariables.set(\"adminId\", sesion.usuarioId);",
                   "pm.execution.setNextRequest(\"Usuarios - fecha omitida → 400\");"
@@ -1649,7 +1773,7 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/sesiones/actual",
+              "raw": "{{baseUrl}}/api/v1/sesiones/{{adminToken}}",
               "host": [
                 "{{baseUrl}}"
               ],
@@ -1657,7 +1781,7 @@
                 "api",
                 "v1",
                 "sesiones",
-                "actual"
+                "{{adminToken}}"
               ]
             },
             "auth": {
@@ -9416,16 +9540,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9456,7 +9578,7 @@
                     "exec": [
                       "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
                       "const declarada = pm.response.json();",
-                      "pm.test(\"Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/jugadores/actual/repertorio/\" + declarada.skillId));",
+                      "pm.test(\"Location\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/repertorios/\" + declarada.skillId));",
                       "pm.test(\"Skill y nivel\", () => { pm.expect(declarada.skillId).to.eql(pm.collectionVariables.get(\"skillId\")); pm.expect(declarada.nivel).to.eql(1); pm.expect(declarada.activa).to.eql(true); });",
                       "pm.test(\"Fecha de declaración\", () => pm.expect(declarada.fechaDeclaracion).to.match(/^\\d{4}-\\d{2}-\\d{2}$/));"
                     ]
@@ -9479,16 +9601,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9535,16 +9655,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9583,16 +9701,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio/{{skillSegundaId}}",
+                  "raw": "{{baseUrl}}/api/v1/repertorios/{{skillSegundaId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio",
+                    "repertorios",
                     "{{skillSegundaId}}"
                   ]
                 },
@@ -9630,16 +9746,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9686,16 +9800,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9746,16 +9858,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9806,16 +9916,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9866,16 +9974,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9926,16 +10032,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -9985,16 +10089,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -10103,16 +10205,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -10218,16 +10318,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio/{{skillSegundaId}}",
+                  "raw": "{{baseUrl}}/api/v1/repertorios/{{skillSegundaId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio",
+                    "repertorios",
                     "{{skillSegundaId}}"
                   ]
                 },
@@ -10266,16 +10364,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -10306,16 +10402,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "auth": {
@@ -12208,16 +12302,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio/{{skillId}}",
+                  "raw": "{{baseUrl}}/api/v1/repertorios/{{skillId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio",
+                    "repertorios",
                     "{{skillId}}"
                   ]
                 },
@@ -14556,16 +14648,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/jugadores/actual/repertorio",
+                  "raw": "{{baseUrl}}/api/v1/repertorios",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "jugadores",
-                    "actual",
-                    "repertorio"
+                    "repertorios"
                   ]
                 },
                 "body": {
@@ -20615,14 +20705,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking",
+                  "raw": "{{baseUrl}}/api/v1/rankings",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ]
                 },
                 "auth": {
@@ -20659,14 +20749,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=1",
+                  "raw": "{{baseUrl}}/api/v1/rankings?cantidad=1",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -20704,14 +20794,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=500",
+                  "raw": "{{baseUrl}}/api/v1/rankings?cantidad=500",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -20751,14 +20841,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=0",
+                  "raw": "{{baseUrl}}/api/v1/rankings?cantidad=0",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -20795,14 +20885,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=100",
+                  "raw": "{{baseUrl}}/api/v1/rankings?cantidad=100",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -20841,14 +20931,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{torneoCupoId}}",
+                  "raw": "{{baseUrl}}/api/v1/rankings?torneoId={{torneoCupoId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -20888,14 +20978,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{torneoCupoId}}&cantidad=2",
+                  "raw": "{{baseUrl}}/api/v1/rankings?torneoId={{torneoCupoId}}&cantidad=2",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -20936,14 +21026,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{bTorneoId}}&cantidad=100",
+                  "raw": "{{baseUrl}}/api/v1/rankings?torneoId={{bTorneoId}}&cantidad=100",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -20995,14 +21085,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId=999999",
+                  "raw": "{{baseUrl}}/api/v1/rankings?torneoId=999999",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -21039,14 +21129,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId={{torneoMinId}}",
+                  "raw": "{{baseUrl}}/api/v1/rankings?torneoId={{torneoMinId}}",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -21083,14 +21173,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?torneoId=abc",
+                  "raw": "{{baseUrl}}/api/v1/rankings?torneoId=abc",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -21127,14 +21217,14 @@
                   }
                 ],
                 "url": {
-                  "raw": "{{baseUrl}}/api/v1/ranking?cantidad=abc",
+                  "raw": "{{baseUrl}}/api/v1/rankings?cantidad=abc",
                   "host": [
                     "{{baseUrl}}"
                   ],
                   "path": [
                     "api",
                     "v1",
-                    "ranking"
+                    "rankings"
                   ],
                   "query": [
                     {
@@ -21261,14 +21351,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/ranking",
+              "raw": "{{baseUrl}}/api/v1/rankings",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "ranking"
+                "rankings"
               ]
             },
             "auth": {
@@ -21512,14 +21602,14 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/v1/ranking?cantidad=abc",
+              "raw": "{{baseUrl}}/api/v1/rankings?cantidad=abc",
               "host": [
                 "{{baseUrl}}"
               ],
               "path": [
                 "api",
                 "v1",
-                "ranking"
+                "rankings"
               ],
               "query": [
                 {
