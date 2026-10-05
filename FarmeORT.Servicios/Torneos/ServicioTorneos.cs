@@ -97,7 +97,8 @@ internal sealed class ServicioTorneos(
         }
 
         // El cupo no baja de las inscripciones Aceptadas: no se cancelan inscripciones para hacer lugar (foro, debate 13).
-        if(datos.Cupo < repositorioInscripciones.ContarAceptadas(torneo.Id))
+        var inscripcionesAceptadas = repositorioInscripciones.ContarAceptadas(torneo.Id);
+        if(datos.Cupo < inscripcionesAceptadas)
         {
             throw new CupoMenorQueInscripcionesAceptadasException();
         }
@@ -110,7 +111,8 @@ internal sealed class ServicioTorneos(
             datos.FechaFin,
             datos.Cupo,
             organizador,
-            ObtenerFechaActual());
+            ObtenerFechaActual(),
+            inscripcionesAceptadas);
         repositorioTorneos.Actualizar(torneo);
         return CrearResponse(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
     }

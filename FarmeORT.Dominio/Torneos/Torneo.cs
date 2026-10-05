@@ -78,8 +78,10 @@ public sealed class Torneo
         DateOnly fechaFin,
         int cupo,
         Usuario organizador,
-        DateOnly fechaActual)
+        DateOnly fechaActual,
+        int inscripcionesAceptadas)
     {
+        _ = inscripcionesAceptadas;
         ValidarModificable();
 
         // Una fecha de inicio que ya pasó y no cambia no impide editar el resto (D-37).

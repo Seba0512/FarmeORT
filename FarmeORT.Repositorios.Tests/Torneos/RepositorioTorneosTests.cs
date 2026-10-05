@@ -196,7 +196,7 @@ public sealed class RepositorioTorneosTests
     public void Actualizar_TorneoModificado_GuardaLosCambios()
     {
         var torneo = GuardarYCargar(CrearTorneo("COPAAURA"));
-        torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, torneo.Organizador, FechaActual);
+        torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, torneo.Organizador, FechaActual, 0);
 
         _repositorio.Actualizar(torneo);
         _baseDeDatos.Contexto.ChangeTracker.Clear();
@@ -250,7 +250,7 @@ public sealed class RepositorioTorneosTests
     {
         GuardarTorneos(CrearTorneo("COPAFUEGO"));
         var torneo = GuardarYCargar(CrearTorneo("COPAAURA"));
-        torneo.Modificar("COPAFUEGO", "Copa Aura", Descripcion, FechaInicio, FechaFin, 8, torneo.Organizador, FechaActual);
+        torneo.Modificar("COPAFUEGO", "Copa Aura", Descripcion, FechaInicio, FechaFin, 8, torneo.Organizador, FechaActual, 0);
 
         Assert.ThrowsExactly<CodigoTorneoYaExisteException>(() => _repositorio.Actualizar(torneo));
         Assert.AreEqual("COPAAURA", _baseDeDatos.Contexto.Torneos.AsNoTracking().Single(t => t.Id == torneo.Id).Codigo);

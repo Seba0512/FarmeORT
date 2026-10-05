@@ -148,7 +148,7 @@ public sealed class TorneoTests
         torneo.Cancelar();
 
         Assert.ThrowsExactly<TorneoNoModificableException>(
-            () => torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, CrearOrganizador(Rol.Organizador), FechaActual));
+            () => torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, CrearOrganizador(Rol.Organizador), FechaActual, 0));
         Assert.AreEqual("COPAAURA", torneo.Codigo);
         Assert.AreEqual(8, torneo.Cupo);
     }
@@ -160,9 +160,20 @@ public sealed class TorneoTests
         torneo.Iniciar(8);
 
         Assert.ThrowsExactly<TorneoNoModificableException>(
-            () => torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, CrearOrganizador(Rol.Organizador), FechaActual));
+            () => torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, CrearOrganizador(Rol.Organizador), FechaActual, 0));
         Assert.AreEqual("COPAAURA", torneo.Codigo);
         Assert.AreEqual(EstadoTorneo.EnCurso, torneo.Estado);
+    }
+
+    // Foro (debate 13): el cupo no baja de las inscripciones Aceptadas; no se cancelan inscripciones para hacer lugar.
+    [TestMethod]
+    public void Modificar_CupoMenorQueLasInscripcionesAceptadas_LanzaCupoMenorQueInscripcionesAceptadasSinCambiarlo()
+    {
+        var torneo = CrearTorneo();
+
+        Assert.ThrowsExactly<CupoMenorQueInscripcionesAceptadasException>(
+            () => torneo.Modificar("COPAAURA", "Copa Aura", Descripcion, FechaInicio, FechaFin, 4, CrearOrganizador(Rol.Organizador), FechaActual, 6));
+        Assert.AreEqual(8, torneo.Cupo);
     }
 
     [TestMethod]
@@ -181,7 +192,7 @@ public sealed class TorneoTests
         var torneo = CrearTorneo();
 
         Assert.ThrowsExactly<DatosInvalidosException>(
-            () => torneo.Modificar(codigo, nombre, descripcion, FechaInicio, FechaFin, cupo, CrearOrganizador(rolOrganizador), FechaActual));
+            () => torneo.Modificar(codigo, nombre, descripcion, FechaInicio, FechaFin, cupo, CrearOrganizador(rolOrganizador), FechaActual, 0));
         Assert.AreEqual("COPAAURA", torneo.Codigo);
         Assert.AreEqual("Copa Aura", torneo.Nombre);
         Assert.AreEqual(8, torneo.Cupo);
@@ -193,7 +204,7 @@ public sealed class TorneoTests
         var torneo = CrearTorneo();
 
         Assert.ThrowsExactly<DatosInvalidosException>(
-            () => torneo.Modificar("COPAAURA", "Copa Aura", Descripcion, FechaInicio, FechaInicio, 8, CrearOrganizador(Rol.Organizador), FechaActual));
+            () => torneo.Modificar("COPAAURA", "Copa Aura", Descripcion, FechaInicio, FechaInicio, 8, CrearOrganizador(Rol.Organizador), FechaActual, 0));
     }
 
     [TestMethod]
@@ -203,7 +214,7 @@ public sealed class TorneoTests
         var fechaPosterior = new DateOnly(2026, 11, 10);
 
         var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(
-            () => torneo.Modificar("COPAAURA", "Copa Aura", Descripcion, new DateOnly(2026, 11, 5), FechaFin, 8, CrearOrganizador(Rol.Organizador), fechaPosterior));
+            () => torneo.Modificar("COPAAURA", "Copa Aura", Descripcion, new DateOnly(2026, 11, 5), FechaFin, 8, CrearOrganizador(Rol.Organizador), fechaPosterior, 0));
 
         Assert.AreEqual("La fecha de inicio no puede ser anterior a la fecha actual.", excepcion.Message);
     }
@@ -215,7 +226,7 @@ public sealed class TorneoTests
         var fechaPosterior = new DateOnly(2026, 11, 10);
         var otroOrganizador = CrearOrganizador(Rol.Organizador);
 
-        torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, otroOrganizador, fechaPosterior);
+        torneo.Modificar("COPAFUEGO", "Copa Fuego", Descripcion, FechaInicio, FechaFin, 16, otroOrganizador, fechaPosterior, 0);
 
         Assert.AreEqual("COPAFUEGO", torneo.Codigo);
         Assert.AreEqual("Copa Fuego", torneo.Nombre);
