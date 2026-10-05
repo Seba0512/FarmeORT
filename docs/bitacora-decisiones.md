@@ -1082,6 +1082,8 @@ rechaza modificar o cancelar en un estado que no lo permite.
   `TOURNAMENT_NOT_CANCELLABLE` (cancelar uno Finalizado o Cancelado), los dos 409. Además, 404
   `TOURNAMENT_NOT_FOUND` y 409 `TOURNAMENT_CODE_ALREADY_EXISTS`. Las excepciones son propias porque cada
   una tiene su código (D-30).
+  **Actualización (D-72):** además, 409 `TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS` si el cupo nuevo es menor
+  que las inscripciones Aceptadas (foro, debate 13).
 - La FK `Torneos.OrganizadorId` es `Restrict`: un organizador no se borra físicamente (la baja es lógica,
   D-27). La migración es `AgregaTorneos`.
 
@@ -1582,7 +1584,8 @@ develop.
   integrante). Las Canceladas no entran, porque se retiraron antes de jugar. El ELO es el actual, que es
   global.
 - Torneo inexistente o **Cancelado** → 404 `TOURNAMENT_NOT_FOUND`. El ranking es público y no distingue
-  quién consulta, y para el público un torneo cancelado no existe (D-36).
+  quién consulta, y para el público un torneo cancelado no existe (D-36). **Actualización (D-72):** el 404
+  del Cancelado vale solo para el anónimo; el autenticado ve el ranking (foro, debate 11).
 - Un `torneoId` que no existe, incluso 0 o negativo, responde 404. La especificación pide 404 para un
   torneo inexistente; ignorar el filtro devolvería el ranking general como si fuera el del torneo. Un
   `torneoId` que no es un número sigue siendo 400 `VALIDATION_ERROR`.
@@ -1591,6 +1594,7 @@ develop.
   extrajeron en un REFACTOR. La cantidad se ajusta igual que sin filtro.
 - Con el filtro, ganadas y perdidas van a contar solo las batallas de ese torneo, y sin filtro todas (lo
   eligió el integrante). Se calculan con `Batalla.GanadorId` cuando los fallos de B estén en develop.
+  **Actualización (D-72):** son siempre las globales, también con el filtro (foro, debate 06).
 
 **Justificación:**
 - Aceptados y Eliminados son quienes compiten o compitieron en el torneo: el ranking muestra a todos los
@@ -1649,7 +1653,8 @@ D-45 dejó acordado que, con `torneoId`, se cuentan solo las batallas de ese tor
   (como mucho las del tope de 100 jugadores) y un ciclo que cuenta jugadas y ganadas de cada uno; perdidas =
   jugadas − ganadas. Sigue sin N+1 y se lee sin `Expression<Func<…>>`. Un test nuevo cubre que un jugador sin
   batallas Finalizadas no figura.
-- Con `torneoId` se filtran las batallas de ese torneo; sin filtro cuentan todas.
+- Con `torneoId` se filtran las batallas de ese torneo; sin filtro cuentan todas. **Actualización (D-72):**
+  ya no se filtran por torneo; la consulta no recibe el torneo (foro, debate 06).
 - Si la lista de jugadores está vacía, el servicio no consulta las batallas.
 
 **Justificación:**
@@ -2564,6 +2569,102 @@ especificación, Postman y documentación, y el skill Graphify. Un test existent
 acceder al registro de eventos desde el sandbox; la suite se reejecutó con los permisos necesarios sin
 cambiar tests ni configuración. El integrante conserva el push, el PR y la revisión humana; el equipo
 debe reflejar esta coordinación en sus entregables API/UML. No se generaron diagramas automáticamente.
+
+---
+
+### D-72 — Alineación con las respuestas docentes del foro de consultas (19/09/2026)
+
+**Problema:** se transcribieron las 24 discusiones del foro de consultas del obligatorio (agosto de 2026,
+consultado el 19/09/2026). Las aclaraciones docentes están por encima de la bitácora y del código
+(`AGENTS.md` §0). Al contrastarlas con `develop`, tres puntos no coincidían:
+- Debate 06: con `torneoId`, el ranking contaba solo las batallas de ese torneo (D-45, D-46). El docente
+  responde que las batallas ganadas y perdidas son las globales, no las del torneo.
+- Debate 13: al modificar un torneo Abierto se podía bajar el cupo por debajo de las inscripciones
+  Aceptadas. El docente responde que la modificación se rechaza indicando el motivo, que no se cancelan
+  inscripciones para hacer lugar y que sí se puede subir el cupo.
+- Debate 11: un usuario autenticado ve torneos en todos los estados, incluido Cancelado; la restricción es
+  solo del anónimo. El ranking de un torneo Cancelado respondía 404 a todos, porque el endpoint no leía el
+  token (D-45).
+
+El resto de las respuestas docentes ya coincidía con el código: skills repetidas por jugador y no por
+batalla (02), ranking ordenado por ELO global (03) y solo con rol Jugador (10), Aceptada o Eliminada en el
+ranking de un torneo (06), variación de ELO de cada jugador en el detalle de la batalla (04), abandono
+resuelto fallando una batalla Pendiente (05), baja bloqueada solo por compromisos activos y baja lógica
+como decisión propia (07, D-27, D-43), skill activa por defecto y sin baja (09, 21), catálogo consultable por
+todos los roles (12), rol mutable que conserva el ELO y se valida en un único lugar (14, 15, 20, D-43),
+inscripción solo para el rol Jugador (15), logout como decisión propia (16, D-69), detalle completo del
+torneo para el anónimo (17), nivel de dominio validado y persistido (18), campeón con inscripción Aceptada
+(19, D-64), sin preselección de skills (22) y administrador precargado (23, D-11).
+
+**Alternativas consideradas:**
+- Ranking: mantener el conteo por torneo como decisión propia, o contar siempre las globales. En ese caso,
+  dejar el filtro por torneo del repositorio sin uso o quitarlo.
+- Cupo: controlar la regla en el servicio, que cuenta las inscripciones, o en `Torneo.Modificar` recibiendo la
+  cantidad, como ya hace `Torneo.Iniciar`. Responder 400 o 409. Cancelar las inscripciones que sobran era la
+  otra opción de la consulta, y el docente la descartó.
+- Ranking de un torneo cancelado: mantener el 404 para todos, o leer el token con `[AutenticacionOpcional]`,
+  como ya hacen torneos, obligatorias y rondas.
+
+**Decisión adoptada:**
+- Las batallas ganadas y perdidas del ranking son siempre las globales. `IRepositorioBatallas.
+  ContarResultadosPorJugador` ya no recibe el torneo: el parámetro quedó sin uso y se quitó en un REFACTOR. El
+  filtro por torneo solo decide quién aparece (Aceptada o Eliminada), y el orden sigue siendo por ELO global.
+- `Torneo.Modificar` recibe la cantidad de inscripciones Aceptadas y rechaza un cupo menor con
+  `CupoMenorQueInscripcionesAceptadasException` → 409 `TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS` ("El cupo no
+  puede ser menor que las inscripciones aceptadas del torneo."). La cantidad la cuenta `ServicioTorneos`. El
+  control va después del de estado: a un torneo En curso se le responde `TOURNAMENT_NOT_MODIFIABLE`, que es el
+  motivo real. Un cupo igual o mayor que las Aceptadas se acepta.
+- `GET /rankings` usa `[AutenticacionOpcional]` e `IServicioRanking.Obtener` recibe `esAnonimo`. El anónimo
+  sigue recibiendo 404 por un torneo Cancelado, y el autenticado ve su ranking: los Eliminados, porque los
+  Aceptados pasaron a Cancelada al cancelarlo. Un token inválido responde 401, como en los otros endpoints
+  públicos.
+- El integrante eligió las tres correcciones el 05/10, incluida la de mostrarle al autenticado el ranking
+  del torneo cancelado.
+
+**Justificación:**
+- Las respuestas docentes mandan sobre la bitácora. En el debate 06 el docente responde lo contrario de lo que
+  se había elegido en D-45.
+- El cupo es un dato del torneo, y `Torneo` ya decide con la cantidad de Aceptadas al iniciar (Information
+  Expert). La cantidad la cuenta el servicio porque las inscripciones son otro agregado. Es 409 y no 400
+  porque el dato es válido en sí: el conflicto es con el estado del sistema.
+- Usar el mismo patrón que los demás endpoints públicos deja una sola regla de visibilidad: al anónimo solo
+  se le oculta el torneo Cancelado.
+
+**Conceptos del curso:** Information Expert, TDD outside-in con un ciclo por capa, status codes (404 frente a
+409), filtros separados de autenticación y autorización, YAGNI (el docente pide en el debate 18 no agregar
+mecanismos que ningún requerimiento necesita: el parámetro sin uso se quitó).
+
+**Evidencia:**
+- Commits RED/GREEN/REFACTOR de la rama `feature/alineacion-foro`.
+- Tests `Obtener_TorneoExistente_CuentaLasBatallasGlobalesDeCadaJugador`,
+  `ContarResultadosPorJugador_BatallasDeVariosTorneos_CuentaLasDeTodos`,
+  `Obtener_ContratoDeSeguridad_ExponeGetRankingConAutenticacionOpcional`,
+  `Obtener_ConCantidad_Devuelve200IndicandoSiConsultaUnAnonimo`,
+  `Obtener_TorneoCanceladoConsultadoPorUnAutenticado_DevuelveElRankingDeSusParticipantes`,
+  `Modificar_CupoMenorQueLasInscripcionesAceptadas_LanzaCupoMenorQueInscripcionesAceptadasSinGuardar`
+  (servicio), `Modificar_CupoMenorQueLasInscripcionesAceptadas_LanzaCupoMenorQueInscripcionesAceptadasSinCambiarlo`
+  (dominio) y el caso nuevo de `OnException_ErrorMapeado_DevuelveSuStatusYCodigo`.
+- `docs/api/ranking.md`, `docs/api/torneos.md`, `AGENTS.md` (§7 y §8) y las carpetas Ranking y Torneos de la
+  colección de Postman.
+- Suite completa en verde, con cobertura de líneas y ramas por encima del 98 % en cada assembly. El Runner
+  de Newman corrió la colección de punta a punta contra la API real sobre una base SQL Server descartable,
+  que se borró al terminar: 455 requests y 893 assertions, sin fallas. Incluye el 409 del cupo, la subida del
+  cupo con inscriptos, el ranking con token y el ranking por torneo comparado con el general.
+
+**Participación de IA:**
+- Claude Code leyó la transcripción completa del foro y contrastó cada respuesta docente con el código de
+  `develop`. Listó los tres desvíos y los puntos que ya coincidían.
+- Preguntó por el ranking del torneo cancelado, porque contradecía una decisión registrada (D-45), y cómo
+  commitear. El integrante eligió las opciones recomendadas.
+- Problemas que aparecieron:
+  - El primer intento del ciclo del cupo implementaba la regla del dominio en el GREEN del servicio, sin un
+    test de dominio que fallara antes. Se descartó sin commitear y se rehízo en dos ciclos (servicio y
+    después dominio), con un REFACTOR que deja la regla solo en `Torneo`.
+  - Un commit GREEN del filtro de excepciones quedó con un error de estilo (SA1515, falta la línea en blanco
+    antes del comentario), porque el commit se encadenó sin esperar el resultado de `dotnet format`. Se
+    corrigió antes del push.
+  - El test de repositorio del filtro por torneo no se borró: se convirtió en uno que verifica que se cuentan
+    las batallas de todos los torneos.
 
 ---
 
