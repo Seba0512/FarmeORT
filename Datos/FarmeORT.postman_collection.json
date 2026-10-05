@@ -583,6 +583,38 @@
     {
       "key": "otraSesionToken",
       "value": ""
+    },
+    {
+      "key": "torneoCupoBajoCodigo",
+      "value": ""
+    },
+    {
+      "key": "torneoCupoBajoId",
+      "value": ""
+    },
+    {
+      "key": "cupoBajoIndice",
+      "value": ""
+    },
+    {
+      "key": "cupoBajoSufijo",
+      "value": ""
+    },
+    {
+      "key": "cupoBajoJugadoresTokens",
+      "value": ""
+    },
+    {
+      "key": "cupoBajoJugadorEmail",
+      "value": ""
+    },
+    {
+      "key": "cupoBajoJugadorNickname",
+      "value": ""
+    },
+    {
+      "key": "cupoBajoTokenActual",
+      "value": ""
     }
   ],
   "item": [
@@ -9269,6 +9301,414 @@
                     "exec": [
                       "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
                       "pm.test(\"Código de error TOURNAMENT_NOT_MODIFIABLE\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_MODIFIABLE\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - alta de un torneo de cupo 8 para bajarle el cupo → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCupoBajoCodigo}}\",\n  \"nombre\": \"Copa Cupo\",\n  \"descripcion\": \"Torneo para comprobar que el cupo no baja de las aceptadas.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 8,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.collectionVariables.set(\"torneoCupoBajoCodigo\", (\"TCUPO\" + Date.now().toString(36).toUpperCase()).slice(0, 20));",
+                      "// Cinco jugadores aceptados: más que el cupo 4 que se intenta poner después (foro, debate 13; D-72).",
+                      "pm.collectionVariables.set(\"cupoBajoIndice\", 0);",
+                      "pm.collectionVariables.set(\"cupoBajoSufijo\", pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 10));",
+                      "pm.collectionVariables.set(\"cupoBajoJugadoresTokens\", \"[]\");"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"torneoCupoBajoId\", pm.response.json().id);"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - registro de los cinco jugadores del torneo de cupo 8 (se repite) → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Jugador\",\n  \"apellido\": \"Cupo\",\n  \"email\": \"{{cupoBajoJugadorEmail}}\",\n  \"nickname\": \"{{cupoBajoJugadorNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cupoBajoIndice\"));",
+                      "const sufijo = pm.collectionVariables.get(\"cupoBajoSufijo\");",
+                      "pm.collectionVariables.set(\"cupoBajoJugadorEmail\", \"cupo\" + indice + \".\" + sufijo + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"cupoBajoJugadorNickname\", \"cupo\" + indice + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cupoBajoIndice\"));",
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "if(indice + 1 < 5) {",
+                      "    pm.collectionVariables.set(\"cupoBajoIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"cupoBajoIndice\", 0);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - login de los cinco jugadores del torneo de cupo 8 (se repite) → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/sesiones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "sesiones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{cupoBajoJugadorEmail}}\",\n  \"contrasena\": \"ClaveSegura123!!\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cupoBajoIndice\"));",
+                      "const sufijo = pm.collectionVariables.get(\"cupoBajoSufijo\");",
+                      "pm.collectionVariables.set(\"cupoBajoJugadorEmail\", \"cupo\" + indice + \".\" + sufijo + \"@farmeort.test\");",
+                      "pm.collectionVariables.set(\"cupoBajoJugadorNickname\", \"cupo\" + indice + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cupoBajoIndice\"));",
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const tokens = JSON.parse(pm.collectionVariables.get(\"cupoBajoJugadoresTokens\"));",
+                      "tokens[indice] = pm.response.json().token;",
+                      "pm.collectionVariables.set(\"cupoBajoJugadoresTokens\", JSON.stringify(tokens));",
+                      "",
+                      "if(indice + 1 < 5) {",
+                      "    pm.collectionVariables.set(\"cupoBajoIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"cupoBajoIndice\", 0);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - los cinco jugadores se inscriben en el torneo de cupo 8 (se repite) → 201",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{cupoBajoTokenActual}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoCupoBajoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cupoBajoIndice\"));",
+                      "pm.collectionVariables.set(\"cupoBajoTokenActual\", JSON.parse(pm.collectionVariables.get(\"cupoBajoJugadoresTokens\"))[indice]);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const indice = Number(pm.collectionVariables.get(\"cupoBajoIndice\"));",
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.test(\"Aceptada\", () => pm.expect(pm.response.json().estado).to.eql(\"Aceptada\"));",
+                      "",
+                      "if(indice + 1 < 5) {",
+                      "    pm.collectionVariables.set(\"cupoBajoIndice\", indice + 1);",
+                      "    pm.execution.setNextRequest(pm.info.requestName);",
+                      "} else {",
+                      "    pm.collectionVariables.set(\"cupoBajoIndice\", 0);",
+                      "}"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación con un cupo menor que las inscripciones aceptadas → 409",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoCupoBajoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoCupoBajoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCupoBajoCodigo}}\",\n  \"nombre\": \"Copa Cupo\",\n  \"descripcion\": \"Torneo para comprobar que el cupo no baja de las aceptadas.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 4,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"errorCode TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_CAPACITY_BELOW_REGISTRATIONS\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Torneos - modificación que sube el cupo de un torneo con inscriptos → 200",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/torneos/{{torneoCupoBajoId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "torneos",
+                    "{{torneoCupoBajoId}}"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"codigo\": \"{{torneoCupoBajoCodigo}}\",\n  \"nombre\": \"Copa Cupo\",\n  \"descripcion\": \"Torneo para comprobar que el cupo no baja de las aceptadas.\",\n  \"fechaInicio\": \"{{torneoFechaInicio}}\",\n  \"fechaFin\": \"{{torneoFechaFin}}\",\n  \"cupo\": 16,\n  \"organizadorId\": {{torneoOrganizadorId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const torneo = pm.response.json();",
+                      "pm.test(\"Cupo nuevo y las cinco aceptadas intactas\", () => { pm.expect(torneo.cupo).to.eql(16); pm.expect(torneo.inscripcionesAceptadas).to.eql(5); });"
                     ]
                   }
                 }
@@ -21016,7 +21456,7 @@
               ]
             },
             {
-              "name": "Ranking - el torneo de las batallas cuenta ganadas y perdidas → 200",
+              "name": "Ranking - filtrado por torneo muestra las batallas globales de cada jugador → 200",
               "request": {
                 "method": "GET",
                 "header": [
@@ -21058,12 +21498,70 @@
                     "exec": [
                       "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                       "const ranking = pm.response.json();",
-                      "const ganadas = ranking.reduce((total, jugador) => total + jugador.batallasGanadas, 0);",
-                      "const perdidas = ranking.reduce((total, jugador) => total + jugador.batallasPerdidas, 0);",
-                      "// Las rondas siguientes pueden fallar más batallas: se comprueba lo que vale en cualquier caso (D-46).",
                       "pm.test(\"Los cuatro participantes, aceptados o eliminados\", () => pm.expect(ranking).to.have.lengthOf(4));",
-                      "pm.test(\"Cada batalla fallada suma una ganada y una perdida, y hay al menos los dos fallos de B\", () => { pm.expect(ganadas).to.eql(perdidas); pm.expect(ganadas).to.be.at.least(2); });",
-                      "pm.test(\"Es eliminatorio: nadie pierde más de una vez\", () => ranking.forEach(jugador => pm.expect(jugador.batallasPerdidas).to.be.at.most(1)));"
+                      "// Foro (debate 06): ganadas y perdidas son las globales, no las del torneo (D-72). Se comparan con el ranking general.",
+                      "pm.sendRequest({ url: pm.variables.replaceIn(\"{{baseUrl}}/api/v1/rankings?cantidad=100\"), method: \"GET\", header: { Accept: \"application/json\" } }, (error, respuesta) => {",
+                      "    const general = respuesta.json();",
+                      "    pm.test(\"Cada participante tiene las mismas batallas que en el ranking general\", () => ranking.forEach(jugador => {",
+                      "        const enGeneral = general.find(otro => otro.nickname === jugador.nickname);",
+                      "        pm.expect(enGeneral, jugador.nickname).to.not.be.undefined;",
+                      "        pm.expect(jugador.batallasGanadas).to.eql(enGeneral.batallasGanadas);",
+                      "        pm.expect(jugador.batallasPerdidas).to.eql(enGeneral.batallasPerdidas);",
+                      "    }));",
+                      "});",
+                      "pm.test(\"Cuenta al menos los dos fallos de B\", () => pm.expect(ranking.reduce((total, jugador) => total + jugador.batallasGanadas, 0)).to.be.at.least(2));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - autenticado ve el ranking de un torneo cancelado → 200",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/rankings?torneoId={{torneoCancelId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "rankings"
+                  ],
+                  "query": [
+                    {
+                      "key": "torneoId",
+                      "value": "{{torneoCancelId}}"
+                    }
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "// Foro (debate 11): solo el anónimo deja de ver los torneos cancelados (D-72). Los aceptados pasaron a Cancelada.",
+                      "pm.test(\"Devuelve la lista del torneo\", () => pm.expect(pm.response.json()).to.be.an(\"array\"));"
                     ]
                   }
                 }
@@ -21119,7 +21617,7 @@
               ]
             },
             {
-              "name": "Ranking - torneo cancelado responde como inexistente → 404",
+              "name": "Ranking - anónimo no ve el ranking de un torneo cancelado → 404",
               "request": {
                 "method": "GET",
                 "header": [
@@ -21157,6 +21655,51 @@
                     "exec": [
                       "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
                       "pm.test(\"errorCode TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Ranking - token inválido → 401",
+              "request": {
+                "method": "GET",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/rankings",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "rankings"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{$guid}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"errorCode INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
                     ]
                   }
                 }
