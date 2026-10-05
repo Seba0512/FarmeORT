@@ -36,7 +36,12 @@ internal sealed class ServicioSesiones(
     public void CerrarSesion(Guid token, int usuarioId)
     {
         var sesion = repositorioSesiones.ObtenerPorToken(token);
-        if(sesion != null && sesion.UsuarioId != usuarioId)
+        if(sesion == null)
+        {
+            throw new SesionNoEncontradaException();
+        }
+
+        if(sesion.UsuarioId != usuarioId)
         {
             throw new NoEsDuenoDeLaSesionException();
         }
