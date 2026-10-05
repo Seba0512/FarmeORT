@@ -45,7 +45,7 @@ public sealed class RankingControllerTests
         var ruta = tipo.GetCustomAttribute<RouteAttribute>();
 
         Assert.IsNotNull(ruta);
-        Assert.AreEqual("api/v1/ranking", ruta.Template);
+        Assert.AreEqual("api/v1/rankings", ruta.Template);
         Assert.IsNotNull(metodo.GetCustomAttribute<HttpGetAttribute>());
         Assert.IsNull(tipo.GetCustomAttribute<AutenticacionAttribute>());
         Assert.IsNull(metodo.GetCustomAttribute<AutenticacionAttribute>());
