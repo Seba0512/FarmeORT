@@ -33,20 +33,30 @@ internal sealed class ServicioFallos(
 
         batalla.ValidarFallo(ganadorId, request.Comentario);
 
-        var ganador = ganadorId == batalla.Jugador1Id ? batalla.Jugador1 : batalla.Jugador2;
-        var perdedor = ganadorId == batalla.Jugador1Id ? batalla.Jugador2 : batalla.Jugador1;
+        var ganador = batalla.Jugador1;
+        var perdedor = batalla.Jugador2;
+        if(ganadorId == batalla.Jugador2Id)
+        {
+            ganador = batalla.Jugador2;
+            perdedor = batalla.Jugador1;
+        }
+
         var inscripcion = repositorioInscripciones.ObtenerAceptada(batalla.TorneoId, perdedor.Id);
         if(inscripcion == null)
         {
             throw new InscripcionNoActivaException();
         }
 
-        var elo1Previo = batalla.Jugador1.Elo;
-        var elo2Previo = batalla.Jugador2.Elo;
+        // Los dos ELO nuevos se calculan con los valores previos de ambos jugadores (letra 1.10).
+        var eloPrevioJugador1 = batalla.Jugador1.Elo;
+        var eloPrevioJugador2 = batalla.Jugador2.Elo;
         var resultadoElo = calculadorElo.Calcular(ganador.Elo, perdedor.Elo);
         ganador.ActualizarElo(resultadoElo.NuevoEloGanador);
         perdedor.ActualizarElo(resultadoElo.NuevoEloPerdedor);
-        batalla.Fallar(ganadorId, request.Comentario, batalla.Jugador1.Elo - elo1Previo, batalla.Jugador2.Elo - elo2Previo);
+
+        var cambioEloJugador1 = batalla.Jugador1.Elo - eloPrevioJugador1;
+        var cambioEloJugador2 = batalla.Jugador2.Elo - eloPrevioJugador2;
+        batalla.Fallar(ganadorId, request.Comentario, cambioEloJugador1, cambioEloJugador2);
         inscripcion.Eliminar();
 
         // Todos los repositorios comparten el contexto Scoped; este es el único SaveChanges.
