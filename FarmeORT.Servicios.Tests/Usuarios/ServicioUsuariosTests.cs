@@ -186,9 +186,9 @@ public sealed class ServicioUsuariosTests
     {
         _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 100, 0))).Returns([]);
 
-        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Limit = 600 });
+        _servicio.Listar(new FiltroUsuariosRequest { Limit = 600 });
 
-        Assert.IsEmpty(usuarios);
+        _repositorioUsuarios.Verify(r => r.Listar(new FiltroUsuarios(null, null, null, 100, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -198,9 +198,9 @@ public sealed class ServicioUsuariosTests
     {
         _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0))).Returns([]);
 
-        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Limit = limit });
+        _servicio.Listar(new FiltroUsuariosRequest { Limit = limit });
 
-        Assert.IsEmpty(usuarios);
+        _repositorioUsuarios.Verify(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -208,9 +208,9 @@ public sealed class ServicioUsuariosTests
     {
         _repositorioUsuarios.Setup(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0))).Returns([]);
 
-        var usuarios = _servicio.Listar(new FiltroUsuariosRequest { Offset = -5 });
+        _servicio.Listar(new FiltroUsuariosRequest { Offset = -5 });
 
-        Assert.IsEmpty(usuarios);
+        _repositorioUsuarios.Verify(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0)), Times.Once);
     }
 
     private void ConfigurarAltaValida()

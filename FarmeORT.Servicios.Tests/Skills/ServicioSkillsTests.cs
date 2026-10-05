@@ -137,9 +137,9 @@ public sealed class ServicioSkillsTests
     {
         _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
 
-        var skills = _servicio.Listar(new FiltroSkillsRequest());
+        _servicio.Listar(new FiltroSkillsRequest());
 
-        Assert.IsEmpty(skills);
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -147,9 +147,9 @@ public sealed class ServicioSkillsTests
     {
         _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 100, 0))).Returns([]);
 
-        var skills = _servicio.Listar(new FiltroSkillsRequest { Limit = 600 });
+        _servicio.Listar(new FiltroSkillsRequest { Limit = 600 });
 
-        Assert.IsEmpty(skills);
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 100, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -159,9 +159,9 @@ public sealed class ServicioSkillsTests
     {
         _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
 
-        var skills = _servicio.Listar(new FiltroSkillsRequest { Limit = limit });
+        _servicio.Listar(new FiltroSkillsRequest { Limit = limit });
 
-        Assert.IsEmpty(skills);
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -169,9 +169,9 @@ public sealed class ServicioSkillsTests
     {
         _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
 
-        var skills = _servicio.Listar(new FiltroSkillsRequest { Offset = -5 });
+        _servicio.Listar(new FiltroSkillsRequest { Offset = -5 });
 
-        Assert.IsEmpty(skills);
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -179,9 +179,9 @@ public sealed class ServicioSkillsTests
     {
         _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
 
-        var skills = _servicio.Listar(new FiltroSkillsRequest { Categoria = "Cocina" });
+        _servicio.Listar(new FiltroSkillsRequest { Categoria = "Cocina" });
 
-        Assert.IsEmpty(skills);
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -191,9 +191,9 @@ public sealed class ServicioSkillsTests
     {
         _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
 
-        var skills = _servicio.Listar(new FiltroSkillsRequest { Dificultad = dificultad });
+        _servicio.Listar(new FiltroSkillsRequest { Dificultad = dificultad });
 
-        Assert.IsEmpty(skills);
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
     }
 
     [TestMethod]

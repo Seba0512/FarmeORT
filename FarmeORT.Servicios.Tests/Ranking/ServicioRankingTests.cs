@@ -62,9 +62,9 @@ public sealed class ServicioRankingTests
     {
         _repositorioUsuarios.Setup(r => r.ListarRanking(100)).Returns([]);
 
-        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
+        _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
 
-        Assert.IsEmpty(ranking);
+        _repositorioUsuarios.Verify(r => r.ListarRanking(100), Times.Once);
         _repositorioUsuarios.Verify(r => r.ListarRanking(100), Times.Once);
     }
 
@@ -75,9 +75,9 @@ public sealed class ServicioRankingTests
     {
         _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
 
-        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
+        _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
 
-        Assert.IsEmpty(ranking);
+        _repositorioUsuarios.Verify(r => r.ListarRanking(10), Times.Once);
         _repositorioUsuarios.Verify(r => r.ListarRanking(10), Times.Once);
     }
 

@@ -251,9 +251,9 @@ public sealed class ServicioInscripcionesTests
         var filtro = new FiltroInscripciones(null, null, null, null, JugadorId, null, 20, 0);
         _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest(), JugadorId, Roles.Jugador);
+        _servicio.Listar(new FiltroInscripcionesRequest(), JugadorId, Roles.Jugador);
 
-        Assert.IsEmpty(inscripciones);
+        _repositorioInscripciones.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     [TestMethod]
@@ -262,9 +262,9 @@ public sealed class ServicioInscripcionesTests
         var filtro = new FiltroInscripciones(null, null, null, null, null, 2, 20, 0);
         _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest(), 2, Roles.Organizador);
+        _servicio.Listar(new FiltroInscripcionesRequest(), 2, Roles.Organizador);
 
-        Assert.IsEmpty(inscripciones);
+        _repositorioInscripciones.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     [TestMethod]
@@ -276,9 +276,9 @@ public sealed class ServicioInscripcionesTests
         var filtro = new FiltroInscripciones(null, null, null, null, null, null, 20, 0);
         _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest { Estado = estado }, 1, Roles.Administrador);
+        _servicio.Listar(new FiltroInscripcionesRequest { Estado = estado }, 1, Roles.Administrador);
 
-        Assert.IsEmpty(inscripciones);
+        _repositorioInscripciones.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     [TestMethod]
@@ -287,9 +287,9 @@ public sealed class ServicioInscripcionesTests
         var filtro = new FiltroInscripciones(null, null, null, null, null, null, 100, 0);
         _repositorioInscripciones.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var inscripciones = _servicio.Listar(new FiltroInscripcionesRequest { Limit = 600, Offset = -2 }, 1, Roles.Administrador);
+        _servicio.Listar(new FiltroInscripcionesRequest { Limit = 600, Offset = -2 }, 1, Roles.Administrador);
 
-        Assert.IsEmpty(inscripciones);
+        _repositorioInscripciones.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     private void ConfigurarInscripcionValida()

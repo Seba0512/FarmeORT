@@ -217,9 +217,9 @@ public sealed class ServicioTorneosTests
         var filtro = new FiltroTorneos(EstadoTorneo.Cancelado, null, null, null, null, true, 20, 0);
         _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var torneos = _servicio.Listar(new FiltroTorneosRequest { Estado = nameof(EstadoTorneo.Cancelado) }, esAnonimo: true);
+        _servicio.Listar(new FiltroTorneosRequest { Estado = nameof(EstadoTorneo.Cancelado) }, esAnonimo: true);
 
-        Assert.IsEmpty(torneos);
+        _repositorioTorneos.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     [TestMethod]
@@ -230,9 +230,9 @@ public sealed class ServicioTorneosTests
     {
         _repositorioTorneos.Setup(r => r.Listar(new FiltroTorneos(null, null, null, null, null, false, 20, 0))).Returns([]);
 
-        var torneos = _servicio.Listar(new FiltroTorneosRequest { Estado = estado }, esAnonimo: false);
+        _servicio.Listar(new FiltroTorneosRequest { Estado = estado }, esAnonimo: false);
 
-        Assert.IsEmpty(torneos);
+        _repositorioTorneos.Verify(r => r.Listar(new FiltroTorneos(null, null, null, null, null, false, 20, 0)), Times.Once);
     }
 
     [TestMethod]
@@ -243,9 +243,9 @@ public sealed class ServicioTorneosTests
         var filtro = new FiltroTorneos(null, null, null, null, null, false, limiteEsperado, desplazamientoEsperado);
         _repositorioTorneos.Setup(r => r.Listar(filtro)).Returns([]);
 
-        var torneos = _servicio.Listar(new FiltroTorneosRequest { Limit = limit, Offset = offset }, esAnonimo: false);
+        _servicio.Listar(new FiltroTorneosRequest { Limit = limit, Offset = offset }, esAnonimo: false);
 
-        Assert.IsEmpty(torneos);
+        _repositorioTorneos.Verify(r => r.Listar(filtro), Times.Once);
     }
 
     [TestMethod]
