@@ -997,7 +997,8 @@ no existen (skills obligatorias, inscripciones y rondas).
 - `[AutenticacionOpcional]` hereda de `[Autenticacion]` (como `[Autorizacion]`, D-13) y redefine
   `PermiteAnonimo`. Sin el encabezado `Authorization` deja pasar como anónimo. Con un token inválido
   responde 401, como dice la nota general de la especificación.
-- El controller solo calcula si quien consulta es anónimo (`ObtenerSesionOpcional`). La regla de
+- El controller solo calcula si quien consulta es anónimo (`HttpContext.EsAnonimo()`, que antes era
+  `ObtenerSesionOpcional() is null`; D-68). La regla de
   visibilidad la aplica el servicio, que recibe `esAnonimo`:
   - el listado le pide al repositorio excluir los torneos cancelados;
   - el detalle de un torneo cancelado responde 404 `TOURNAMENT_NOT_FOUND`, igual que un id inexistente.
@@ -1029,7 +1030,7 @@ no existen (skills obligatorias, inscripciones y rondas).
 Template Method (D-13), SRP en los filtros, Information Expert, Low Coupling.
 
 **Evidencia:**
-- `TorneosController`, `AutenticacionOpcionalAttribute`, `ExtensionesHttpContext.ObtenerSesionOpcional`.
+- `TorneosController`, `AutenticacionOpcionalAttribute`, `ExtensionesHttpContext.EsAnonimo` (D-68).
 - `ServicioTorneos.ObtenerPorId` y `Listar`, `RepositorioTorneos.Listar`.
 - Los tests `Consultas_IncluidoAnonimo_UsanAutenticacionOpcional`,
   `OnAuthorization_TokenEnviadoPeroInvalido_Devuelve401ConInvalidToken`,
@@ -1294,6 +1295,8 @@ compartido: la Persona B la elimina al fallar una batalla y la Persona A la canc
   - Aceptadas == Cupo → 409 `TOURNAMENT_FULL`;
   - en el constructor de `Inscripcion`: torneo que no está Abierto → 409 `TOURNAMENT_NOT_OPEN`, y skills
     obligatorias sin declarar → 409 `MISSING_MANDATORY_SKILLS`.
+  - **Actualización (D-67):** el estado del torneo pasó a controlarse en el servicio antes del duplicado y el
+    cupo, porque un torneo En curso tiene el cupo lleno y respondía `TOURNAMENT_FULL`.
 - Cancelar: inexistente → 404 `REGISTRATION_NOT_FOUND`; ajena → 403 `NOT_REGISTRATION_OWNER`; torneo que no
   está Abierto → 409 `TOURNAMENT_NOT_OPEN`; inscripción que ya no está Aceptada → 409
   `REGISTRATION_NOT_ACTIVE`. `Inscripcion.Cancelar()` no mira el torneo, porque la cancelación del torneo
@@ -1519,6 +1522,8 @@ batallas) lo agrega la Persona C después; este cambio suma las otras dos partes
   hace un `COUNT` aparte.
 - Las dos propiedades nuevas tienen `set`: `CrearResponse<T>` comparte el mapeo del resumen y el servicio
   completa el detalle después. Las propiedades del resumen siguen siendo `init`.
+  **Actualización (D-68):** el mapeo genérico se reemplazó por `CrearResponse` y `CrearDetalle`, explícitos, y
+  todas las propiedades del detalle volvieron a ser `init`.
 - `RespuestasSkills.Crear` reemplaza el mapeo de `Skill` a `SkillResponse` que repetían `ServicioSkills`,
   `ServicioSkillsObligatorias` y ahora `ServicioTorneos`.
 - La visibilidad no cambia (D-36): el anónimo ve el detalle de los torneos no cancelados, con los mismos
@@ -1636,6 +1641,10 @@ D-45 dejó acordado que, con `torneoId`, se cuentan solo las batallas de ese tor
 - Ganadas: se agrupa por `GanadorId`. Perdidas: se suman dos conteos, como jugador 1 y como jugador 2 cuando
   el ganador es el otro. En total son tres consultas agrupadas por ranking, sin importar cuántos jugadores
   muestre.
+- **Actualización (D-68):** pasó a una sola consulta que trae las batallas Finalizadas de los jugadores pedidos
+  (como mucho las del tope de 100 jugadores) y un ciclo que cuenta jugadas y ganadas de cada uno; perdidas =
+  jugadas − ganadas. Sigue sin N+1 y se lee sin `Expression<Func<…>>`. Un test nuevo cubre que un jugador sin
+  batallas Finalizadas no figura.
 - Con `torneoId` se filtran las batallas de ese torneo; sin filtro cuentan todas.
 - Si la lista de jugadores está vacía, el servicio no consulta las batallas.
 
@@ -1785,7 +1794,7 @@ El ELO de Usuario se configura como token de concurrencia, además del estado de
 
 `FiltroBatallas` transporta filtros normalizados al repositorio. `Listar` aplica torneo, estado, ronda y cualquiera de los dos jugadores, ordena por NumeroRonda e Id y recién entonces usa Skip/Take en SQL. Reutiliza Paginacion y ValoresPorNombre (D-35); la consulta del listado usa AsNoTracking. Las consultas nuevas se agregan al final de las interfaces, conservando las de A. El detalle reutiliza el fallo y el historial de D-53; mapeo y carga autorizada están compartidos entre los GET.
 
-**Justificación:** el ámbito de visibilidad es estable después del fallo y el cliente no puede ampliar permisos modificando filtros. La paginación tiene resultados deterministas y limita lo leído de la base. Las consultas no guardan ni mutan entidades. `HistorialLanzamientosController` protege el GET con los tres roles; el controller de POST conserva exclusivamente Jugador sin que su atributo restrinja las consultas.
+**Justificación:** el ámbito de visibilidad es estable después del fallo y el cliente no puede ampliar permisos modificando filtros. La paginación tiene resultados deterministas y limita lo leído de la base. Las consultas no guardan ni mutan entidades. `HistorialLanzamientosController` protege el GET con los tres roles; el controller de POST conserva exclusivamente Jugador sin que su atributo restrinja las consultas. **Actualización (D-68):** los dos controllers se unieron en `LanzamientosController`, con el atributo en cada método (GET para los tres roles, POST solo Jugador): un recurso, un controller.
 
 **Conceptos del curso:** alta cohesión, bajo acoplamiento, SRP, DI, autorización a nivel de recurso, REST, separación de responsabilidades y TDD Outside-In con Moq/SQLite.
 
@@ -2256,6 +2265,108 @@ la persona A (D-40, D-41); por eso queda registrado aparte, para su revisión.
 
 ---
 
+### D-67 — Inscripción: el estado del torneo se controla antes que el duplicado y el cupo
+
+**Problema:** `ServicioInscripciones.Inscribir` controlaba el duplicado y el cupo antes que el estado, que recién
+miraba el constructor de `Inscripcion`. Un torneo En curso tiene tantas Aceptadas como cupo, así que inscribirse
+respondía 409 `TOURNAMENT_FULL` en lugar de `TOURNAMENT_NOT_OPEN`; y el campeón de un torneo Finalizado (que sigue
+Aceptado) recibía `ALREADY_REGISTERED`. El status era el mismo, pero el motivo que veía el usuario era falso. Lo
+encontró la auditoría del 04/10/2026.
+
+**Alternativas consideradas:**
+- Dejar el orden de D-41: primero las dos consultas al repositorio.
+- Controlar el estado en el servicio, antes del duplicado y el cupo, en el orden en que la letra lista los motivos
+  de rechazo (1.5).
+- Llevar el duplicado y el cupo al dominio: `Torneo` tendría que cargar sus inscripciones y cambiaría el
+  repositorio.
+
+**Decisión adoptada:** el servicio controla `torneo.Estado != Abierto` → `TorneoNoAbiertoException` apenas obtiene
+el torneo y el jugador. El constructor de `Inscripcion` conserva su control: es la invariante del dominio y
+protege a cualquier otro llamador.
+
+**Justificación:** el rechazo informa el motivo real (el torneo ya no admite inscripciones), en el mismo orden que
+la letra. No agrega consultas: el torneo ya estaba cargado.
+
+**Conceptos del curso:** precedencia de reglas, validación en el servicio y en el dominio, status 409, TDD para
+corregir un bug (RED → GREEN).
+
+**Evidencia:**
+- `ServicioInscripcionesTests.Inscribir_TorneoEnCursoConElCupoCompleto_LanzaTorneoNoAbiertoSinGuardar`: RED
+  `12a2bb6` (fallaba con `TorneoCompletoException`) y GREEN `02d0120`.
+- Postman: "Inscripciones - cupo de aceptadas completo" usa un torneo Abierto y sigue respondiendo
+  `TOURNAMENT_FULL`.
+- Secuencia actualizada en `docs/uml/inscripcion.puml`.
+
+**Participación de IA:** Claude Code (Claude Opus 5.5) encontró el caso al leer el servicio durante la auditoría,
+escribió el test que lo reproduce y la corrección mínima; el integrante eligió corregirlo con TDD. Se descartó
+mover el duplicado y el cupo al dominio: cambiaba el repositorio a cuatro días de la entrega sin ganancia para el
+usuario. El código es de la persona A (D-41); queda registrado aparte para su revisión.
+
+---
+
+### D-68 — Código explícito en todo el repositorio y conversión del rol por nombre
+
+**Problema:** el código mezclaba dos estilos. Algunas clases usaban `?? throw`, `?.` con `??`, `is null`,
+switch expressions, patrones relacionales (`is < a or > b`), rangos (`[..n]`), `[GeneratedRegex]`, `ForEach` con
+una asignación adentro, un mapeo genérico con restricción `new()` y consultas con `Expression<Func<…>>`; el resto
+usaba `if` explícitos. En los tests había reflexión para forzar estados privados, `if` y ternarios que elegían qué
+probar, y asserts que solo comprobaban la lista vacía que devolvía el mock. La letra pide que un tercero entienda
+cada clase "con el menor esfuerzo posible" y que cualquier integrante pueda explicar cualquier parte en la defensa.
+Además, `ServicioUsuarios` convertía el rol con `Enum.TryParse`, que acepta "1" como Organizador, a diferencia de
+la categoría y los filtros, que comparan por nombre (D-35).
+
+**Alternativas consideradas:**
+- Dejar cada parte con el estilo de quien la escribió.
+- Pasar todo el repositorio al estilo idiomático moderno.
+- Usar en todo el repositorio la forma más explícita que acepten los analizadores (`dotnet format`).
+
+**Decisión adoptada:** la forma explícita, sin cambiar el comportamiento (commits REFACTOR, verificados con la
+suite completa):
+- Producción: `if (x == null) throw` en lugar de `?? throw`; `== null` en lugar de `is null`; `if` en lugar de
+  switch expressions, ternarios encadenados y patrones relacionales; `Substring` en lugar de rangos;
+  `Regex.IsMatch` con una constante, como `Skill` y `Torneo`; constantes con nombre para el largo del comentario del
+  fallo, el ELO mínimo y los largos de la batalla; un método `ObtenerXExistente` por servicio; `ValoresPorNombre`
+  también para la categoría; `HttpContext.EsAnonimo()`; un solo `LanzamientosController` por recurso; el detalle del
+  torneo con su propio mapeo (D-44); ganadas y perdidas del ranking con una consulta y un ciclo (D-46).
+- Comentarios: sin las marcas "Persona A/B/C" ni referencias a reviews ya resueltos; cada bloque dice su tema y su
+  decisión.
+- Tests: estados preparados con operaciones del dominio (`Lanzar`, `Fallar`, `Cancelar`, `ActualizarElo`) en lugar
+  de reflexión; un test por efecto en el fallo de batalla; sin `if` ni ternarios que elijan qué probar; `Verify`
+  del filtro que llega al repositorio en lugar de `Assert.IsEmpty` sobre lo que devuelve el mock; el filtro de
+  excepciones en una sola tabla; `GetCustomAttribute<T>()` en los tests de seguridad, que ahora exigen el atributo
+  y los roles exactos.
+- El rol se convierte comparando por nombre exacto (bug).
+- Fuera de alcance, a pedido del integrante: la concurrencia de D-70 y `RepositorioInscripciones`, que la persona B
+  está modificando en otra rama.
+
+**Justificación:** nombres que revelan intención y funciones chicas, sin construcciones que obliguen a conocer
+detalles del lenguaje para leer una regla. Hay más líneas, pero cada una dice lo que hace, y el comportamiento es el
+mismo porque los tests no cambiaron de significado. Los tests sin reflexión no dependen de campos privados.
+
+**Conceptos del curso:** Clean Code (nombres, funciones, comentarios, formato), refactoring sin cambiar el
+comportamiento, FIRST, mocks contra stubs, DRY y encapsulamiento.
+
+**Evidencia:**
+- Rama `feature/simplificacion-auditoria`: un commit REFACTOR por archivo o tema. El rol: RED `4f86e7e` (`"1"` llegaba
+  al repositorio) y GREEN `cb29be6`.
+- Tests: de 957 a 987, todos verdes. Los agregados cubren reglas de la letra que no tenían test: cancelar un torneo
+  En curso, modificar un torneo En curso o Finalizado, fallar una batalla En arbitraje, un comentario de 501
+  caracteres, finalizar un torneo Abierto o ya Finalizado, los servicios de batallas en la fábrica y un jugador sin
+  batallas Finalizadas en el ranking.
+- Build Release sin errores, `dotnet format` sin cambios y cobertura combinada de 98,75 % o más en líneas y ramas en
+  cada assembly.
+
+**Participación de IA:** Claude Code (Claude Opus 5.5) auditó todo el código, con agentes en paralelo para las
+transcripciones, el material teórico y los tests, y propuso cada simplificación. El integrante fijó el alcance
+(todo el repositorio menos la concurrencia), eligió corregir los bugs con TDD y limitó los tests a los hallazgos que
+incumplían reglas. Se rechazaron o postergaron: unificar `JugadorAceptadoResponse` y `JugadorBatallaResponse`
+(cambia el JSON del contrato), reescribir los tests de concurrencia de D-70 (fuera de alcance) y reemplazar la
+expresión regular de la contraseña del DTO (la alternativa agregaba más código). Problema que apareció: editar por
+script cambió los fines de línea y agregó un BOM en algunos archivos; `dotnet format` lo detectó y se corrigió antes
+de cada commit.
+
+---
+
 ### D-70 — Versionar el torneo para confirmar inscripciones y rondas concurrentes
 
 **Problema:** la auditoría del 02/10/2026 reprodujo dos inscripciones Aceptadas del mismo jugador,
@@ -2408,3 +2519,8 @@ El integrante conserva la revisión humana, el push y la publicación del PR; UM
   en clase remarcaron no representar lo mismo de dos maneras.
 - Los commits RED de las validaciones de DTOs del catálogo de skills (`0162a1f`, `eac0efa`) agrupan varios
   tests; son anteriores a la regla de un test por RED y hay que explicarlo en el documento de TDD.
+- Los tests de concurrencia de D-70 (`RepositorioRondasTests.GuardarRonda_DosPedidosPreparanLaMismaRonda_...` y
+  varios de `RepositorioInscripcionesTests`) eligen el escenario con `if` según el `DataRow` y arman los datos con
+  LINQ difícil de leer. Quedaron fuera de D-68 porque la persona B tiene una rama abierta sobre esos archivos:
+  separarlos en un test por escenario cuando la cierre.
+- Documentar `TOURNAMENT_CHANGED` (D-70) en `docs/api/` y en la tabla de errores de la especificación.
