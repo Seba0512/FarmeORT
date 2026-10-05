@@ -65,4 +65,16 @@ public sealed class TorneoFinalizacionTests
         Assert.ThrowsExactly<TorneoNoCancelableException>(_torneo.Cancelar);
         Assert.AreEqual(EstadoTorneo.Finalizado, _torneo.Estado);
     }
+
+    [TestMethod]
+    public void Modificar_TorneoFinalizado_LanzaTorneoNoModificable()
+    {
+        _torneo.Iniciar(4);
+        _torneo.Finalizar(_campeon);
+
+        Assert.ThrowsExactly<TorneoNoModificableException>(
+            () => _torneo.Modificar("COPAFUEGO", "Copa Fuego", "Torneo eliminatorio de batallas de aura.", FechaActual, FechaActual.AddDays(10), 8, _torneo.Organizador, FechaActual));
+        Assert.AreEqual("COPAAURA", _torneo.Codigo);
+        Assert.AreEqual(EstadoTorneo.Finalizado, _torneo.Estado);
+    }
 }

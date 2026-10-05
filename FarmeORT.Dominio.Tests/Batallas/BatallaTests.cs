@@ -51,6 +51,7 @@ public sealed class BatallaTests
 
     [TestMethod]
     [DataRow(9)]
+    [DataRow(501)]
     public void Fallar_ComentarioFueraDeRango_RechazaSinCambiarEstado(int largo)
     {
         var batalla = CrearBatallaConHistorial(0);
@@ -59,6 +60,18 @@ public sealed class BatallaTests
         Assert.ThrowsExactly<DatosInvalidosException>(() => batalla.Fallar(IdJugador1, comentario, 16, -16));
 
         AssertSinFallo(batalla);
+    }
+
+    [TestMethod]
+    public void Fallar_BatallaEnArbitraje_QuedaFinalizadaConElGanador()
+    {
+        var batalla = CrearBatallaConHistorial(8);
+
+        batalla.Fallar(IdJugador2, "Farmeó más aura en los ocho turnos.", -16, 16);
+
+        Assert.AreEqual(EstadoBatalla.Finalizada, batalla.Estado);
+        Assert.AreEqual(IdJugador2, batalla.GanadorId);
+        Assert.HasCount(8, batalla.Lanzamientos);
     }
 
     [TestMethod]
