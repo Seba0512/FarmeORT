@@ -1,4 +1,3 @@
-using System.Linq.Expressions;
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Torneos;
 using FarmeORT.Excepciones;
@@ -98,26 +97,29 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId)
     {
-        var finalizadas = contexto.Batallas.Where(b => b.Estado == EstadoBatalla.Finalizada && b.GanadorId != null);
+        var consulta = contexto.Batallas.AsNoTracking()
+            .Where(b => b.Estado == EstadoBatalla.Finalizada && b.GanadorId != null)
+            .Where(b => jugadorIds.Contains(b.Jugador1Id) || jugadorIds.Contains(b.Jugador2Id));
         if(torneoId != null)
         {
-            finalizadas = finalizadas.Where(b => b.TorneoId == torneoId.Value);
+            consulta = consulta.Where(b => b.TorneoId == torneoId.Value);
         }
 
-        var ganadas = ContarPorJugador(
-            finalizadas.Where(b => jugadorIds.Contains(b.GanadorId!.Value)), b => b.GanadorId!.Value);
+        // Una sola consulta trae las batallas Finalizadas de los jugadores pedidos y se cuentan en memoria: agrupar
+        // por el perdedor dentro de la consulta dio un conteo incorrecto en los tests con SQLite (D-46).
+        var finalizadas = consulta.ToList();
+        Dictionary<int, ResultadosDeBatallas> resultados = [];
+        foreach(var jugadorId in jugadorIds)
+        {
+            var jugadas = finalizadas.Count(b => b.Jugador1Id == jugadorId || b.Jugador2Id == jugadorId);
+            var ganadas = finalizadas.Count(b => b.GanadorId == jugadorId);
+            if(jugadas > 0)
+            {
+                resultados[jugadorId] = new ResultadosDeBatallas(ganadas, jugadas - ganadas);
+            }
+        }
 
-        // Las perdidas se cuentan por cada lado de la batalla: agrupar por el perdedor calculado con un CASE dio un
-        // conteo incorrecto en los tests con SQLite (D-46).
-        var perdidasComoJugador1 = ContarPorJugador(
-            finalizadas.Where(b => jugadorIds.Contains(b.Jugador1Id) && b.GanadorId != b.Jugador1Id), b => b.Jugador1Id);
-        var perdidasComoJugador2 = ContarPorJugador(
-            finalizadas.Where(b => jugadorIds.Contains(b.Jugador2Id) && b.GanadorId != b.Jugador2Id), b => b.Jugador2Id);
-        return ganadas.Keys.Union(perdidasComoJugador1.Keys).Union(perdidasComoJugador2.Keys).ToDictionary(
-            id => id,
-            id => new ResultadosDeBatallas(
-                ganadas.GetValueOrDefault(id),
-                perdidasComoJugador1.GetValueOrDefault(id) + perdidasComoJugador2.GetValueOrDefault(id)));
+        return resultados;
     }
 
     public IReadOnlyList<Batalla> ListarDelTorneo(int torneoId)
@@ -151,10 +153,5 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
             throw new TorneoModificadoException();
         }
-    }
-
-    private static Dictionary<int, int> ContarPorJugador(IQueryable<Batalla> batallas, Expression<Func<Batalla, int>> jugador)
-    {
-        return batallas.GroupBy(jugador).ToDictionary(g => g.Key, g => g.Count());
     }
 }
