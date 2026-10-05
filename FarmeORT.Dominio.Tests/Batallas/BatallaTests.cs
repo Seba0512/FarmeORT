@@ -1,4 +1,3 @@
-using System.Reflection;
 using FarmeORT.Dominio.Batallas;
 using FarmeORT.Dominio.Skills;
 using FarmeORT.Dominio.Torneos;
@@ -10,11 +9,16 @@ namespace FarmeORT.Dominio.Tests.Batallas;
 [TestClass]
 public sealed class BatallaTests
 {
+    private const int BatallaId = 12;
+    private const int IdJugador1 = 7;
+    private const int IdJugador2 = 8;
+
     private static readonly DateOnly FechaActual = new(2026, 10, 1);
+    private static readonly DateTimeOffset Fecha = new(2026, 10, 1, 17, 0, 0, TimeSpan.Zero);
 
     [TestMethod]
-    [DataRow(7, 10)]
-    [DataRow(8, 500)]
+    [DataRow(IdJugador1, 10)]
+    [DataRow(IdJugador2, 500)]
     public void Fallar_ComentarioEnLimites_ConservaFalloYCambiosDeElo(int ganadorId, int largo)
     {
         var batalla = CrearBatallaConHistorial(0);
@@ -24,7 +28,8 @@ public sealed class BatallaTests
 
         Assert.AreEqual(EstadoBatalla.Finalizada, batalla.Estado);
         Assert.AreEqual(ganadorId, batalla.GanadorId);
-        Assert.AreSame(ganadorId == 7 ? batalla.Jugador1 : batalla.Jugador2, batalla.Ganador);
+        Assert.IsNotNull(batalla.Ganador);
+        Assert.AreEqual(ganadorId, batalla.Ganador.Id);
         Assert.AreEqual(comentario, batalla.Comentario);
         Assert.AreEqual(16, batalla.CambioEloJugador1);
         Assert.AreEqual(-16, batalla.CambioEloJugador2);
@@ -34,19 +39,26 @@ public sealed class BatallaTests
     [TestMethod]
     [DataRow(null)]
     [DataRow("")]
-    [DataRow("         ")]
-    [DataRow("123456789")]
-    public void Fallar_ComentarioInvalido_RechazaSinCambiarEstado(string? comentario)
+    [DataRow("          ")]
+    public void Fallar_ComentarioVacio_RechazaSinCambiarEstado(string? comentario)
     {
         var batalla = CrearBatallaConHistorial(0);
 
-        Assert.ThrowsExactly<DatosInvalidosException>(() => batalla.Fallar(7, comentario, 16, -16));
+        Assert.ThrowsExactly<DatosInvalidosException>(() => batalla.Fallar(IdJugador1, comentario, 16, -16));
 
-        Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
-        Assert.IsNull(batalla.GanadorId);
-        Assert.IsNull(batalla.Comentario);
-        Assert.IsNull(batalla.CambioEloJugador1);
-        Assert.IsNull(batalla.CambioEloJugador2);
+        AssertSinFallo(batalla);
+    }
+
+    [TestMethod]
+    [DataRow(9)]
+    public void Fallar_ComentarioFueraDeRango_RechazaSinCambiarEstado(int largo)
+    {
+        var batalla = CrearBatallaConHistorial(0);
+        var comentario = new string('a', largo);
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => batalla.Fallar(IdJugador1, comentario, 16, -16));
+
+        AssertSinFallo(batalla);
     }
 
     [TestMethod]
@@ -65,20 +77,20 @@ public sealed class BatallaTests
     [DataRow(EstadoBatalla.Cancelada)]
     public void Fallar_BatallaResuelta_RechazaSinRegistrarFallo(EstadoBatalla estado)
     {
-        var batalla = CrearBatallaConHistorial(0);
-        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
+        var batalla = CrearBatallaEnEstado(estado);
+        var ganadorPrevio = batalla.GanadorId;
 
-        Assert.ThrowsExactly<BatallaNoFallableException>(() => batalla.Fallar(7, "Victoria por abandono.", 16, -16));
+        Assert.ThrowsExactly<BatallaNoFallableException>(() => batalla.Fallar(IdJugador2, "Otro fallo distinto.", -16, 16));
 
-        Assert.IsNull(batalla.GanadorId);
+        Assert.AreEqual(ganadorPrevio, batalla.GanadorId);
         Assert.AreEqual(estado, batalla.Estado);
     }
 
     [TestMethod]
     public void Constructor_EloEmpatado_IniciaPendienteConJugadorElegidoPorSorteo()
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var jugador2 = CrearUsuario(8, Rol.Jugador);
+        var jugador1 = CrearUsuario(IdJugador1, Rol.Jugador);
+        var jugador2 = CrearUsuario(IdJugador2, Rol.Jugador);
         var torneo = CrearTorneo();
         var sorteo = new SorteoPreparado(jugador2);
 
@@ -88,27 +100,27 @@ public sealed class BatallaTests
         Assert.AreEqual(torneo.Id, batalla.TorneoId);
         Assert.AreEqual(2, batalla.NumeroRonda);
         Assert.AreSame(jugador1, batalla.Jugador1);
-        Assert.AreEqual(7, batalla.Jugador1Id);
+        Assert.AreEqual(IdJugador1, batalla.Jugador1Id);
         Assert.AreSame(jugador2, batalla.Jugador2);
-        Assert.AreEqual(8, batalla.Jugador2Id);
+        Assert.AreEqual(IdJugador2, batalla.Jugador2Id);
         Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
-        Assert.AreEqual(8, batalla.JugadorInicialId);
-        Assert.AreEqual(8, batalla.JugadorTurnoId);
+        Assert.AreEqual(IdJugador2, batalla.JugadorInicialId);
+        Assert.AreEqual(IdJugador2, batalla.JugadorTurnoId);
         Assert.AreEqual(1, sorteo.Llamadas);
         Assert.AreSame(jugador1, sorteo.Jugador1Recibido);
         Assert.AreSame(jugador2, sorteo.Jugador2Recibido);
     }
 
     [TestMethod]
-    [DataRow(1300, 1200, 7)]
-    [DataRow(1200, 1300, 8)]
+    [DataRow(1300, 1200, IdJugador1)]
+    [DataRow(1200, 1300, IdJugador2)]
     public void Constructor_EloDistinto_EmpiezaElMayorSinSortear(int elo1, int elo2, int esperado)
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var jugador2 = CrearUsuario(8, Rol.Jugador);
-        typeof(Usuario).GetProperty(nameof(Usuario.Elo))!.SetValue(jugador1, elo1);
-        typeof(Usuario).GetProperty(nameof(Usuario.Elo))!.SetValue(jugador2, elo2);
-        var sorteo = new SorteoPreparado(esperado == 7 ? jugador2 : jugador1);
+        var jugador1 = CrearUsuario(IdJugador1, Rol.Jugador);
+        var jugador2 = CrearUsuario(IdJugador2, Rol.Jugador);
+        jugador1.ActualizarElo(elo1);
+        jugador2.ActualizarElo(elo2);
+        var sorteo = new SorteoPreparado(jugador1);
 
         var batalla = new Batalla(CrearTorneo(), 1, jugador1, jugador2, sorteo);
 
@@ -122,9 +134,7 @@ public sealed class BatallaTests
     [DataRow(EstadoBatalla.EnArbitraje)]
     public void Cancelar_BatallaSinResolver_PasaACanceladaYSinTurno(EstadoBatalla estado)
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var batalla = new Batalla(CrearTorneo(), 1, jugador1, CrearUsuario(8, Rol.Jugador), new SorteoPreparado(jugador1));
-        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
+        var batalla = CrearBatallaEnEstado(estado);
 
         batalla.Cancelar();
 
@@ -137,10 +147,7 @@ public sealed class BatallaTests
     [DataRow(EstadoBatalla.Cancelada)]
     public void Cancelar_BatallaResuelta_LanzaBatallaNoCancelableSinCambiarEstado(EstadoBatalla estado)
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var batalla = new Batalla(CrearTorneo(), 1, jugador1, CrearUsuario(8, Rol.Jugador), new SorteoPreparado(jugador1));
-        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
-        typeof(Batalla).GetProperty(nameof(Batalla.JugadorTurnoId))!.SetValue(batalla, null);
+        var batalla = CrearBatallaEnEstado(estado);
 
         Assert.ThrowsExactly<BatallaNoCancelableException>(batalla.Cancelar);
 
@@ -149,50 +156,45 @@ public sealed class BatallaTests
     }
 
     [TestMethod]
-    [DataRow(7, 8)]
-    [DataRow(8, 7)]
+    [DataRow(IdJugador1, IdJugador2)]
+    [DataRow(IdJugador2, IdJugador1)]
     public void Lanzar_PrimerTurno_RegistraSkillYAlternaJugador(int inicialId, int siguienteId)
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var jugador2 = CrearUsuario(8, Rol.Jugador);
-        var inicial = inicialId == 7 ? jugador1 : jugador2;
-        var batalla = new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(inicial)) { Id = 12 };
-        var skill = CrearSkill(3);
-        inicial.DeclararSkill(skill, 4, FechaActual);
-        var fecha = new DateTimeOffset(2026, 10, 1, 16, 30, 0, TimeSpan.Zero);
+        var batalla = CrearBatallaConHistorial(0, inicialId);
+        var inicial = JugadorDelTurno(batalla);
+        var skill = inicial.Repertorio.Single(d => d.SkillId == 3).Skill;
 
-        var lanzamiento = batalla.Lanzar(inicial, skill, fecha);
+        var lanzamiento = batalla.Lanzar(inicial, skill, Fecha);
 
         Assert.HasCount(1, batalla.Lanzamientos);
         Assert.AreSame(lanzamiento, batalla.Lanzamientos.Single());
         Assert.AreSame(batalla, lanzamiento.Batalla);
-        Assert.AreEqual(12, lanzamiento.BatallaId);
+        Assert.AreEqual(BatallaId, lanzamiento.BatallaId);
         Assert.AreEqual(1, lanzamiento.Turno);
         Assert.AreSame(inicial, lanzamiento.Jugador);
         Assert.AreEqual(inicialId, lanzamiento.JugadorId);
         Assert.AreSame(skill, lanzamiento.Skill);
         Assert.AreEqual(3, lanzamiento.SkillId);
-        Assert.AreEqual(fecha, lanzamiento.Fecha);
+        Assert.AreEqual(Fecha, lanzamiento.Fecha);
         Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
         Assert.AreEqual(siguienteId, batalla.JugadorTurnoId);
     }
 
     [TestMethod]
-    [DataRow(7)]
-    [DataRow(8)]
+    [DataRow(IdJugador1)]
+    [DataRow(IdJugador2)]
     public void Lanzar_OctavoTurno_CompletaCuatroPorJugadorYPasaAEnArbitraje(int inicialId)
     {
         var batalla = CrearBatallaConHistorial(7, inicialId);
-        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var jugador = JugadorDelTurno(batalla);
         var skill = jugador.Repertorio.Single(d => d.SkillId == 4).Skill;
-        var fecha = new DateTimeOffset(2026, 10, 1, 17, 0, 0, TimeSpan.Zero);
 
-        var lanzamiento = batalla.Lanzar(jugador, skill, fecha);
+        var lanzamiento = batalla.Lanzar(jugador, skill, Fecha);
 
         Assert.AreEqual(8, lanzamiento.Turno);
         Assert.HasCount(8, batalla.Lanzamientos);
-        Assert.AreEqual(4, batalla.Lanzamientos.Count(l => l.JugadorId == 7));
-        Assert.AreEqual(4, batalla.Lanzamientos.Count(l => l.JugadorId == 8));
+        Assert.AreEqual(4, batalla.Lanzamientos.Count(l => l.JugadorId == IdJugador1));
+        Assert.AreEqual(4, batalla.Lanzamientos.Count(l => l.JugadorId == IdJugador2));
         Assert.AreEqual(EstadoBatalla.EnArbitraje, batalla.Estado);
         Assert.IsNull(batalla.JugadorTurnoId);
     }
@@ -203,16 +205,15 @@ public sealed class BatallaTests
     [DataRow(EstadoBatalla.Cancelada)]
     public void Lanzar_BatallaNoPendiente_RechazaSinModificarHistorial(EstadoBatalla estado)
     {
-        var batalla = CrearBatallaConHistorial(0);
-        typeof(Batalla).GetProperty(nameof(Batalla.Estado))!.SetValue(batalla, estado);
+        var batalla = CrearBatallaEnEstado(estado);
+        var lanzamientosPrevios = batalla.Lanzamientos.Count;
         var skill = batalla.Jugador1.Repertorio.First().Skill;
 
-        Assert.ThrowsExactly<BatallaNoPendienteException>(
-            () => batalla.Lanzar(batalla.Jugador1, skill, DateTimeOffset.UtcNow));
+        Assert.ThrowsExactly<BatallaNoPendienteException>(() => batalla.Lanzar(batalla.Jugador1, skill, Fecha));
 
-        Assert.HasCount(0, batalla.Lanzamientos);
+        Assert.HasCount(lanzamientosPrevios, batalla.Lanzamientos);
         Assert.AreEqual(estado, batalla.Estado);
-        Assert.AreEqual(7, batalla.JugadorTurnoId);
+        Assert.IsNull(batalla.JugadorTurnoId);
     }
 
     [TestMethod]
@@ -223,24 +224,22 @@ public sealed class BatallaTests
         var skill = CrearSkill(1);
         jugador.DeclararSkill(skill, 4, FechaActual);
 
-        Assert.ThrowsExactly<JugadorNoParticipaEnBatallaException>(
-            () => batalla.Lanzar(jugador, skill, DateTimeOffset.UtcNow));
+        Assert.ThrowsExactly<JugadorNoParticipaEnBatallaException>(() => batalla.Lanzar(jugador, skill, Fecha));
 
         Assert.HasCount(0, batalla.Lanzamientos);
-        Assert.AreEqual(7, batalla.JugadorTurnoId);
+        Assert.AreEqual(IdJugador1, batalla.JugadorTurnoId);
     }
 
     [TestMethod]
-    [DataRow(7)]
-    [DataRow(8)]
+    [DataRow(IdJugador1)]
+    [DataRow(IdJugador2)]
     public void Lanzar_TurnoDelRival_RechazaSinConsumirTurno(int inicialId)
     {
         var batalla = CrearBatallaConHistorial(0, inicialId);
-        var rival = inicialId == 7 ? batalla.Jugador2 : batalla.Jugador1;
+        var rival = JugadorSinTurno(batalla);
         var skill = rival.Repertorio.First().Skill;
 
-        Assert.ThrowsExactly<TurnoIncorrectoException>(
-            () => batalla.Lanzar(rival, skill, DateTimeOffset.UtcNow));
+        Assert.ThrowsExactly<TurnoIncorrectoException>(() => batalla.Lanzar(rival, skill, Fecha));
 
         Assert.HasCount(0, batalla.Lanzamientos);
         Assert.AreEqual(inicialId, batalla.JugadorTurnoId);
@@ -252,24 +251,22 @@ public sealed class BatallaTests
         var batalla = CrearBatallaConHistorial(0);
         var skill = CrearSkill(99);
 
-        Assert.ThrowsExactly<SkillFueraDelRepertorioException>(
-            () => batalla.Lanzar(batalla.Jugador1, skill, DateTimeOffset.UtcNow));
+        Assert.ThrowsExactly<SkillFueraDelRepertorioException>(() => batalla.Lanzar(batalla.Jugador1, skill, Fecha));
 
         Assert.HasCount(0, batalla.Lanzamientos);
-        Assert.AreEqual(7, batalla.JugadorTurnoId);
+        Assert.AreEqual(IdJugador1, batalla.JugadorTurnoId);
     }
 
     [TestMethod]
-    [DataRow(7)]
-    [DataRow(8)]
+    [DataRow(IdJugador1)]
+    [DataRow(IdJugador2)]
     public void Lanzar_SkillYaUsadaPorElJugador_RechazaSinConsumirTurno(int inicialId)
     {
         var batalla = CrearBatallaConHistorial(2, inicialId);
-        var jugador = inicialId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var jugador = JugadorDelTurno(batalla);
         var skill = jugador.Repertorio.Single(d => d.SkillId == 1).Skill;
 
-        Assert.ThrowsExactly<SkillYaLanzadaException>(
-            () => batalla.Lanzar(jugador, skill, DateTimeOffset.UtcNow));
+        Assert.ThrowsExactly<SkillYaLanzadaException>(() => batalla.Lanzar(jugador, skill, Fecha));
 
         Assert.HasCount(2, batalla.Lanzamientos);
         Assert.AreEqual(inicialId, batalla.JugadorTurnoId);
@@ -282,7 +279,7 @@ public sealed class BatallaTests
         var skill = batalla.Jugador1.Repertorio.Single(d => d.SkillId == 1).Skill;
         skill.Desactivar();
 
-        var lanzamiento = batalla.Lanzar(batalla.Jugador1, skill, DateTimeOffset.UtcNow);
+        var lanzamiento = batalla.Lanzar(batalla.Jugador1, skill, Fecha);
 
         Assert.AreEqual(1, lanzamiento.SkillId);
         Assert.IsFalse(lanzamiento.Skill.Activa);
@@ -295,19 +292,19 @@ public sealed class BatallaTests
         var batalla = CrearBatallaConHistorial(1);
         var skill = batalla.Jugador2.Repertorio.Single(d => d.SkillId == 1).Skill;
 
-        var lanzamiento = batalla.Lanzar(batalla.Jugador2, skill, DateTimeOffset.UtcNow);
+        var lanzamiento = batalla.Lanzar(batalla.Jugador2, skill, Fecha);
 
         Assert.AreEqual(2, lanzamiento.Turno);
         Assert.HasCount(2, batalla.Lanzamientos);
         Assert.IsTrue(batalla.Lanzamientos.All(l => l.SkillId == 1));
-        Assert.AreEqual(7, batalla.JugadorTurnoId);
+        Assert.AreEqual(IdJugador1, batalla.JugadorTurnoId);
     }
 
     [TestMethod]
     public void Constructor_MismoJugadorEnAmbosLados_RechazaDatosInvalidos()
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var jugador2 = CrearUsuario(7, Rol.Jugador);
+        var jugador1 = CrearUsuario(IdJugador1, Rol.Jugador);
+        var jugador2 = CrearUsuario(IdJugador1, Rol.Jugador);
 
         Assert.ThrowsExactly<DatosInvalidosException>(
             () => new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(jugador1)));
@@ -320,8 +317,8 @@ public sealed class BatallaTests
     [DataRow(Rol.Jugador, Rol.Administrador)]
     public void Constructor_ParticipanteSinRolJugador_RechazaDatosInvalidos(Rol rol1, Rol rol2)
     {
-        var jugador1 = CrearUsuario(7, rol1);
-        var jugador2 = CrearUsuario(8, rol2);
+        var jugador1 = CrearUsuario(IdJugador1, rol1);
+        var jugador2 = CrearUsuario(IdJugador2, rol2);
 
         Assert.ThrowsExactly<DatosInvalidosException>(
             () => new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(jugador1)));
@@ -332,70 +329,70 @@ public sealed class BatallaTests
     [DataRow(-1)]
     public void Constructor_RondaNoPositiva_RechazaDatosInvalidos(int ronda)
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
+        var jugador1 = CrearUsuario(IdJugador1, Rol.Jugador);
+        var jugador2 = CrearUsuario(IdJugador2, Rol.Jugador);
 
         Assert.ThrowsExactly<DatosInvalidosException>(
-            () => new Batalla(CrearTorneo(), ronda, jugador1, CrearUsuario(8, Rol.Jugador), new SorteoPreparado(jugador1)));
+            () => new Batalla(CrearTorneo(), ronda, jugador1, jugador2, new SorteoPreparado(jugador1)));
     }
 
     [TestMethod]
-    [DataRow(4, 7)]
-    [DataRow(4, 8)]
-    [DataRow(5, 7)]
-    [DataRow(5, 8)]
-    [DataRow(6, 7)]
-    [DataRow(6, 8)]
-    public void Lanzar_ObligatoriasPendientesIgualATurnosPropios_RechazaLibre(int cantidad, int inicialId)
+    [DataRow(4, IdJugador1)]
+    [DataRow(4, IdJugador2)]
+    [DataRow(5, IdJugador1)]
+    [DataRow(5, IdJugador2)]
+    [DataRow(6, IdJugador1)]
+    [DataRow(6, IdJugador2)]
+    public void Lanzar_ObligatoriasPendientesIgualATurnosPropios_RechazaLibre(int lanzamientos, int inicialId)
     {
-        var batalla = CrearBatallaConHistorial(cantidad, inicialId);
-        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var batalla = CrearBatallaConHistorial(lanzamientos, inicialId);
+        var jugador = JugadorDelTurno(batalla);
         var libre = CrearSkill(99);
         jugador.DeclararSkill(libre, 4, FechaActual);
         AsociarObligatorias(batalla);
 
-        Assert.ThrowsExactly<SkillObligatoriaPendienteException>(
-            () => batalla.Lanzar(jugador, libre, DateTimeOffset.UtcNow));
+        Assert.ThrowsExactly<SkillObligatoriaPendienteException>(() => batalla.Lanzar(jugador, libre, Fecha));
 
-        Assert.HasCount(cantidad, batalla.Lanzamientos);
+        Assert.HasCount(lanzamientos, batalla.Lanzamientos);
         Assert.AreEqual(jugador.Id, batalla.JugadorTurnoId);
     }
 
     [TestMethod]
-    [DataRow(0, 7)]
-    [DataRow(0, 8)]
-    [DataRow(2, 7)]
-    [DataRow(2, 8)]
-    public void Lanzar_HayMasTurnosPropiosQueObligatoriasPendientes_PermiteLibre(int cantidad, int inicialId)
+    [DataRow(0, IdJugador1)]
+    [DataRow(0, IdJugador2)]
+    [DataRow(2, IdJugador1)]
+    [DataRow(2, IdJugador2)]
+    public void Lanzar_HayMasTurnosPropiosQueObligatoriasPendientes_PermiteLibre(int lanzamientos, int inicialId)
     {
-        var batalla = CrearBatallaConHistorial(cantidad, inicialId);
-        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var batalla = CrearBatallaConHistorial(lanzamientos, inicialId);
+        var jugador = JugadorDelTurno(batalla);
         var libre = CrearSkill(99);
         jugador.DeclararSkill(libre, 4, FechaActual);
         AsociarObligatorias(batalla);
 
-        var lanzamiento = batalla.Lanzar(jugador, libre, DateTimeOffset.UtcNow);
+        var lanzamiento = batalla.Lanzar(jugador, libre, Fecha);
 
         Assert.AreEqual(99, lanzamiento.SkillId);
-        Assert.AreEqual(cantidad + 1, lanzamiento.Turno);
+        Assert.AreEqual(lanzamientos + 1, lanzamiento.Turno);
     }
 
     [TestMethod]
-    [DataRow(4, 7, 3)]
-    [DataRow(4, 8, 4)]
-    [DataRow(6, 7, 4)]
-    [DataRow(6, 8, 4)]
-    public void Lanzar_UltimosTurnosPropios_PermiteObligatoriaPendiente(int cantidad, int inicialId, int skillId)
+    [DataRow(4, IdJugador1, 3)]
+    [DataRow(4, IdJugador2, 4)]
+    [DataRow(6, IdJugador1, 4)]
+    [DataRow(6, IdJugador2, 4)]
+    public void Lanzar_UltimosTurnosPropios_PermiteObligatoriaPendiente(int lanzamientos, int inicialId, int skillId)
     {
-        var batalla = CrearBatallaConHistorial(cantidad, inicialId);
-        var jugador = batalla.JugadorTurnoId == 7 ? batalla.Jugador1 : batalla.Jugador2;
+        var batalla = CrearBatallaConHistorial(lanzamientos, inicialId);
+        var jugador = JugadorDelTurno(batalla);
         AsociarObligatorias(batalla);
         var obligatoria = jugador.Repertorio.Single(d => d.SkillId == skillId).Skill;
         obligatoria.Desactivar();
 
-        var lanzamiento = batalla.Lanzar(jugador, obligatoria, DateTimeOffset.UtcNow);
+        var lanzamiento = batalla.Lanzar(jugador, obligatoria, Fecha);
 
         Assert.AreEqual(skillId, lanzamiento.SkillId);
-        Assert.AreEqual(cantidad + 1, lanzamiento.Turno);
+        Assert.AreEqual(lanzamientos + 1, lanzamiento.Turno);
         Assert.IsFalse(lanzamiento.Skill.Activa);
     }
 
@@ -408,10 +405,19 @@ public sealed class BatallaTests
         var libre = CrearSkill(99);
         batalla.Jugador1.DeclararSkill(libre, 4, FechaActual);
 
-        var lanzamiento = batalla.Lanzar(batalla.Jugador1, libre, DateTimeOffset.UtcNow);
+        var lanzamiento = batalla.Lanzar(batalla.Jugador1, libre, Fecha);
 
         Assert.AreEqual(99, lanzamiento.SkillId);
         Assert.AreEqual(7, lanzamiento.Turno);
+    }
+
+    private static void AssertSinFallo(Batalla batalla)
+    {
+        Assert.AreEqual(EstadoBatalla.Pendiente, batalla.Estado);
+        Assert.IsNull(batalla.GanadorId);
+        Assert.IsNull(batalla.Comentario);
+        Assert.IsNull(batalla.CambioEloJugador1);
+        Assert.IsNull(batalla.CambioEloJugador2);
     }
 
     private static Usuario CrearUsuario(int id, Rol rol)
@@ -421,6 +427,7 @@ public sealed class BatallaTests
         { Id = id };
     }
 
+    // Las skills 3 y 4 pasan a ser las obligatorias del torneo.
     private static void AsociarObligatorias(Batalla batalla)
     {
         foreach(var id in new[] { 3, 4 })
@@ -429,13 +436,19 @@ public sealed class BatallaTests
         }
     }
 
-    private static Batalla CrearBatallaConHistorial(int cantidad, int inicialId = 7)
+    // Los dos jugadores declaran las skills 1 a 4 y las lanzan en orden, alternando desde el inicial: en los
+    // turnos 1 y 2 cada uno lanza la skill 1, en los turnos 3 y 4 la skill 2, y así. Con 8 queda EnArbitraje.
+    private static Batalla CrearBatallaConHistorial(int lanzamientos, int inicialId = IdJugador1)
     {
-        var jugador1 = CrearUsuario(7, Rol.Jugador);
-        var jugador2 = CrearUsuario(8, Rol.Jugador);
-        var inicial = inicialId == 7 ? jugador1 : jugador2;
-        var rival = inicialId == 7 ? jugador2 : jugador1;
-        var batalla = new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(inicial)) { Id = 12 };
+        var jugador1 = CrearUsuario(IdJugador1, Rol.Jugador);
+        var jugador2 = CrearUsuario(IdJugador2, Rol.Jugador);
+        var inicial = jugador1;
+        if(inicialId == IdJugador2)
+        {
+            inicial = jugador2;
+        }
+
+        var batalla = new Batalla(CrearTorneo(), 1, jugador1, jugador2, new SorteoPreparado(inicial)) { Id = BatallaId };
         for(var id = 1; id <= 4; id++)
         {
             var skill = CrearSkill(id);
@@ -443,19 +456,57 @@ public sealed class BatallaTests
             jugador2.DeclararSkill(skill, 4, FechaActual);
         }
 
-        var historial = (List<Lanzamiento>)typeof(Batalla)
-            .GetField("_lanzamientos", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(batalla)!;
-        for(var turno = 1; turno <= cantidad; turno++)
+        for(var turno = 1; turno <= lanzamientos; turno++)
         {
-            var jugador = turno % 2 == 1 ? inicial : rival;
-            var skill = jugador.Repertorio.Single(d => d.SkillId == ((turno + 1) / 2)).Skill;
-            historial.Add(new Lanzamiento(batalla, turno, jugador, skill,
-                new DateTimeOffset(2026, 10, 1, 16, turno, 0, TimeSpan.Zero)));
+            var jugador = JugadorDelTurno(batalla);
+            var skillId = (turno + 1) / 2;
+            var skill = jugador.Repertorio.Single(d => d.SkillId == skillId).Skill;
+            batalla.Lanzar(jugador, skill, new DateTimeOffset(2026, 10, 1, 16, turno, 0, TimeSpan.Zero));
         }
 
-        typeof(Batalla).GetProperty(nameof(Batalla.JugadorTurnoId))!.SetValue(batalla,
-            cantidad % 2 == 0 ? inicial.Id : rival.Id);
         return batalla;
+    }
+
+    // Lleva la batalla a cada estado con sus propias operaciones, sin tocar campos privados.
+    private static Batalla CrearBatallaEnEstado(EstadoBatalla estado)
+    {
+        if(estado == EstadoBatalla.EnArbitraje)
+        {
+            return CrearBatallaConHistorial(8);
+        }
+
+        var batalla = CrearBatallaConHistorial(0);
+        if(estado == EstadoBatalla.Finalizada)
+        {
+            batalla.Fallar(IdJugador1, "Victoria por abandono.", 16, -16);
+        }
+
+        if(estado == EstadoBatalla.Cancelada)
+        {
+            batalla.Cancelar();
+        }
+
+        return batalla;
+    }
+
+    private static Usuario JugadorDelTurno(Batalla batalla)
+    {
+        if(batalla.JugadorTurnoId == batalla.Jugador1Id)
+        {
+            return batalla.Jugador1;
+        }
+
+        return batalla.Jugador2;
+    }
+
+    private static Usuario JugadorSinTurno(Batalla batalla)
+    {
+        if(batalla.JugadorTurnoId == batalla.Jugador1Id)
+        {
+            return batalla.Jugador2;
+        }
+
+        return batalla.Jugador1;
     }
 
     private static Skill CrearSkill(int id)
