@@ -31,36 +31,29 @@ public static class RegistroServicios
 {
     public static IServiceCollection AgregarServicios(this IServiceCollection servicios)
     {
-        servicios.AddScoped<IServicioSesiones, ServicioSesiones>();
+        // Seguridad y sesiones.
         servicios.AddScoped<IHasheadorContrasenas, HasheadorContrasenas>();
         servicios.AddScoped<IGeneradorTokens, GeneradorTokens>();
+        servicios.AddScoped<IServicioSesiones, ServicioSesiones>();
+
+        // Casos de uso.
         servicios.AddScoped<IServicioUsuarios, ServicioUsuarios>();
         servicios.AddScoped<IServicioSkills, ServicioSkills>();
         servicios.AddScoped<IServicioTorneos, ServicioTorneos>();
         servicios.AddScoped<IServicioRepertorio, ServicioRepertorio>();
         servicios.AddScoped<IServicioSkillsObligatorias, ServicioSkillsObligatorias>();
         servicios.AddScoped<IServicioInscripciones, ServicioInscripciones>();
-
-        servicios.AddScoped<ICalculadorElo, CalculadorEloBase>();
-
-        // Persona B: batallas y lanzamientos.
-        servicios.AddScoped<ISorteo, SorteoAleatorio>();
+        servicios.AddScoped<IServicioRondas, ServicioRondas>();
+        servicios.AddScoped<IServicioBatallas, ServicioBatallas>();
         servicios.AddScoped<IServicioLanzamientos, ServicioLanzamientos>();
-
+        servicios.AddScoped<IServicioFallos, ServicioFallos>();
+        servicios.AddScoped<IServicioFinalizaciones, ServicioFinalizaciones>();
         servicios.AddScoped<IServicioRanking, ServicioRanking>();
 
-        // Persona B: fallos de batallas.
-        servicios.AddScoped<IServicioFallos, ServicioFallos>();
-
-        // Persona B: consultas de batallas.
-        servicios.AddScoped<IServicioBatallas, ServicioBatallas>();
-
-        // Persona C: rondas y su estrategia de emparejamiento (D-62).
+        // Puntos de variación: otra implementación se registra acá sin tocar a quien la usa (D-51, D-60, D-62).
+        servicios.AddScoped<ICalculadorElo, CalculadorEloBase>();
         servicios.AddScoped<IEstrategiaEmparejamiento, EmparejamientoPorElo>();
-        servicios.AddScoped<IServicioRondas, ServicioRondas>();
-
-        // Persona C: finalización del torneo (D-64).
-        servicios.AddScoped<IServicioFinalizaciones, ServicioFinalizaciones>();
+        servicios.AddScoped<ISorteo, SorteoAleatorio>();
         return servicios;
     }
 }

@@ -25,8 +25,6 @@ public static class RegistroRepositorios
         servicios.AddScoped<IRepositorioSkills, RepositorioSkills>();
         servicios.AddScoped<IRepositorioTorneos, RepositorioTorneos>();
         servicios.AddScoped<IRepositorioInscripciones, RepositorioInscripciones>();
-
-        // Persona B: batallas y lanzamientos.
         servicios.AddScoped<IRepositorioBatallas, RepositorioBatallas>();
         return servicios;
     }
