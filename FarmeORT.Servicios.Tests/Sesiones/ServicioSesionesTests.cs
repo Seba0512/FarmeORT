@@ -124,6 +124,15 @@ public sealed class ServicioSesionesTests
     }
 
     [TestMethod]
+    public void CerrarSesion_TokenSinSesion_LanzaSesionNoEncontrada()
+    {
+        _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns((Sesion?)null);
+
+        Assert.ThrowsExactly<SesionNoEncontradaException>(() => _servicio.CerrarSesion(Token, UsuarioId));
+        _repositorioSesiones.Verify(r => r.Eliminar(It.IsAny<Guid>()), Times.Never);
+    }
+
+    [TestMethod]
     public void ObtenerSesionAutenticada_TokenSinSesion_DevuelveNull()
     {
         _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns((Sesion?)null);
