@@ -108,10 +108,6 @@ public sealed class ServicioLanzamientosTests
     public void Lanzar_SkillIdAusenteONoPositivo_RechazaDatosSinConsultarRepositorios(int? skillId)
     {
         ConfigurarLanzamientoValido();
-        if(skillId != null)
-        {
-            _skills.Setup(r => r.ObtenerPorId(skillId.Value)).Returns(_skill);
-        }
 
         Assert.ThrowsExactly<DatosInvalidosException>(
             () => _servicio.Lanzar(12, 7, new LanzamientoRequest { SkillId = skillId }));
@@ -124,17 +120,20 @@ public sealed class ServicioLanzamientosTests
     public void Lanzar_DosObligatoriasPendientesYDosTurnosRestantes_RechazaSkillLibreSinGuardar()
     {
         ConfigurarLanzamientoValido();
-        var historial = (List<Lanzamiento>)typeof(Batalla)
-            .GetField("_lanzamientos", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .GetValue(_batalla)!;
+
+        // Cada jugador ya lanzó dos skills libres, y después el torneo suma dos obligatorias que el jugador 1 no lanzó.
         for(var id = 1; id <= 2; id++)
         {
             var usada = new Skill($"USADA{id}", $"Skill {id}", "Skill ya lanzada en la batalla de aura.", CategoriaSkill.Gestual, 2) { Id = id };
             _batalla.Jugador1.DeclararSkill(usada, 4, FechaActual);
             _batalla.Jugador2.DeclararSkill(usada, 4, FechaActual);
-            historial.Add(new Lanzamiento(_batalla, (id * 2) - 1, _batalla.Jugador1, usada, FechaLanzamiento));
-            historial.Add(new Lanzamiento(_batalla, id * 2, _batalla.Jugador2, usada, FechaLanzamiento));
-            var obligatoria = new Skill($"OBLIG{id}", $"Obligatoria {id}", "Skill obligatoria del torneo de aura.", CategoriaSkill.Gestual, 2) { Id = id + 4 };
+            _batalla.Lanzar(_batalla.Jugador1, usada, FechaLanzamiento);
+            _batalla.Lanzar(_batalla.Jugador2, usada, FechaLanzamiento);
+        }
+
+        for(var id = 5; id <= 6; id++)
+        {
+            var obligatoria = new Skill($"OBLIG{id}", $"Obligatoria {id}", "Skill obligatoria del torneo de aura.", CategoriaSkill.Gestual, 2) { Id = id };
             _batalla.Jugador1.DeclararSkill(obligatoria, 4, FechaActual);
             _batalla.Torneo.AsociarSkillObligatoria(obligatoria);
         }
