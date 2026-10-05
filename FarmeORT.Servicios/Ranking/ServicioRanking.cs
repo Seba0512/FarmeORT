@@ -16,8 +16,9 @@ internal sealed class ServicioRanking(
     private const int CantidadMaxima = 100;
     private const int CantidadPorDefecto = 10;
 
-    public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro)
+    public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro, bool esAnonimo)
     {
+        _ = esAnonimo;
         var jugadores = ListarJugadores(filtro.TorneoId, AjustarCantidad(filtro.Cantidad));
         if(jugadores.Count == 0)
         {

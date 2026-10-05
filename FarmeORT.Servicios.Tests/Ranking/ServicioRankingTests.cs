@@ -41,7 +41,7 @@ public sealed class ServicioRankingTests
         _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 }))
             .Returns(new Dictionary<int, ResultadosDeBatallas> { [4] = new(3, 1) });
 
-        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5 });
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5 }, true);
 
         Assert.HasCount(2, ranking);
         Assert.AreEqual(1, ranking[0].Posicion);
@@ -62,7 +62,7 @@ public sealed class ServicioRankingTests
     {
         _repositorioUsuarios.Setup(r => r.ListarRanking(100)).Returns([]);
 
-        _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
+        _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad }, true);
 
         _repositorioUsuarios.Verify(r => r.ListarRanking(100), Times.Once);
         _repositorioUsuarios.Verify(r => r.ListarRanking(100), Times.Once);
@@ -75,7 +75,7 @@ public sealed class ServicioRankingTests
     {
         _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
 
-        _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad });
+        _servicio.Obtener(new FiltroRankingRequest { Cantidad = cantidad }, true);
 
         _repositorioUsuarios.Verify(r => r.ListarRanking(10), Times.Once);
         _repositorioUsuarios.Verify(r => r.ListarRanking(10), Times.Once);
@@ -87,7 +87,7 @@ public sealed class ServicioRankingTests
         _repositorioTorneos.Setup(r => r.ObtenerPorId(99)).Returns((Torneo?)null);
         _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
 
-        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = 99 }));
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = 99 }, true));
 
         _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
     }
@@ -100,7 +100,7 @@ public sealed class ServicioRankingTests
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
         _repositorioUsuarios.Setup(r => r.ListarRanking(10)).Returns([]);
 
-        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId }));
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId }, true));
 
         _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
     }
@@ -113,7 +113,7 @@ public sealed class ServicioRankingTests
         _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 5)).Returns([CrearJugador(4, "aurafarmer"), CrearJugador(2, "sixseven")]);
         _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 })).Returns(new Dictionary<int, ResultadosDeBatallas>());
 
-        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5, TorneoId = TorneoId });
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5, TorneoId = TorneoId }, true);
 
         CollectionAssert.AreEqual(new[] { "aurafarmer", "sixseven" }, ranking.Select(j => j.Nickname).ToArray());
         CollectionAssert.AreEqual(new[] { 1, 2 }, ranking.Select(j => j.Posicion).ToArray());
@@ -128,7 +128,7 @@ public sealed class ServicioRankingTests
         _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4 }))
             .Returns(new Dictionary<int, ResultadosDeBatallas> { [4] = new(7, 2) });
 
-        var ranking = _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId });
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId }, true);
 
         Assert.AreEqual(7, ranking[0].BatallasGanadas);
         Assert.AreEqual(2, ranking[0].BatallasPerdidas);
