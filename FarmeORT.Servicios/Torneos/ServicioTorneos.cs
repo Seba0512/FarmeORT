@@ -96,13 +96,8 @@ internal sealed class ServicioTorneos(
             ValidarCodigoDisponible(request.Codigo);
         }
 
-        // El cupo no baja de las inscripciones Aceptadas: no se cancelan inscripciones para hacer lugar (foro, debate 13).
+        // El torneo controla que el cupo no baje de sus inscripciones Aceptadas, después de controlar que esté Abierto.
         var inscripcionesAceptadas = repositorioInscripciones.ContarAceptadas(torneo.Id);
-        if(datos.Cupo < inscripcionesAceptadas)
-        {
-            throw new CupoMenorQueInscripcionesAceptadasException();
-        }
-
         torneo.Modificar(
             request.Codigo,
             request.Nombre,
@@ -114,7 +109,9 @@ internal sealed class ServicioTorneos(
             ObtenerFechaActual(),
             inscripcionesAceptadas);
         repositorioTorneos.Actualizar(torneo);
-        return CrearResponse(torneo, repositorioInscripciones.ContarAceptadas(torneo.Id));
+
+        // Modificar el torneo no cambia sus inscripciones: la cantidad ya contada sigue valiendo para la respuesta.
+        return CrearResponse(torneo, inscripcionesAceptadas);
     }
 
     public TorneoResponse Cancelar(int id)
