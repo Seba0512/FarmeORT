@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Inscripciones;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Inscripciones;
@@ -94,12 +95,10 @@ public sealed class InscripcionesControllerTests
     [DataRow(nameof(InscripcionesController.Cancelar))]
     public void InscribirYCancelar_RequierenRolJugador(string accion)
     {
-        var metodo = typeof(InscripcionesController).GetMethod(accion);
+        var metodo = typeof(InscripcionesController).GetMethod(accion)!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>()
-            .SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
+
         Assert.IsNotNull(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
     }
@@ -109,10 +108,10 @@ public sealed class InscripcionesControllerTests
     [DataRow(nameof(InscripcionesController.ObtenerPorId))]
     public void Consultas_CualquierRolAutenticado_UsanAutenticacionSinRol(string accion)
     {
-        var metodo = typeof(InscripcionesController).GetMethod(accion);
+        var metodo = typeof(InscripcionesController).GetMethod(accion)!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
+
         Assert.IsNotNull(atributo);
         Assert.AreEqual(typeof(AutenticacionAttribute), atributo.GetType());
     }

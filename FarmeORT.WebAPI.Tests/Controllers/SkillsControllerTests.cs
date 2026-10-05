@@ -138,12 +138,10 @@ public sealed class SkillsControllerTests
     [DataRow(nameof(SkillsController.CambiarEstado))]
     public void Mantenimiento_CatalogoGlobal_RequiereRolAdministrador(string accion)
     {
-        var metodo = typeof(SkillsController).GetMethod(accion);
+        var metodo = typeof(SkillsController).GetMethod(accion)!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>()
-            .SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
+
         Assert.IsNotNull(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Administrador }, atributo.RolesPermitidos.ToArray());
     }

@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Skills;
 using FarmeORT.DTOs.Torneos;
 using FarmeORT.DTOs.Usuarios;
@@ -85,12 +86,10 @@ public sealed class SkillsObligatoriasControllerTests
     [DataRow(nameof(SkillsObligatoriasController.Quitar))]
     public void Modificaciones_SkillsObligatorias_RequierenRolOrganizador(string accion)
     {
-        var metodo = typeof(SkillsObligatoriasController).GetMethod(accion);
+        var metodo = typeof(SkillsObligatoriasController).GetMethod(accion)!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>()
-            .SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutorizacionAttribute>();
+
         Assert.IsNotNull(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Organizador }, atributo.RolesPermitidos.ToArray());
     }
@@ -98,10 +97,10 @@ public sealed class SkillsObligatoriasControllerTests
     [TestMethod]
     public void Listar_IncluidoAnonimo_UsaAutenticacionOpcional()
     {
-        var metodo = typeof(SkillsObligatoriasController).GetMethod(nameof(SkillsObligatoriasController.Listar));
+        var metodo = typeof(SkillsObligatoriasController).GetMethod(nameof(SkillsObligatoriasController.Listar))!;
 
-        Assert.IsNotNull(metodo);
-        var atributo = metodo.GetCustomAttributes(typeof(AutenticacionAttribute), inherit: true).SingleOrDefault();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
+
         Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
     }
 

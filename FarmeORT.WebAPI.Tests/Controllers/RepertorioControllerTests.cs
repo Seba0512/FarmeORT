@@ -1,3 +1,4 @@
+using System.Reflection;
 using FarmeORT.DTOs.Repertorio;
 using FarmeORT.DTOs.Usuarios;
 using FarmeORT.IServicios.Repertorio;
@@ -74,10 +75,9 @@ public sealed class RepertorioControllerTests
     [TestMethod]
     public void Controller_Repertorio_RequiereRolJugador()
     {
-        var atributo = typeof(RepertorioController)
-            .GetCustomAttributes(typeof(AutorizacionAttribute), inherit: true)
-            .OfType<AutorizacionAttribute>()
-            .SingleOrDefault();
+        var controller = typeof(RepertorioController);
+
+        var atributo = controller.GetCustomAttribute<AutorizacionAttribute>();
 
         Assert.IsNotNull(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
