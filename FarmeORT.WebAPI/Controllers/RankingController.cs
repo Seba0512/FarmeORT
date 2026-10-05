@@ -13,8 +13,7 @@ public sealed class RankingController(IServicioRanking servicioRanking) : Contro
     [AutenticacionOpcional]
     public IActionResult Obtener([FromQuery] FiltroRankingRequest filtro)
     {
-        _ = servicioRanking;
-        _ = filtro;
-        throw new NotImplementedException();
+        var esAnonimo = HttpContext.EsAnonimo();
+        return Ok(servicioRanking.Obtener(filtro, esAnonimo));
     }
 }
