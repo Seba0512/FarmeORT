@@ -21,10 +21,8 @@ internal class AutenticacionAttribute : Attribute, IAuthorizationFilter
             return;
         }
 
-        var sesion = IntentarObtenerToken(encabezado, out var token)
-            ? ObtenerSesion(context, token)
-            : null;
-        if(sesion is null)
+        var sesion = ObtenerSesion(context, encabezado);
+        if(sesion == null)
         {
             var error = new ErrorResponse { UserMessage = "La sesión no es válida.", ErrorCode = "INVALID_TOKEN" };
             context.Result = new ObjectResult(error) { StatusCode = StatusCodes.Status401Unauthorized };
@@ -39,16 +37,20 @@ internal class AutenticacionAttribute : Attribute, IAuthorizationFilter
     {
     }
 
-    private static bool IntentarObtenerToken(string? encabezado, out Guid token)
+    // Sin el formato "Bearer {token}" no se consulta la base: la sesión no es válida.
+    private static SesionAutenticada? ObtenerSesion(AuthorizationFilterContext context, string? encabezado)
     {
-        token = Guid.Empty;
-        return encabezado is not null
-            && encabezado.StartsWith(PrefijoBearer, StringComparison.OrdinalIgnoreCase)
-            && Guid.TryParse(encabezado[PrefijoBearer.Length..], out token);
-    }
+        if(encabezado == null || !encabezado.StartsWith(PrefijoBearer, StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
 
-    private static SesionAutenticada? ObtenerSesion(AuthorizationFilterContext context, Guid token)
-    {
+        var textoDelToken = encabezado.Substring(PrefijoBearer.Length);
+        if(!Guid.TryParse(textoDelToken, out var token))
+        {
+            return null;
+        }
+
         var servicioSesiones = context.HttpContext.RequestServices.GetRequiredService<IServicioSesiones>();
         return servicioSesiones.ObtenerSesionAutenticada(token);
     }
