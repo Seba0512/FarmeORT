@@ -36,18 +36,18 @@ public sealed class RankingControllerTests
         Assert.AreSame(ranking, resultado.Value);
     }
 
+    // Público, pero si llega un token se valida: el autenticado ve también los torneos cancelados (foro, debate 11).
     [TestMethod]
-    public void Obtener_ContratoPublico_ExponeGetRankingSinAutenticacion()
+    public void Obtener_ContratoDeSeguridad_ExponeGetRankingConAutenticacionOpcional()
     {
         var tipo = typeof(RankingController);
         var metodo = tipo.GetMethod(nameof(RankingController.Obtener))!;
 
-        var ruta = tipo.GetCustomAttribute<RouteAttribute>();
+        var atributo = metodo.GetCustomAttribute<AutenticacionAttribute>();
 
-        Assert.IsNotNull(ruta);
-        Assert.AreEqual("api/v1/rankings", ruta.Template);
+        Assert.AreEqual("api/v1/rankings", tipo.GetCustomAttribute<RouteAttribute>()!.Template);
         Assert.IsNotNull(metodo.GetCustomAttribute<HttpGetAttribute>());
         Assert.IsNull(tipo.GetCustomAttribute<AutenticacionAttribute>());
-        Assert.IsNull(metodo.GetCustomAttribute<AutenticacionAttribute>());
+        Assert.IsInstanceOfType<AutenticacionOpcionalAttribute>(atributo);
     }
 }
