@@ -215,10 +215,10 @@ equipo, frenar y proponer agregarlo.
 
 | Recurso | Endpoints |
 |---|---|
-| Sesiones | `POST /sesiones` · `DELETE /sesiones/actual` |
+| Sesiones | `POST /sesiones` · `DELETE /sesiones/{token}` (solo las propias) |
 | Jugadores | `POST /jugadores` (registro público) |
 | Usuarios (admin) | `POST /usuarios` · `GET /usuarios` · `GET/PUT/DELETE /usuarios/{id}` |
-| Repertorio | `GET/POST /jugadores/actual/repertorio` · `DELETE /jugadores/actual/repertorio/{skillId}` |
+| Repertorio | `GET/POST /repertorios` · `DELETE /repertorios/{skillId}` (el jugador sale del token) |
 | Skills | `GET /skills` · `GET /skills/{id}` · `POST /skills` · `PUT /skills/{id}` · `PATCH /skills/{id}` |
 | Torneos | `GET /torneos` · `GET /torneos/{id}` · `POST /torneos` · `PUT /torneos/{id}` · `POST /torneos/{id}/cancelaciones` · `POST /torneos/{id}/finalizaciones` |
 | Skills obligatorias | `GET/POST /torneos/{id}/skills-obligatorias` · `DELETE /torneos/{id}/skills-obligatorias/{skillId}` |
@@ -227,11 +227,14 @@ equipo, frenar y proponer agregarlo.
 | Batallas | `GET /batallas` · `GET /batallas/{id}` |
 | Lanzamientos | `GET/POST /batallas/{id}/lanzamientos` |
 | Fallos | `POST /batallas/{id}/fallos` |
-| Ranking | `GET /ranking` (público) |
+| Ranking | `GET /rankings` (público) |
 
 - Route = identidad del recurso; query = filtros/orden/paginación (no obligatorios salvo el torneo en
   `GET /batallas`); body = datos de la operación; GET y DELETE sin body.
-- Rutas de **hasta tres niveles** (el id final no cuenta), en minúscula y con guiones.
+- Rutas de **hasta tres niveles** (el id final no cuenta, como en `../users/{id}/orders/{id}`), en minúscula
+  y con guiones. Recursos **en plural y consistentes** (`rankings`, no `ranking`).
+- **Sin segmentos fijos como `actual`**: no son un identificador válido. El usuario autenticado sale del token
+  y el recurso se identifica con su id (revisión docente del 05/10, D-69).
 - Paginado con `limit`/`offset`, con valor por defecto y tope. **Fuera de rango no se rechaza**, "para no
   trancar al usuario": `limit` mayor al tope usa el tope, `limit` menor a 1 usa el valor por defecto,
   `offset` negativo usa 0, y un filtro con un valor inválido se ignora. Un tipo mal formado

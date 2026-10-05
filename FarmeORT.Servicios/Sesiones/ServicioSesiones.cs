@@ -32,8 +32,20 @@ internal sealed class ServicioSesiones(
         };
     }
 
-    public void CerrarSesion(Guid token)
+    // El token identifica a la sesión; cada usuario solo cierra las suyas.
+    public void CerrarSesion(Guid token, int usuarioId)
     {
+        var sesion = repositorioSesiones.ObtenerPorToken(token);
+        if(sesion == null)
+        {
+            throw new SesionNoEncontradaException();
+        }
+
+        if(sesion.UsuarioId != usuarioId)
+        {
+            throw new NoEsDuenoDeLaSesionException();
+        }
+
         repositorioSesiones.Eliminar(token);
     }
 

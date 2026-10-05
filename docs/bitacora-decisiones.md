@@ -89,6 +89,8 @@ no dejar un commit con contraseñas en texto plano; el equipo aprobó.
 **Alternativas consideradas:** devolver solo el token; devolver token, id y rol.
 
 **Decisión adoptada:** `SesionResponse { token, usuarioId, rol }` con `Location: /api/v1/sesiones/actual`.
+**Actualización (D-69):** por la revisión docente, `actual` dejó de usarse: `Location: /api/v1/sesiones/{token}` y el
+logout es `DELETE /api/v1/sesiones/{token}`.
 
 **Justificación:** el cliente conoce su rol sin una segunda llamada. `sesiones/actual` es la misma
 identidad que usa `DELETE /sesiones/actual`.
@@ -1153,6 +1155,8 @@ datos y esas reglas, y qué responder en cada error.
 - Contrato:
   - Las rutas son `/jugadores/actual/repertorio`. El jugador sale siempre del token: el controller
     lleva `[Autorizacion(Roles.Jugador)]` y nunca recibe un id de jugador.
+  - **Actualización (D-69):** por la revisión docente, las rutas pasaron a `/repertorios` y
+    `/repertorios/{skillId}`; el jugador sigue saliendo del token.
   - `POST` responde 201 con `Location: /api/v1/jugadores/actual/repertorio/{skillId}`, la URI del
     recurso que después se borra con `DELETE`.
   - El listado se ordena por `SkillId` para que no dependa del orden en que la base devuelve las filas.
@@ -1882,7 +1886,8 @@ en paralelo.
 
 **Decisión adoptada:**
 - Contrato:
-  - `GET /api/v1/ranking?cantidad=N`, público: no pide token.
+  - `GET /api/v1/ranking?cantidad=N`, público: no pide token. **Actualización (D-69):** la ruta pasó a
+    `/api/v1/rankings`, en plural como el resto de los recursos.
   - Responde 200 con una lista de `JugadorRankingResponse`: `posicion`, `nickname`, `elo`,
     `batallasGanadas` y `batallasPerdidas`.
   - Una `cantidad` que no es un número (`cantidad=abc`) responde 400 `VALIDATION_ERROR`.
@@ -2364,6 +2369,54 @@ incumplían reglas. Se rechazaron o postergaron: unificar `JugadorAceptadoRespon
 expresión regular de la contraseña del DTO (la alternativa agregaba más código). Problema que apareció: editar por
 script cambió los fines de línea y agregó un BOM en algunos archivos; `dotnet format` lo detectó y se corrigió antes
 de cada commit.
+
+---
+
+### D-69 — Rutas según la revisión docente de la especificación (05/10/2026)
+
+**Problema:** en la revisión de la especificación de la API, el docente marcó tres cosas sobre las rutas:
+- `/ranking` era el único recurso en singular (`batallas`, `inscripciones`, `rondas`, `torneos`…): hay que ser
+  consistente.
+- En `/jugadores/actual/repertorio/{skillId}`, `actual` no es un identificador válido y con él la ruta se pasa de
+  los tres niveles (la rúbrica pone de límite `../users/{id}/orders/{id}`).
+- `DELETE /sesiones/actual` tiene el mismo problema: `actual` no identifica a la sesión.
+
+También pidió que los cuerpos de la especificación se escriban en JSON (clave-valor) y que se describan los
+códigos de estado. Eso es del documento, no del código: la API ya recibe y responde JSON.
+
+**Alternativas consideradas:**
+- Ranking: dejar `/ranking` y justificarlo, o pasarlo a `/rankings`.
+- Repertorio: `/repertorio`, `/repertorios`, o mantener la ruta y escribir `{actual}` en la especificación.
+- Logout: un `Id` numérico nuevo para la sesión (`DELETE /sesiones/{id}`, con migración), o usar el token, que ya
+  es la clave de la sesión (`DELETE /sesiones/{token}`).
+
+**Decisión adoptada:**
+- `GET /api/v1/rankings`.
+- `GET` y `POST /api/v1/repertorios`, y `DELETE /api/v1/repertorios/{skillId}`. El jugador sigue saliendo del token.
+- `DELETE /api/v1/sesiones/{token}`, y el login responde `Location: /api/v1/sesiones/{token}`. Cada usuario solo
+  cierra sus sesiones: un token sin sesión responde 404 `SESSION_NOT_FOUND` y la sesión de otro usuario, 403
+  `NOT_SESSION_OWNER`. Las rutas viejas responden 404.
+
+**Justificación:** todos los recursos quedan en plural, en uno o dos niveles y sin segmentos fijos. Para la
+sesión, el equipo eligió no tener dos identificadores: el token ya es su clave. El riesgo es que la URL (y con ella
+el token) quede en los logs. Es bajo porque el mismo pedido invalida el token, exige además el token en
+`Authorization` y solo cierra sesiones propias. El `Id` numérico se descartó porque agregaba un segundo
+identificador y una migración.
+
+**Conceptos del curso:** REST (identidad del recurso en la ruta, sustantivos en plural, niveles), códigos 403 y
+404, excepciones propias con `errorCode` propio, TDD (RED → GREEN por cambio de contrato).
+
+**Evidencia:**
+- Commits RED y GREEN de `RankingControllerTests`, `RepertorioControllerTests`, `ServicioSesionesTests`,
+  `SesionesControllerTests` y `FiltroExcepcionesTests`.
+- Postman con las rutas nuevas y dos casos nuevos (token sin sesión → 404, sesión de otro usuario → 403):
+  434 requests, 864 assertions, 0 fallos contra SQL Server en una base descartable.
+- `AGENTS.md` §7 actualizado con la tabla de endpoints y la regla de no usar segmentos fijos.
+
+**Participación de IA:** Claude Code (Claude Opus 5.5) interpretó la transcripción de la revisión y las capturas
+de la rúbrica, y propuso alternativas para cada ruta. El equipo eligió `/repertorios` en plural en lugar del
+`/repertorio` sugerido, y el token como identificador de la sesión en lugar del `Id` numérico recomendado, para no
+tener dos identificadores. La IA advirtió el riesgo del token en la URL; quedó documentado en la justificación.
 
 ---
 

@@ -42,7 +42,7 @@ public sealed class RepertorioControllerTests
 
         Assert.IsNotNull(resultado);
         Assert.AreEqual(StatusCodes.Status201Created, resultado.StatusCode);
-        Assert.AreEqual("/api/v1/jugadores/actual/repertorio/3", resultado.Location);
+        Assert.AreEqual("/api/v1/repertorios/3", resultado.Location);
         Assert.AreSame(declarada, resultado.Value);
         _servicioRepertorio.Verify(s => s.Declarar(JugadorId, request), Times.Once);
     }
@@ -81,6 +81,18 @@ public sealed class RepertorioControllerTests
 
         Assert.IsNotNull(atributo);
         CollectionAssert.AreEqual(new[] { Roles.Jugador }, atributo.RolesPermitidos.ToArray());
+    }
+
+    // El jugador sale del token: la ruta no lleva "actual" y queda en un solo nivel.
+    [TestMethod]
+    public void Controller_Ruta_EsRepertoriosSinElJugadorEnLaRuta()
+    {
+        var controller = typeof(RepertorioController);
+
+        var ruta = controller.GetCustomAttribute<RouteAttribute>();
+
+        Assert.IsNotNull(ruta);
+        Assert.AreEqual("api/v1/repertorios", ruta.Template);
     }
 
     private static SkillDeclaradaResponse CrearResponse()

@@ -4,7 +4,7 @@ Contrato: letra (ranking), especificación de la API del equipo, D-61, D-45 y D-
 
 | Operación | Entrada | Respuesta | Estados |
 |---|---|---|---|
-| GET `/ranking` | Query `cantidad: int` opcional (10 por defecto) y `torneoId: int` opcional | `JugadorRankingResponse[]` | 200, 400, 404 |
+| GET `/rankings` | Query `cantidad: int` opcional (10 por defecto) y `torneoId: int` opcional | `JugadorRankingResponse[]` | 200, 400, 404 |
 
 `JugadorRankingResponse`: `posicion: int`, `nickname: string`, `elo: int`, `batallasGanadas: int` y `batallasPerdidas: int`.
 
@@ -16,7 +16,7 @@ Reglas:
 - Con `torneoId` (D-45) entran solo los jugadores con inscripción Aceptada o Eliminada en ese torneo; las Canceladas no. El ELO es el actual (global) y el orden y la cantidad son los mismos que sin filtro.
 - Estados: 200; 400 `VALIDATION_ERROR` si `cantidad` o `torneoId` no son números; 404 `TOURNAMENT_NOT_FOUND` si el torneo no existe (también con 0 o un número negativo) o está Cancelado, porque para el público un torneo cancelado no existe (D-36). No hay 401, 403 ni 409: el recurso es público.
 
-Ejemplo: `GET /api/v1/ranking?cantidad=2` responde 200 con `[{"posicion":1,"nickname":"aurafarmer","elo":1200,"batallasGanadas":0,"batallasPerdidas":0},{"posicion":2,"nickname":"sixseven","elo":1200,"batallasGanadas":0,"batallasPerdidas":0}]`: los dos tienen el mismo ELO y va primero el que se registró antes.
+Ejemplo: `GET /api/v1/rankings?cantidad=2` responde 200 con `[{"posicion":1,"nickname":"aurafarmer","elo":1200,"batallasGanadas":0,"batallasPerdidas":0},{"posicion":2,"nickname":"sixseven","elo":1200,"batallasGanadas":0,"batallasPerdidas":0}]`: los dos tienen el mismo ELO y va primero el que se registró antes.
 
-Ejemplo con filtro: `GET /api/v1/ranking?torneoId=4&cantidad=2` responde 200 con los dos participantes de mayor ELO de ese torneo; `GET /api/v1/ranking?torneoId=999999` responde 404 con `{"userMessage":"No existe un torneo con ese id.","errorCode":"TOURNAMENT_NOT_FOUND",...}`.
+Ejemplo con filtro: `GET /api/v1/rankings?torneoId=4&cantidad=2` responde 200 con los dos participantes de mayor ELO de ese torneo; `GET /api/v1/rankings?torneoId=999999` responde 404 con `{"userMessage":"No existe un torneo con ese id.","errorCode":"TOURNAMENT_NOT_FOUND",...}`.
 

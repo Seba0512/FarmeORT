@@ -13,15 +13,16 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
     public IActionResult Crear([FromBody] LoginRequest request)
     {
         var response = servicioSesiones.IniciarSesion(request);
-        return Created("/api/v1/sesiones/actual", response);
+        return Created($"/api/v1/sesiones/{response.Token}", response);
     }
 
-    [HttpDelete("actual")]
+    // El token identifica a la sesión; el servicio controla que sea del usuario autenticado.
+    [HttpDelete("{token:guid}")]
     [Autenticacion]
-    public IActionResult Eliminar()
+    public IActionResult Eliminar(Guid token)
     {
         var sesion = HttpContext.ObtenerSesionAutenticada();
-        servicioSesiones.CerrarSesion(sesion.Token);
+        servicioSesiones.CerrarSesion(token, sesion.UsuarioId);
         return NoContent();
     }
 }

@@ -25,6 +25,8 @@ public sealed class FiltroExcepcionesTests
     [TestMethod]
     [DataRow(typeof(CredencialesInvalidasException), StatusCodes.Status401Unauthorized, "INVALID_CREDENTIALS", "Email o contraseña incorrectos.")]
     [DataRow(typeof(UsuarioNoEncontradoException), StatusCodes.Status404NotFound, "USER_NOT_FOUND", "No existe un usuario con ese id.")]
+    [DataRow(typeof(SesionNoEncontradaException), StatusCodes.Status404NotFound, "SESSION_NOT_FOUND", "No existe una sesión con ese token.")]
+    [DataRow(typeof(NoEsDuenoDeLaSesionException), StatusCodes.Status403Forbidden, "NOT_SESSION_OWNER", "La sesión no es tuya.")]
     [DataRow(typeof(SkillNoEncontradaException), StatusCodes.Status404NotFound, "SKILL_NOT_FOUND", "No existe una skill con ese id.")]
     [DataRow(typeof(SkillNoDeclaradaException), StatusCodes.Status404NotFound, "DECLARED_SKILL_NOT_FOUND", "La skill no está en tu repertorio.")]
     [DataRow(typeof(TorneoNoEncontradoException), StatusCodes.Status404NotFound, "TOURNAMENT_NOT_FOUND", "No existe un torneo con ese id.")]

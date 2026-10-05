@@ -7,11 +7,11 @@ using Microsoft.AspNetCore.Mvc;
 namespace FarmeORT.WebAPI.Controllers;
 
 [ApiController]
-[Route("api/v1/jugadores/actual/repertorio")]
+[Route("api/v1/repertorios")]
 [Autorizacion(Roles.Jugador)]
 public sealed class RepertorioController(IServicioRepertorio servicioRepertorio) : ControllerBase
 {
-    // "actual" es el jugador del token: el id nunca llega en la ruta ni en el body.
+    // El jugador sale del token: el id nunca llega en la ruta ni en el body.
     private int JugadorActualId => HttpContext.ObtenerSesionAutenticada().UsuarioId;
 
     [HttpGet]
@@ -24,7 +24,7 @@ public sealed class RepertorioController(IServicioRepertorio servicioRepertorio)
     public IActionResult Declarar([FromBody] SkillDeclaradaRequest request)
     {
         var response = servicioRepertorio.Declarar(JugadorActualId, request);
-        return Created($"/api/v1/jugadores/actual/repertorio/{response.SkillId}", response);
+        return Created($"/api/v1/repertorios/{response.SkillId}", response);
     }
 
     [HttpDelete("{skillId:int}")]

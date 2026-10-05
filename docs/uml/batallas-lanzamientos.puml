@@ -45,13 +45,13 @@ class Usuario {
   + ActualizarElo(elo : int) : void
 }
 class Skill
-Batalla "0..*" --> "1" Torneo
+Batalla "0..*" --> "1" Torneo : torneo
 Batalla "0..*" --> "1" Usuario : jugador1
 Batalla "0..*" --> "1" Usuario : jugador2
-Batalla "1" *-- "0..8" Lanzamiento
+Batalla "1" *-- "0..8" Lanzamiento : lanzamientos
 Batalla "0..*" --> "0..1" Usuario : ganador
 Lanzamiento "0..*" --> "1" Usuario : jugador
-Lanzamiento "0..*" --> "1" Skill
+Lanzamiento "0..*" --> "1" Skill : skill
 Batalla ..> ISorteo : constructor, solo empate
 SorteoAleatorio ..|> ISorteo
 note right of Batalla
