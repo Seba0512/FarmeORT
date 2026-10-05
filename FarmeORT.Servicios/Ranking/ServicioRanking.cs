@@ -18,8 +18,7 @@ internal sealed class ServicioRanking(
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro, bool esAnonimo)
     {
-        _ = esAnonimo;
-        var jugadores = ListarJugadores(filtro.TorneoId, AjustarCantidad(filtro.Cantidad));
+        var jugadores = ListarJugadores(filtro.TorneoId, AjustarCantidad(filtro.Cantidad), esAnonimo);
         if(jugadores.Count == 0)
         {
             return [];
@@ -52,22 +51,28 @@ internal sealed class ServicioRanking(
         return ranking;
     }
 
-    private IReadOnlyList<Usuario> ListarJugadores(int? torneoId, int cantidad)
+    private IReadOnlyList<Usuario> ListarJugadores(int? torneoId, int cantidad, bool esAnonimo)
     {
         if(torneoId == null)
         {
             return repositorioUsuarios.ListarRanking(cantidad);
         }
 
-        ValidarTorneoVisible(torneoId.Value);
+        ValidarTorneoVisible(torneoId.Value, esAnonimo);
         return repositorioUsuarios.ListarRankingDelTorneo(torneoId.Value, cantidad);
     }
 
-    // El ranking es público y para el público un torneo cancelado no existe (D-36).
-    private void ValidarTorneoVisible(int torneoId)
+    // Para el anónimo un torneo Cancelado no existe; el autenticado lo ve, como en la consulta de torneos (D-36,
+    // foro, debate 11).
+    private void ValidarTorneoVisible(int torneoId, bool esAnonimo)
     {
         var torneo = repositorioTorneos.ObtenerPorId(torneoId);
-        if(torneo == null || !torneo.EsVisibleParaAnonimos)
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
+        if(esAnonimo && !torneo.EsVisibleParaAnonimos)
         {
             throw new TorneoNoEncontradoException();
         }
