@@ -93,7 +93,7 @@ public sealed class ServicioRankingTests
     }
 
     [TestMethod]
-    public void Obtener_TorneoCancelado_LanzaTorneoNoEncontradoSinConsultarElRanking()
+    public void Obtener_TorneoCanceladoConsultadoPorUnAnonimo_LanzaTorneoNoEncontradoSinConsultarElRanking()
     {
         var torneo = CrearTorneo();
         torneo.Cancelar();
@@ -103,6 +103,22 @@ public sealed class ServicioRankingTests
         Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId }, true));
 
         _repositorioUsuarios.Verify(r => r.ListarRanking(It.IsAny<int>()), Times.Never);
+    }
+
+    // Foro (debate 11): solo el anónimo deja de ver los torneos cancelados.
+    [TestMethod]
+    public void Obtener_TorneoCanceladoConsultadoPorUnAutenticado_DevuelveElRankingDeSusParticipantes()
+    {
+        var torneo = CrearTorneo();
+        torneo.Cancelar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 10)).Returns([CrearJugador(4, "aurafarmer")]);
+        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4 })).Returns(new Dictionary<int, ResultadosDeBatallas>());
+
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId }, false);
+
+        Assert.HasCount(1, ranking);
+        Assert.AreEqual("aurafarmer", ranking[0].Nickname);
     }
 
     [TestMethod]
