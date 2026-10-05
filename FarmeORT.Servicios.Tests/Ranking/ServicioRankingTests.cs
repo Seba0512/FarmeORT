@@ -119,6 +119,23 @@ public sealed class ServicioRankingTests
         CollectionAssert.AreEqual(new[] { 1, 2 }, ranking.Select(j => j.Posicion).ToArray());
     }
 
+    // Foro (debate 06): con el filtro por torneo, las batallas ganadas y perdidas siguen siendo las globales.
+    [TestMethod]
+    public void Obtener_TorneoExistente_CuentaLasBatallasGlobalesDeCadaJugador()
+    {
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
+        _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 10)).Returns([CrearJugador(4, "aurafarmer")]);
+        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4 }, TorneoId))
+            .Returns(new Dictionary<int, ResultadosDeBatallas> { [4] = new(1, 0) });
+        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4 }, null))
+            .Returns(new Dictionary<int, ResultadosDeBatallas> { [4] = new(7, 2) });
+
+        var ranking = _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId });
+
+        Assert.AreEqual(7, ranking[0].BatallasGanadas);
+        Assert.AreEqual(2, ranking[0].BatallasPerdidas);
+    }
+
     private static Torneo CrearTorneo()
     {
         var organizador = new Usuario("Laura", "Gomez", "laura@farmeort.com", "laurag", new DateOnly(1990, 5, 20), Rol.Organizador, "hash", FechaActual)
