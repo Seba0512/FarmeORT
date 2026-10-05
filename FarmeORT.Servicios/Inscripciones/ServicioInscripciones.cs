@@ -53,13 +53,26 @@ internal sealed class ServicioInscripciones(
             estado = ValoresPorNombre.Buscar<EstadoInscripcion>(filtro.Estado);
         }
 
+        // Un Jugador ve solo las propias; un Organizador, las de sus torneos; un Administrador, todas (letra 1.6).
+        int? jugadorId = null;
+        int? organizadorId = null;
+        if(rol == Roles.Jugador)
+        {
+            jugadorId = usuarioId;
+        }
+
+        if(rol == Roles.Organizador)
+        {
+            organizadorId = usuarioId;
+        }
+
         var filtroRepositorio = new FiltroInscripciones(
             filtro.TorneoId,
             estado,
             filtro.FechaDesde,
             filtro.FechaHasta,
-            rol == Roles.Jugador ? usuarioId : null,
-            rol == Roles.Organizador ? usuarioId : null,
+            jugadorId,
+            organizadorId,
             Paginacion.AjustarLimite(filtro.Limit),
             Paginacion.AjustarDesplazamiento(filtro.Offset));
         return repositorioInscripciones.Listar(filtroRepositorio).Select(CrearResponse).ToList();
