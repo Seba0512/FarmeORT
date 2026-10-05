@@ -81,13 +81,18 @@ public sealed class Torneo
         DateOnly fechaActual,
         int inscripcionesAceptadas)
     {
-        _ = inscripcionesAceptadas;
         ValidarModificable();
 
         // Una fecha de inicio que ya pasó y no cambia no impide editar el resto (D-37).
         if(fechaInicio != FechaInicio)
         {
             ValidarInicioNoPasado(fechaInicio, fechaActual);
+        }
+
+        // El cupo no baja de las inscripciones Aceptadas: no se cancelan inscripciones para hacer lugar (foro, debate 13).
+        if(cupo < inscripcionesAceptadas)
+        {
+            throw new CupoMenorQueInscripcionesAceptadasException();
         }
 
         AsignarDatos(codigo, nombre, descripcion, fechaInicio, fechaFin, cupo, organizador);
