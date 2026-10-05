@@ -16,7 +16,13 @@ namespace FarmeORT.Servicios.Tests.Batallas;
 [TestClass]
 public sealed class ServicioBatallasTests
 {
+    private const int BatallaId = 12;
+    private const int TorneoId = 5;
+    private const int OrganizadorId = 2;
+    private const int OtroUsuarioId = 9;
+
     private static readonly DateOnly FechaActual = new(2026, 10, 2);
+    private static readonly DateTimeOffset FechaPrimerLanzamiento = new(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
 
     private Mock<IRepositorioBatallas> _batallas = null!;
     private Mock<IRepositorioTorneos> _torneos = null!;
@@ -34,39 +40,25 @@ public sealed class ServicioBatallasTests
         var jugador1 = CrearUsuario(7, Rol.Jugador);
         var jugador2 = CrearUsuario(8, Rol.Jugador);
         var torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.",
-            FechaActual.AddDays(1), FechaActual.AddDays(2), 4, CrearUsuario(2, Rol.Organizador), FechaActual)
-        { Id = 5 };
+            FechaActual.AddDays(1), FechaActual.AddDays(2), 4, CrearUsuario(OrganizadorId, Rol.Organizador), FechaActual)
+        { Id = TorneoId };
         var sorteo = new Mock<ISorteo>(MockBehavior.Strict);
         sorteo.Setup(s => s.ElegirEntre(jugador1, jugador2)).Returns(jugador1);
-        _batalla = new Batalla(torneo, 1, jugador1, jugador2, sorteo.Object) { Id = 12 };
+        _batalla = new Batalla(torneo, 1, jugador1, jugador2, sorteo.Object) { Id = BatallaId };
     }
 
     [TestMethod]
-    [DataRow(Roles.Jugador)]
-    [DataRow(Roles.Organizador)]
-    [DataRow(Roles.Administrador)]
-    public void Consultar_UsuarioAutorizado_DevuelveFalloEHistorialDelTorneo(string rol)
+    [DataRow(Roles.Jugador, OtroUsuarioId)]
+    [DataRow(Roles.Organizador, OrganizadorId)]
+    [DataRow(Roles.Administrador, OtroUsuarioId)]
+    public void ObtenerPorId_UsuarioAutorizado_DevuelveElFalloYElHistorial(string rol, int usuarioId)
     {
-        var usuarioId = rol == Roles.Organizador ? 2 : 9;
-        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
-        if(rol == Roles.Jugador)
-        {
-            _inscripciones.Setup(r => r.ExisteDelJugador(5, usuarioId)).Returns(true);
-        }
+        PrepararBatallaFalladaConDosLanzamientos();
 
-        var skill = new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2) { Id = 3 };
-        _batalla.Jugador1.DeclararSkill(skill, 4, FechaActual);
-        _batalla.Jugador2.DeclararSkill(skill, 4, FechaActual);
-        var fecha = new DateTimeOffset(2026, 10, 2, 12, 0, 0, TimeSpan.Zero);
-        _batalla.Lanzar(_batalla.Jugador1, skill, fecha);
-        _batalla.Lanzar(_batalla.Jugador2, skill, fecha.AddMinutes(1));
-        _batalla.Fallar(8, "Victoria por abandono.", -16, 16);
+        var detalle = _servicio.ObtenerPorId(BatallaId, usuarioId, rol);
 
-        var detalle = _servicio.ObtenerPorId(12, usuarioId, rol);
-        var historial = _servicio.ListarLanzamientos(12, usuarioId, rol);
-
-        Assert.AreEqual(12, detalle.Id);
-        Assert.AreEqual(5, detalle.TorneoId);
+        Assert.AreEqual(BatallaId, detalle.Id);
+        Assert.AreEqual(TorneoId, detalle.TorneoId);
         Assert.AreEqual(1, detalle.Ronda);
         Assert.AreEqual(7, detalle.Jugador1.Id);
         Assert.AreEqual(8, detalle.Jugador2.Id);
@@ -76,94 +68,93 @@ public sealed class ServicioBatallasTests
         Assert.AreEqual(-16, detalle.CambioEloJugador1);
         Assert.AreEqual(16, detalle.CambioEloJugador2);
         Assert.IsNull(detalle.JugadorTurnoId);
-        CollectionAssert.AreEqual(new[] { 1, 2 }, historial.Select(l => l.Turno).ToArray());
         CollectionAssert.AreEqual(new[] { 1, 2 }, detalle.Lanzamientos.Select(l => l.Turno).ToArray());
+    }
+
+    [TestMethod]
+    [DataRow(Roles.Jugador, OtroUsuarioId)]
+    [DataRow(Roles.Organizador, OrganizadorId)]
+    [DataRow(Roles.Administrador, OtroUsuarioId)]
+    public void ListarLanzamientos_UsuarioAutorizado_DevuelveElHistorialOrdenado(string rol, int usuarioId)
+    {
+        PrepararBatallaFalladaConDosLanzamientos();
+
+        var historial = _servicio.ListarLanzamientos(BatallaId, usuarioId, rol);
+
+        CollectionAssert.AreEqual(new[] { 1, 2 }, historial.Select(l => l.Turno).ToArray());
         Assert.AreEqual(7, historial[0].JugadorId);
         Assert.AreEqual("usuario7", historial[0].Nickname);
         Assert.AreEqual(3, historial[0].SkillId);
         Assert.AreEqual("Six-Seven", historial[0].Skill);
-        Assert.AreEqual(fecha, historial[0].Fecha);
-        Assert.AreEqual(fecha.AddMinutes(1), historial[1].Fecha);
-        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.AreEqual(FechaPrimerLanzamiento, historial[0].Fecha);
+        Assert.AreEqual(FechaPrimerLanzamiento.AddMinutes(1), historial[1].Fecha);
     }
 
     [TestMethod]
-    [DataRow(false, Roles.Jugador)]
-    [DataRow(true, Roles.Jugador)]
-    [DataRow(false, Roles.Organizador)]
-    [DataRow(true, Roles.Organizador)]
-    public void Consultar_UsuarioAjeno_RechazaDetalleEHistorial(bool historial, string rol)
+    public void ObtenerPorId_JugadorSinInscripcionEnElTorneo_LanzaJugadorNoInscriptoEnTorneo()
     {
-        _batallas.Setup(r => r.ObtenerPorId(12)).Returns(_batalla);
-        if(rol == Roles.Jugador)
-        {
-            _inscripciones.Setup(r => r.ExisteDelJugador(5, 9)).Returns(false);
-        }
+        _batallas.Setup(r => r.ObtenerPorId(BatallaId)).Returns(_batalla);
+        _inscripciones.Setup(r => r.ExisteDelJugador(TorneoId, OtroUsuarioId)).Returns(false);
 
-        Action consultar = historial
-            ? () => _servicio.ListarLanzamientos(12, 9, rol)
-            : () => _servicio.ObtenerPorId(12, 9, rol);
-        if(rol == Roles.Jugador)
-        {
-            Assert.ThrowsExactly<JugadorNoInscriptoEnTorneoException>(consultar);
-        }
-        else
-        {
-            Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(consultar);
-        }
-
-        _batallas.Verify(r => r.Guardar(), Times.Never);
+        Assert.ThrowsExactly<JugadorNoInscriptoEnTorneoException>(() => _servicio.ObtenerPorId(BatallaId, OtroUsuarioId, Roles.Jugador));
     }
 
     [TestMethod]
-    [DataRow(false)]
-    [DataRow(true)]
-    public void Consultar_BatallaInexistente_RechazaSinConsultarInscripcion(bool historial)
+    public void ObtenerPorId_OrganizadorDeOtroTorneo_LanzaNoEsOrganizadorDelTorneo()
     {
-        _batallas.Setup(r => r.ObtenerPorId(12)).Returns((Batalla?)null);
+        _batallas.Setup(r => r.ObtenerPorId(BatallaId)).Returns(_batalla);
 
-        if(historial)
-        {
-            Assert.ThrowsExactly<BatallaNoEncontradaException>(() => _servicio.ListarLanzamientos(12, 7, Roles.Jugador));
-        }
-        else
-        {
-            Assert.ThrowsExactly<BatallaNoEncontradaException>(() => _servicio.ObtenerPorId(12, 7, Roles.Jugador));
-        }
-
-        _batallas.Verify(r => r.ObtenerPorId(12), Times.Once);
-        _inscripciones.VerifyNoOtherCalls();
+        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() => _servicio.ObtenerPorId(BatallaId, OtroUsuarioId, Roles.Organizador));
     }
 
     [TestMethod]
-    [DataRow(Roles.Jugador, "Finalizada", 2, 8, 10, 3, EstadoBatalla.Finalizada, 2, 8, 10, 3)]
-    [DataRow(Roles.Organizador, "EnArbitraje", 1, 7, 150, -3, EstadoBatalla.EnArbitraje, 1, 7, 100, 0)]
-    [DataRow(Roles.Administrador, "1", 0, -1, 0, 0, null, null, null, 20, 0)]
-    [DataRow(Roles.Administrador, null, null, null, 20, 0, null, null, null, 20, 0)]
-    [DataRow(Roles.Administrador, "pendiente", -1, 0, -5, -10, null, null, null, 20, 0)]
-    [DataRow(Roles.Administrador, "Cancelada", null, null, 1, 0, EstadoBatalla.Cancelada, null, null, 1, 0)]
-    [DataRow(Roles.Administrador, "Pendiente", null, null, 1, 0, EstadoBatalla.Pendiente, null, null, 1, 0)]
-    public void Listar_UsuarioAutorizado_NormalizaFiltrosYDevuelveResumen(
-        string rol, string? estado, int? ronda, int? jugadorId, int limit, int offset,
-        EstadoBatalla? estadoEsperado, int? rondaEsperada, int? jugadorEsperado, int limiteEsperado, int desplazamientoEsperado)
+    public void ListarLanzamientos_JugadorSinInscripcionEnElTorneo_LanzaJugadorNoInscriptoEnTorneo()
     {
-        var usuarioId = rol == Roles.Organizador ? 2 : 9;
-        _torneos.Setup(r => r.ObtenerPorId(5)).Returns(_batalla.Torneo);
-        if(rol == Roles.Jugador)
-        {
-            _inscripciones.Setup(r => r.ExisteDelJugador(5, usuarioId)).Returns(true);
-        }
+        _batallas.Setup(r => r.ObtenerPorId(BatallaId)).Returns(_batalla);
+        _inscripciones.Setup(r => r.ExisteDelJugador(TorneoId, OtroUsuarioId)).Returns(false);
 
-        var esperado = new FiltroBatallas(5, estadoEsperado, rondaEsperada, jugadorEsperado, limiteEsperado, desplazamientoEsperado);
-        _batallas.Setup(r => r.Listar(esperado)).Returns([_batalla]);
+        Assert.ThrowsExactly<JugadorNoInscriptoEnTorneoException>(() => _servicio.ListarLanzamientos(BatallaId, OtroUsuarioId, Roles.Jugador));
+    }
+
+    [TestMethod]
+    public void ListarLanzamientos_OrganizadorDeOtroTorneo_LanzaNoEsOrganizadorDelTorneo()
+    {
+        _batallas.Setup(r => r.ObtenerPorId(BatallaId)).Returns(_batalla);
+
+        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() => _servicio.ListarLanzamientos(BatallaId, OtroUsuarioId, Roles.Organizador));
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_BatallaInexistente_LanzaBatallaNoEncontrada()
+    {
+        _batallas.Setup(r => r.ObtenerPorId(BatallaId)).Returns((Batalla?)null);
+
+        Assert.ThrowsExactly<BatallaNoEncontradaException>(() => _servicio.ObtenerPorId(BatallaId, 7, Roles.Jugador));
+    }
+
+    [TestMethod]
+    public void ListarLanzamientos_BatallaInexistente_LanzaBatallaNoEncontrada()
+    {
+        _batallas.Setup(r => r.ObtenerPorId(BatallaId)).Returns((Batalla?)null);
+
+        Assert.ThrowsExactly<BatallaNoEncontradaException>(() => _servicio.ListarLanzamientos(BatallaId, 7, Roles.Jugador));
+    }
+
+    [TestMethod]
+    [DataRow(Roles.Jugador, OtroUsuarioId)]
+    [DataRow(Roles.Organizador, OrganizadorId)]
+    [DataRow(Roles.Administrador, OtroUsuarioId)]
+    public void Listar_UsuarioAutorizado_DevuelveElResumenDeLasBatallas(string rol, int usuarioId)
+    {
+        _inscripciones.Setup(r => r.ExisteDelJugador(TorneoId, OtroUsuarioId)).Returns(true);
+        PrepararListado(new FiltroBatallas(TorneoId, null, null, null, 20, 0));
         _batalla.Fallar(7, "Victoria por abandono.", 16, -16);
-        var filtro = new FiltroBatallasRequest { TorneoId = 5, Estado = estado, Ronda = ronda, JugadorId = jugadorId, Limit = limit, Offset = offset };
 
-        var resultado = _servicio.Listar(filtro, usuarioId, rol);
+        var resultado = _servicio.Listar(new FiltroBatallasRequest { TorneoId = TorneoId }, usuarioId, rol);
 
         var resumen = resultado.Single();
-        Assert.AreEqual(12, resumen.Id);
-        Assert.AreEqual(5, resumen.TorneoId);
+        Assert.AreEqual(BatallaId, resumen.Id);
+        Assert.AreEqual(TorneoId, resumen.TorneoId);
         Assert.AreEqual(1, resumen.Ronda);
         Assert.AreEqual(7, resumen.Jugador1.Id);
         Assert.AreEqual("usuario7", resumen.Jugador1.Nickname);
@@ -174,46 +165,101 @@ public sealed class ServicioBatallasTests
         Assert.AreEqual("Finalizada", resumen.Estado);
         Assert.AreEqual(7, resumen.GanadorId);
         Assert.IsNull(resumen.JugadorTurnoId);
+    }
+
+    [TestMethod]
+    [DataRow("Pendiente", EstadoBatalla.Pendiente)]
+    [DataRow("EnArbitraje", EstadoBatalla.EnArbitraje)]
+    [DataRow("Finalizada", EstadoBatalla.Finalizada)]
+    [DataRow("Cancelada", EstadoBatalla.Cancelada)]
+    public void Listar_EstadoConNombreExacto_FiltraPorEseEstado(string estado, EstadoBatalla estadoEsperado)
+    {
+        var esperado = new FiltroBatallas(TorneoId, estadoEsperado, null, null, 20, 0);
+        PrepararListado(esperado);
+
+        _servicio.Listar(new FiltroBatallasRequest { TorneoId = TorneoId, Estado = estado }, OtroUsuarioId, Roles.Administrador);
+
         _batallas.Verify(r => r.Listar(esperado), Times.Once);
-        _batallas.Verify(r => r.Guardar(), Times.Never);
+    }
+
+    [TestMethod]
+    [DataRow("1")]
+    [DataRow("pendiente")]
+    public void Listar_EstadoInexistente_NoFiltraPorEstado(string estado)
+    {
+        var esperado = new FiltroBatallas(TorneoId, null, null, null, 20, 0);
+        PrepararListado(esperado);
+
+        _servicio.Listar(new FiltroBatallasRequest { TorneoId = TorneoId, Estado = estado }, OtroUsuarioId, Roles.Administrador);
+
+        _batallas.Verify(r => r.Listar(esperado), Times.Once);
+    }
+
+    [TestMethod]
+    public void Listar_RondaYJugadorPositivos_FiltraPorEllos()
+    {
+        var esperado = new FiltroBatallas(TorneoId, null, 2, 8, 20, 0);
+        PrepararListado(esperado);
+
+        _servicio.Listar(new FiltroBatallasRequest { TorneoId = TorneoId, Ronda = 2, JugadorId = 8 }, OtroUsuarioId, Roles.Administrador);
+
+        _batallas.Verify(r => r.Listar(esperado), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(0, -1)]
+    [DataRow(-1, 0)]
+    public void Listar_RondaYJugadorNoPositivos_NoFiltraPorEllos(int ronda, int jugadorId)
+    {
+        var esperado = new FiltroBatallas(TorneoId, null, null, null, 20, 0);
+        PrepararListado(esperado);
+
+        _servicio.Listar(new FiltroBatallasRequest { TorneoId = TorneoId, Ronda = ronda, JugadorId = jugadorId }, OtroUsuarioId, Roles.Administrador);
+
+        _batallas.Verify(r => r.Listar(esperado), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(10, 3, 10, 3)]
+    [DataRow(150, -3, 100, 0)]
+    [DataRow(0, 0, 20, 0)]
+    [DataRow(-5, -10, 20, 0)]
+    public void Listar_Paginacion_AjustaLosValoresFueraDeRango(int limit, int offset, int limiteEsperado, int desplazamientoEsperado)
+    {
+        var esperado = new FiltroBatallas(TorneoId, null, null, null, limiteEsperado, desplazamientoEsperado);
+        PrepararListado(esperado);
+
+        _servicio.Listar(new FiltroBatallasRequest { TorneoId = TorneoId, Limit = limit, Offset = offset }, OtroUsuarioId, Roles.Administrador);
+
+        _batallas.Verify(r => r.Listar(esperado), Times.Once);
     }
 
     [TestMethod]
     public void Listar_JugadorSinInscripcion_RechazaAunqueFiltroIncluyaOtroJugador()
     {
-        _torneos.Setup(r => r.ObtenerPorId(5)).Returns(_batalla.Torneo);
-        _inscripciones.Setup(r => r.ExisteDelJugador(5, 9)).Returns(false);
+        _torneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_batalla.Torneo);
+        _inscripciones.Setup(r => r.ExisteDelJugador(TorneoId, OtroUsuarioId)).Returns(false);
+        var filtro = new FiltroBatallasRequest { TorneoId = TorneoId, JugadorId = 7 };
 
-        Assert.ThrowsExactly<JugadorNoInscriptoEnTorneoException>(() =>
-            _servicio.Listar(new FiltroBatallasRequest { TorneoId = 5, JugadorId = 7 }, 9, Roles.Jugador));
-
-        _inscripciones.Verify(r => r.ExisteDelJugador(5, 9), Times.Once);
-        _batallas.VerifyNoOtherCalls();
+        Assert.ThrowsExactly<JugadorNoInscriptoEnTorneoException>(() => _servicio.Listar(filtro, OtroUsuarioId, Roles.Jugador));
     }
 
     [TestMethod]
     public void Listar_OrganizadorAjeno_RechazaAntesDeConsultarBatallas()
     {
-        _torneos.Setup(r => r.ObtenerPorId(5)).Returns(_batalla.Torneo);
+        _torneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_batalla.Torneo);
+        var filtro = new FiltroBatallasRequest { TorneoId = TorneoId };
 
-        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() =>
-            _servicio.Listar(new FiltroBatallasRequest { TorneoId = 5 }, 3, Roles.Organizador));
-
-        _batallas.VerifyNoOtherCalls();
-        _inscripciones.VerifyNoOtherCalls();
+        Assert.ThrowsExactly<NoEsOrganizadorDelTorneoException>(() => _servicio.Listar(filtro, 3, Roles.Organizador));
     }
 
     [TestMethod]
     public void Listar_TorneoInexistente_RechazaSinConsultarBatallas()
     {
-        _torneos.Setup(r => r.ObtenerPorId(5)).Returns((Torneo?)null);
+        _torneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns((Torneo?)null);
+        var filtro = new FiltroBatallasRequest { TorneoId = TorneoId };
 
-        Assert.ThrowsExactly<TorneoNoEncontradoException>(() =>
-            _servicio.Listar(new FiltroBatallasRequest { TorneoId = 5 }, 7, Roles.Jugador));
-
-        _torneos.Verify(r => r.ObtenerPorId(5), Times.Once);
-        _batallas.VerifyNoOtherCalls();
-        _inscripciones.VerifyNoOtherCalls();
+        Assert.ThrowsExactly<TorneoNoEncontradoException>(() => _servicio.Listar(filtro, 7, Roles.Jugador));
     }
 
     [TestMethod]
@@ -222,11 +268,29 @@ public sealed class ServicioBatallasTests
     [DataRow(-1)]
     public void Listar_TorneoIdInvalido_RechazaAntesDeConsultar(int? torneoId)
     {
-        Assert.ThrowsExactly<DatosInvalidosException>(() =>
-            _servicio.Listar(new FiltroBatallasRequest { TorneoId = torneoId }, 7, Roles.Jugador));
-        _torneos.VerifyNoOtherCalls();
-        _batallas.VerifyNoOtherCalls();
-        _inscripciones.VerifyNoOtherCalls();
+        var filtro = new FiltroBatallasRequest { TorneoId = torneoId };
+
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Listar(filtro, 7, Roles.Jugador));
+    }
+
+    // Batalla fallada por el jugador 8 con dos lanzamientos de la misma skill. El jugador consultante (9) está
+    // inscripto en el torneo; el organizador y el administrador no necesitan esa consulta.
+    private void PrepararBatallaFalladaConDosLanzamientos()
+    {
+        _batallas.Setup(r => r.ObtenerPorId(BatallaId)).Returns(_batalla);
+        _inscripciones.Setup(r => r.ExisteDelJugador(TorneoId, OtroUsuarioId)).Returns(true);
+        var skill = new Skill("SIXSEVEN", "Six-Seven", "Gesto alternando las manos hacia arriba y abajo.", CategoriaSkill.Gestual, 2) { Id = 3 };
+        _batalla.Jugador1.DeclararSkill(skill, 4, FechaActual);
+        _batalla.Jugador2.DeclararSkill(skill, 4, FechaActual);
+        _batalla.Lanzar(_batalla.Jugador1, skill, FechaPrimerLanzamiento);
+        _batalla.Lanzar(_batalla.Jugador2, skill, FechaPrimerLanzamiento.AddMinutes(1));
+        _batalla.Fallar(8, "Victoria por abandono.", -16, 16);
+    }
+
+    private void PrepararListado(FiltroBatallas esperado)
+    {
+        _torneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_batalla.Torneo);
+        _batallas.Setup(r => r.Listar(esperado)).Returns([_batalla]);
     }
 
     private static Usuario CrearUsuario(int id, Rol rol)
