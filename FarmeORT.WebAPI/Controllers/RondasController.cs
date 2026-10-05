@@ -22,7 +22,7 @@ public sealed class RondasController(IServicioRondas servicioRondas) : Controlle
     [AutenticacionOpcional]
     public IActionResult Listar(int torneoId)
     {
-        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
+        var esAnonimo = HttpContext.EsAnonimo();
         return Ok(servicioRondas.Listar(torneoId, esAnonimo));
     }
 
@@ -30,7 +30,7 @@ public sealed class RondasController(IServicioRondas servicioRondas) : Controlle
     [AutenticacionOpcional]
     public IActionResult ObtenerPorNumero(int torneoId, int numero)
     {
-        var esAnonimo = HttpContext.ObtenerSesionOpcional() is null;
+        var esAnonimo = HttpContext.EsAnonimo();
         return Ok(servicioRondas.ObtenerPorNumero(torneoId, numero, esAnonimo));
     }
 }
