@@ -18,9 +18,9 @@ public interface IRepositorioBatallas
     // Filtra y pagina las batallas de un torneo; el servicio ya controló que quien consulta puede verlo (D-55).
     IReadOnlyList<Batalla> Listar(FiltroBatallas filtro);
 
-    // Ganadas y perdidas de los jugadores del ranking en una sola consulta, opcionalmente de un torneo (D-46).
-    // Un jugador sin batallas Finalizadas no figura.
-    IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds, int? torneoId);
+    // Ganadas y perdidas de los jugadores del ranking en una sola consulta (D-46). Son las de todos los torneos,
+    // también en el ranking de un torneo (foro, debate 06). Un jugador sin batallas Finalizadas no figura.
+    IReadOnlyDictionary<int, ResultadosDeBatallas> ContarResultadosPorJugador(IReadOnlyCollection<int> jugadorIds);
 
     // Las batallas del torneo con sus jugadores, ordenadas por ronda y por id, para armar las rondas (D-62).
     IReadOnlyList<Batalla> ListarDelTorneo(int torneoId);

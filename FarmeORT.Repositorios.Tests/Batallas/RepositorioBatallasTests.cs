@@ -457,7 +457,7 @@ public sealed class RepositorioBatallasTests
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
 
-        var resultados = _repositorio.ContarResultadosPorJugador([7, 8], null);
+        var resultados = _repositorio.ContarResultadosPorJugador([7, 8]);
 
         Assert.HasCount(2, resultados);
         Assert.AreEqual(new ResultadosDeBatallas(1, 2), resultados[7]);
@@ -465,7 +465,7 @@ public sealed class RepositorioBatallasTests
     }
 
     [TestMethod]
-    public void ContarResultadosPorJugador_ConTorneo_CuentaSoloLasBatallasDeEseTorneo()
+    public void ContarResultadosPorJugador_BatallasDeVariosTorneos_CuentaLasDeTodos()
     {
         var organizador = CrearUsuario(2, Rol.Organizador);
         var torneo = CrearTorneoConId(5, "COPAAURA", organizador);
@@ -479,10 +479,10 @@ public sealed class RepositorioBatallasTests
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
 
-        var resultados = _repositorio.ContarResultadosPorJugador([7], 5);
+        var resultados = _repositorio.ContarResultadosPorJugador([7]);
 
         Assert.HasCount(1, resultados);
-        Assert.AreEqual(new ResultadosDeBatallas(1, 0), resultados[7]);
+        Assert.AreEqual(new ResultadosDeBatallas(2, 1), resultados[7]);
     }
 
     [TestMethod]
@@ -495,7 +495,7 @@ public sealed class RepositorioBatallasTests
         _baseDeDatos.Contexto.SaveChanges();
         _baseDeDatos.Contexto.ChangeTracker.Clear();
 
-        var resultados = _repositorio.ContarResultadosPorJugador([7, 8], null);
+        var resultados = _repositorio.ContarResultadosPorJugador([7, 8]);
 
         Assert.IsEmpty(resultados);
     }

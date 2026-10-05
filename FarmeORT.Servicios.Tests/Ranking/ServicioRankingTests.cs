@@ -38,7 +38,7 @@ public sealed class ServicioRankingTests
         _repositorioUsuarios.Setup(r => r.ListarRanking(5)).Returns(jugadores);
 
         // sixseven no tiene batallas Finalizadas: el repositorio no lo devuelve y el ranking muestra 0.
-        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 }, null))
+        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 }))
             .Returns(new Dictionary<int, ResultadosDeBatallas> { [4] = new(3, 1) });
 
         var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5 });
@@ -111,7 +111,7 @@ public sealed class ServicioRankingTests
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
         _repositorioUsuarios.Setup(r => r.ListarRanking(5)).Returns([CrearJugador(9, "otrotorneo")]);
         _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 5)).Returns([CrearJugador(4, "aurafarmer"), CrearJugador(2, "sixseven")]);
-        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 }, null)).Returns(new Dictionary<int, ResultadosDeBatallas>());
+        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4, 2 })).Returns(new Dictionary<int, ResultadosDeBatallas>());
 
         var ranking = _servicio.Obtener(new FiltroRankingRequest { Cantidad = 5, TorneoId = TorneoId });
 
@@ -125,9 +125,7 @@ public sealed class ServicioRankingTests
     {
         _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(CrearTorneo());
         _repositorioUsuarios.Setup(r => r.ListarRankingDelTorneo(TorneoId, 10)).Returns([CrearJugador(4, "aurafarmer")]);
-        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4 }, TorneoId))
-            .Returns(new Dictionary<int, ResultadosDeBatallas> { [4] = new(1, 0) });
-        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4 }, null))
+        _repositorioBatallas.Setup(r => r.ContarResultadosPorJugador(new[] { 4 }))
             .Returns(new Dictionary<int, ResultadosDeBatallas> { [4] = new(7, 2) });
 
         var ranking = _servicio.Obtener(new FiltroRankingRequest { TorneoId = TorneoId });

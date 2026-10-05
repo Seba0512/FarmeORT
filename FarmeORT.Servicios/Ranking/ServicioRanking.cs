@@ -25,7 +25,7 @@ internal sealed class ServicioRanking(
         }
 
         // Aunque se filtre por torneo, ganadas y perdidas son las globales de cada jugador (foro, debate 06).
-        var resultados = repositorioBatallas.ContarResultadosPorJugador(jugadores.Select(j => j.Id).ToList(), null);
+        var resultados = repositorioBatallas.ContarResultadosPorJugador(jugadores.Select(j => j.Id).ToList());
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
