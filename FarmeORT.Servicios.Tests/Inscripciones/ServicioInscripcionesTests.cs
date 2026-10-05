@@ -128,6 +128,17 @@ public sealed class ServicioInscripcionesTests
     }
 
     [TestMethod]
+    public void Inscribir_TorneoEnCursoConElCupoCompleto_LanzaTorneoNoAbiertoSinGuardar()
+    {
+        ConfigurarInscripcionValida();
+        _repositorioInscripciones.Setup(r => r.ContarAceptadas(TorneoId)).Returns(4);
+        _torneo.Iniciar(4);
+
+        Assert.ThrowsExactly<TorneoNoAbiertoException>(() => _servicio.Inscribir(JugadorId, new InscripcionRequest { TorneoId = TorneoId }));
+        _repositorioInscripciones.Verify(r => r.Agregar(It.IsAny<Inscripcion>()), Times.Never);
+    }
+
+    [TestMethod]
     public void Cancelar_InscripcionPropiaConTorneoAbierto_GuardaLaInscripcionCanceladaYLaDevuelve()
     {
         var inscripcion = CrearInscripcion();
