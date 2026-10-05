@@ -479,6 +479,32 @@ public sealed class ServicioTorneosTests
     }
 
     [TestMethod]
+    public void Cancelar_TorneoEnCurso_CancelaBatallasEInscripcionesEnElMismoGuardado()
+    {
+        var torneo = CrearTorneo();
+        var inscripcion = new Inscripcion(torneo, CrearUsuario(7, Rol.Jugador), new DateTime(2026, 10, 1, 12, 0, 0));
+        torneo.Iniciar(Cupo);
+        var batalla = CrearBatalla(torneo);
+        EstadoBatalla? estadoBatallaAlGuardar = null;
+        EstadoInscripcion? estadoInscripcionAlGuardar = null;
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(torneo);
+        _repositorioBatallas.Setup(r => r.ListarSinResolverDelTorneo(TorneoId)).Returns([batalla]);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns([inscripcion]);
+        _repositorioTorneos.Setup(r => r.Actualizar(torneo)).Callback(() =>
+        {
+            estadoBatallaAlGuardar = batalla.Estado;
+            estadoInscripcionAlGuardar = inscripcion.Estado;
+        });
+
+        var response = _servicio.Cancelar(TorneoId);
+
+        Assert.AreEqual(nameof(EstadoTorneo.Cancelado), response.Estado);
+        Assert.AreEqual(EstadoBatalla.Cancelada, estadoBatallaAlGuardar);
+        Assert.AreEqual(EstadoInscripcion.Cancelada, estadoInscripcionAlGuardar);
+        _repositorioTorneos.Verify(r => r.Actualizar(torneo), Times.Once);
+    }
+
+    [TestMethod]
     public void Cancelar_TorneoYaCancelado_LanzaTorneoNoCancelableSinTocarBatallasNiInscripciones()
     {
         var torneo = CrearTorneo();
