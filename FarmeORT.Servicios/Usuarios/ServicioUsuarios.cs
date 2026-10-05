@@ -169,14 +169,16 @@ internal sealed class ServicioUsuarios(
         return DateOnly.FromDateTime(reloj.GetLocalNow().DateTime);
     }
 
+    // Se compara por nombre para que un número como "1" no se acepte como rol.
     private static Rol ConvertirRol(string rol)
     {
-        if(!Enum.TryParse<Rol>(rol, out var rolConvertido) || !Enum.IsDefined(rolConvertido))
+        var rolConvertido = ValoresPorNombre.Buscar<Rol>(rol);
+        if(rolConvertido == null)
         {
             throw new DatosInvalidosException("El rol debe ser Jugador, Organizador o Administrador.");
         }
 
-        return rolConvertido;
+        return rolConvertido.Value;
     }
 
     // Los índices únicos de SQL Server no distinguen mayúsculas: cambiar solo mayúsculas no ocupa un valor ajeno.
