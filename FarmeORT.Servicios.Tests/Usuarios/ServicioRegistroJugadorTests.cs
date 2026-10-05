@@ -114,18 +114,22 @@ public sealed class ServicioRegistroJugadorTests
     }
 
     [TestMethod]
-    [DataRow("nombre", "")]
-    [DataRow("apellido", "Pe")]
-    [DataRow("email", "no-es-email")]
-    [DataRow("nickname", "con espacio")]
-    public void RegistrarJugador_DatosPersonalesInvalidos_LanzaDatosInvalidosSinGuardar(string campo, string valor)
+    [DataRow("", "Pérez", Email, Nickname)]
+    [DataRow("Ana", "Pe", Email, Nickname)]
+    [DataRow("Ana", "Pérez", "no-es-email", Nickname)]
+    [DataRow("Ana", "Pérez", Email, "con espacio")]
+    public void RegistrarJugador_DatosPersonalesInvalidos_LanzaDatosInvalidosSinGuardar(
+        string nombre,
+        string apellido,
+        string email,
+        string nickname)
     {
         var request = new RegistroJugadorRequest
         {
-            Nombre = campo == "nombre" ? valor : "Ana",
-            Apellido = campo == "apellido" ? valor : "Pérez",
-            Email = campo == "email" ? valor : Email,
-            Nickname = campo == "nickname" ? valor : Nickname,
+            Nombre = nombre,
+            Apellido = apellido,
+            Email = email,
+            Nickname = nickname,
             Contrasena = Contrasena,
             FechaNacimiento = new DateOnly(2000, 1, 15),
         };
