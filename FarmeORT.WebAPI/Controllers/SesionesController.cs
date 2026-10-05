@@ -13,7 +13,7 @@ public sealed class SesionesController(IServicioSesiones servicioSesiones) : Con
     public IActionResult Crear([FromBody] LoginRequest request)
     {
         var response = servicioSesiones.IniciarSesion(request);
-        return Created("/api/v1/sesiones/actual", response);
+        return Created($"/api/v1/sesiones/{response.Token}", response);
     }
 
     // El token identifica a la sesión; el servicio controla que sea del usuario autenticado.
