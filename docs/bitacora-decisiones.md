@@ -2668,6 +2668,81 @@ mecanismos que ningún requerimiento necesita: el parámetro sin uso se quitó).
 
 ---
 
+### D-73 — Coordinar el inicio de sesión con la baja lógica del usuario
+
+**Problema:** el login podía leer un usuario activo, otra petición guardar su baja y revocar sus
+sesiones, y el login guardar después una sesión nueva. La consulta del token no comprobaba la baja,
+por lo que esa sesión residual permitía autenticarse. Además, la baja revocaba una lista de sesiones
+leída antes de persistir el usuario: una sesión incorporada después de esa lectura podía quedar fuera.
+Esto contradice la denegación de acceso al eliminado definida en D-27 y el login de la letra §1.1.
+
+**Alternativas consideradas:** negar solo la autenticación de sesiones residuales (protege el acceso,
+pero conserva la carrera de persistencia); releer el usuario justo antes de insertar (deja otro
+intervalo sin coordinación); un lock Scoped (no coordina solicitudes); una versión nueva compartida
+con login y baja (requiere migración y renovación explícita); coordinar las escrituras existentes
+sobre la fila del usuario mediante transacciones.
+
+**Decisión adoptada:** `RepositorioSesiones.Agregar` abre una transacción Serializable y ejecuta
+una actualización condicionada por `Id` y `Eliminado == false`, manteniendo `Eliminado` en false.
+Esta escritura sobre la fila existente precede a la inserción de la sesión y se confirma junto a ella.
+Si ninguna fila cumple la condición, lanza `CredencialesInvalidasException`, sin insertar ni reactivar
+al usuario. `RepositorioUsuarios.Eliminar` guarda primero el usuario eliminado, luego ejecuta
+`ExecuteDelete` sobre todas sus sesiones y confirma ambas operaciones en una transacción Serializable.
+Ambos caminos escriben primero el usuario y luego las sesiones. Si confirma primero el login, la baja
+revoca esa sesión; si confirma primero la baja, el login se rechaza. Un fallo al revocar revierte la baja.
+
+La lectura del token usa `AsNoTracking`, incluye el usuario y filtra por usuario activo en la base.
+`ServicioSesiones.ObtenerSesionAutenticada` también rechaza una sesión cuyo usuario esté eliminado:
+protege el caso de sesiones residuales y evita confiar en una entidad previamente cargada.
+
+**Contrato de autenticación:** se conservan `POST /api/v1/sesiones` (201 con token, usuarioId, rol y
+Location `/api/v1/sesiones/{token}`) y `DELETE /api/v1/sesiones/{token}` (204 propio, 403
+`NOT_SESSION_OWNER` ajeno y 404 `SESSION_NOT_FOUND` si no existe, con Bearer válido).
+Login con usuario eliminado, credenciales incorrectas o baja confirmada antes de guardar responde
+401 `INVALID_CREDENTIALS`, con el mismo mensaje y sin revelar la causa. Un token revocado o residual
+de eliminado responde 401 `INVALID_TOKEN`, también en endpoints con autenticación opcional y en logout.
+El token sigue siendo opaco, persistido y sin vencimiento; no se agregan rutas ni errores nuevos.
+
+**Justificación:** utiliza EF y las tablas existentes, mantiene servicios dependientes de interfaces
+y concentra la coordinación en persistencia. No requiere migración ni una versión nueva. La
+[documentación de transacciones de SQL Server](https://learn.microsoft.com/en-us/sql/relational-databases/sql-server-transaction-locking-and-row-versioning-guide?view=sql-server-ver17)
+fundamenta la coordinación de escrituras; los bloqueos se verificaron además con conexiones reales.
+La garantía cubre login y baja mediante estos repositorios. No soluciona las carreras entre cambio
+de rol/baja y nuevas inscripciones o asignaciones de torneos: esos flujos necesitan su propia
+coordinación de precondiciones. No se borra el usuario ni su historial, ni se modifica su ELO.
+
+**Conceptos del curso:** atomicidad, aislamiento transaccional, EF Core, DI Scoped, SRP, DIP,
+TDD de regresión, FIRST y autenticación separada de autorización.
+
+**Evidencia:** cuatro ciclos RED/GREEN separados en `feature/sesiones-usuarios-activos`:
+`34de23a`/`1423c67` (servicio y sesión residual), `5162196`/`d036a2e` (login tras baja),
+`a07f642`/`06af528` (consulta residual, con y sin tracking previo), `4cfac33`/`d4e138f`
+(sesión incorporada durante persistencia de la baja, reproducida mediante trigger SQLite).
+Las pruebas adicionales de orden inverso y rollback pasaron desde su primera ejecución y se
+guardaron como tests sin etapa RED ficticia (`b3b8f40`). REFACTOR evaluado sin una mejora adicional necesaria.
+Suite Release: 1011/1011 (212 Dominio, 318 Servicios, 173 Repositorios, 295 WebAPI y 13 Fabrica).
+Build y `dotnet format --verify-no-changes` correctos. Cobertura: 2079/2080 líneas y 528/530 ramas;
+todos los assemblies superan el 90 % en métricas aplicables, con las exclusiones originales.
+
+SQL Server Express 2025, versión 17.0.5005.3, verificó ambos órdenes con dos conexiones para cada
+rol (seis casos), espera de la escritura competidora, revocación total y ELO conservado. Un trigger
+de fallo de revocación confirmó rollback de la baja y conservación de la sesión. La API real verificó
+login y Location, logout propio/ajeno, baja, token revocado/residual, autenticación opcional y
+credenciales inválidas. El nuevo caso Postman de token eliminado en ranking se ejecutó con Newman:
+1 request y 2 assertions sin fallos. La colección contiene 403 requests; no se reejecutó completa en
+este trabajo. Las bases exclusivas se migraron con las once migraciones existentes y se eliminaron.
+Actions y aprobación humana pendientes; el equipo debe reflejar esta secuencia en API y UML finales.
+
+**Participación de IA:** Codex asistió en localizar y contrastar el código, comparar alternativas,
+proponer la coordinación transaccional, editar pruebas y correcciones y ejecutar las verificaciones.
+Se aplicaron las instrucciones del repositorio, las skills DA2 pertinentes y Graphify. Se descartaron
+la relectura sin transacción, el lock Scoped y una nueva versión por las limitaciones descritas.
+La suite necesitó acceso al log de Windows fuera del sandbox, sin modificar tests ni configuración.
+La autoría Git corresponde exclusivamente al integrante; la asistencia se declara aquí separadamente.
+La revisión humana, publicación y diagramas permanecen a cargo del equipo.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)

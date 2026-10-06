@@ -156,6 +156,18 @@ public sealed class ServicioSesionesTests
         Assert.AreEqual(Roles.Jugador, resultado.Rol);
     }
 
+    [TestMethod]
+    public void ObtenerSesionAutenticada_SesionResidualDeUsuarioEliminado_DevuelveNull()
+    {
+        var usuario = CrearUsuario();
+        usuario.Eliminar();
+        _repositorioSesiones.Setup(r => r.ObtenerPorToken(Token)).Returns(new Sesion(Token, usuario));
+
+        var resultado = _servicio.ObtenerSesionAutenticada(Token);
+
+        Assert.IsNull(resultado);
+    }
+
     private Usuario ConfigurarCredencialesValidas()
     {
         var usuario = CrearUsuario();

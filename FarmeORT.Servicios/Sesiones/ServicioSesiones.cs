@@ -52,7 +52,7 @@ internal sealed class ServicioSesiones(
     public SesionAutenticada? ObtenerSesionAutenticada(Guid token)
     {
         var sesion = repositorioSesiones.ObtenerPorToken(token);
-        if(sesion == null)
+        if(sesion == null || sesion.Usuario.Eliminado)
         {
             return null;
         }

@@ -2904,6 +2904,52 @@
           ]
         },
         {
+          "name": "Usuarios - token del eliminado en autenticación opcional → 401",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Accept",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/v1/rankings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "rankings"
+              ]
+            },
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{modUsuarioToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "description": "El token de un usuario dado de baja también se rechaza en un endpoint con autenticación opcional. Los intercalados concurrentes y las sesiones residuales insertadas fuera del flujo se verifican aparte con dos contextos y SQL Server; este caso comprueba el contrato HTTP después de la baja."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                  "pm.test(\"errorCode INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                ]
+              }
+            }
+          ]
+        },
+        {
           "name": "Usuarios - la baja cierra las sesiones del eliminado → 401",
           "request": {
             "method": "GET",
