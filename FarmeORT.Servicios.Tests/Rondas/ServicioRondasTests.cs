@@ -231,6 +231,35 @@ public sealed class ServicioRondasTests
     }
 
     [TestMethod]
+    public void Generar_UltimoFalloDuranteLasLecturas_EmparejaSoloSupervivientesSinListaImpar()
+    {
+        var inscripciones = _jugadores.Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
+        _torneo.Iniciar(4);
+        var primera = CrearBatallaFallada(10, 1, 0, 3);
+        var ultima = CrearBatalla(11, 1, 1, 2);
+
+        inscripciones[3].Eliminar();
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId))
+            .Returns(() => inscripciones.Where(i => i.Estado == EstadoInscripcion.Aceptada).ToList());
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns(() =>
+        {
+            ultima.Fallar(8, "Victoria por abandono.", 16, -16);
+            inscripciones[2].Eliminar();
+            return [primera, ultima];
+        });
+        _sorteo.Setup(s => s.ElegirEntre(_jugadores[0], _jugadores[1])).Returns(_jugadores[0]);
+        _repositorioBatallas.Setup(r => r.GuardarRonda(_torneo, It.Is<IReadOnlyList<Batalla>>(b => b.Count == 1 && b[0].NumeroRonda == 2)));
+        var servicio = new ServicioRondas(_repositorioTorneos.Object, _repositorioInscripciones.Object, _repositorioBatallas.Object, new EmparejamientoPorElo(), _sorteo.Object);
+
+        var ronda = servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador);
+
+        Assert.HasCount(1, ronda.Batallas);
+        CollectionAssert.AreEquivalent(new[] { 7, 8 }, ronda.Batallas.SelectMany(b => new[] { b.Jugador1.Id, b.Jugador2.Id }).ToArray());
+        Assert.IsFalse(ronda.Batallas.Any(b => b.Jugador1.Id == 9 || b.Jugador2.Id == 9 || b.Jugador1.Id == 10 || b.Jugador2.Id == 10));
+    }
+
+    [TestMethod]
     public void Generar_RondaAnteriorSinResolver_LanzaRondaSinResolver()
     {
         var siguen = _jugadores.Take(3).Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
