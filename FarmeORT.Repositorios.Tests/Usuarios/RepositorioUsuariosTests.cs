@@ -401,6 +401,27 @@ public sealed class RepositorioUsuariosTests
         Assert.IsTrue(_baseDeDatos.Contexto.Sesiones.Any(s => s.Token == sesionDelOtro));
     }
 
+    [TestMethod]
+    public void Eliminar_SesionAgregadaAlPersistirBaja_RevocaAntesDeConfirmar()
+    {
+        var usuario = GuardarUsuario(Email, "usuario");
+        _baseDeDatos.Contexto.Database.ExecuteSqlRaw("""
+            CREATE TRIGGER sesion_durante_baja AFTER UPDATE OF Eliminado ON Usuarios
+            WHEN NEW.Eliminado = 1
+            BEGIN
+                INSERT INTO Sesiones (Token, UsuarioId)
+                VALUES ('3F2B8C1E-5D4A-4E7B-9C6F-1A2B3C4D5E6F', NEW.Id);
+            END;
+            """);
+        usuario.Eliminar();
+
+        _repositorio.Eliminar(usuario);
+
+        using var verificacion = _baseDeDatos.CrearContexto();
+        Assert.IsTrue(verificacion.Usuarios.Single(u => u.Id == usuario.Id).Eliminado);
+        Assert.IsFalse(verificacion.Sesiones.Any(s => s.UsuarioId == usuario.Id));
+    }
+
     // Deja el usuario guardado y cargado desde el contexto, como lo recibe el servicio antes de modificarlo.
     // No usa ObtenerPorId para que estos tests no dependan de otro método del repositorio (FIRST).
     private Usuario GuardarUsuario(string email, string nickname)
