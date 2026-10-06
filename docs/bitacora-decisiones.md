@@ -2743,6 +2743,74 @@ La revisión humana, publicación y diagramas permanecen a cargo del equipo.
 
 ---
 
+### D-74 — Coordinar los fallos y los supervivientes de las rondas posteriores
+
+**Problema:** generar una ronda leía las inscripciones Aceptadas antes de comprobar que la anterior
+estaba resuelta. Si entre esas consultas se confirmaban sus fallos, podía guardar batallas nuevas
+con jugadores ya Eliminados. Cada fallo era atómico, pero no invalidaba la versión del torneo que
+la generación había leído. Una lista temporal impar también podía llegar al emparejamiento y
+producir un error inesperado en vez de un conflicto.
+
+**Alternativas consideradas:** cambiar únicamente el orden de consultas (reduce la ventana, pero
+no protege la confirmación); coordinar todas las lecturas con aislamiento SQL y bloqueos adicionales;
+introducir otra versión o infraestructura de concurrencia; reutilizar `Torneo.Version` de D-70 y
+comprobar la ronda anterior antes de leer supervivientes.
+
+**Decisión adoptada:** `FarmeORTContext.SaveChanges` renueva la versión existente cuando detecta
+el cambio de una inscripción a Eliminada, además de las altas que ya coordinaba. La eliminación,
+el fallo, ambos ELO y la versión se confirman en la misma transacción EF. `ServicioRondas` primero
+comprueba la ronda anterior y después consulta las Aceptadas. Antes de emparejar una ronda posterior,
+una cantidad impar se rechaza como `TorneoModificadoException`: otro pedido podría haber generado
+otra ronda y fallado una batalla entre las consultas. Se conserva la validación del cupo de la primera
+ronda y la finalización cuando resta un único jugador.
+
+`GuardarRonda` sigue consumiendo la versión leída al cargar el torneo y revierte todas las batallas
+nuevas ante un conflicto. Se reutilizan los errores y el filtro existentes: generar con versión
+anterior o lista temporal impar responde 409 `TOURNAMENT_CHANGED`; si quedan batallas pendientes,
+409 `ROUND_NOT_RESOLVED`. Dos fallos distintos preparados sobre la misma versión del torneo pueden
+competir: uno confirma y el otro responde 409 `BATTLE_CHANGED` sin cambios parciales de ELO,
+resultado ni eliminación. El cliente debe consultar nuevamente y reenviar; no se agrega reintento
+automático. Una solicitud nueva puede confirmar el fallo restante y generar con los supervivientes.
+
+**Justificación:** amplía el mecanismo de coordinación existente en persistencia, sin nuevas
+entidades, interfaces, servicios, patrones, bloqueos de aplicación ni migraciones. Ordenar las
+consultas evita usar aceptadas anteriores a la resolución observada, y la versión protege su
+confirmación frente a modificaciones intermedias. La validación de paridad evita que una lectura
+temporal llegue como 500 a la estrategia; esta conserva su propia invariante. El contexto continúa
+Scoped y las responsabilidades de servicios y repositorios se mantienen. No se alteran permisos
+de Administrador/Organizador, cancelación, finalización ni la fórmula de ELO. La garantía cubre los
+flujos EF que renuevan y consumen esta versión; no coordina escrituras SQL externas que la omitan
+ni repara cuadros inconsistentes ya guardados.
+
+**Conceptos del curso:** concurrencia optimista, atomicidad, EF Core, DI Scoped, SRP, DIP,
+Information Expert, TDD de regresión y FIRST.
+
+**Evidencia:** tres ciclos RED/GREEN independientes en `feature/rondas-resultados-concurrentes`:
+`b0e1817`/`7b88cc7` (fallos posteriores a la lectura, versión y rollback),
+`7ebc6e4`/`387570e` (último fallo entre consultas y supervivientes),
+`5f8cd69`/`7331835` (lista temporal impar de otra ronda, conflicto antes de emparejar).
+`ResultadosYRondasTests` usa dos contextos SQLite independientes, uno/dos fallos, cupos 4/8,
+rondas intermedias, fallos antes de generar, ausencia de eliminados, conflictos entre fallos
+distintos, ELO previo y reintento. Las cinco variantes adicionales pasaron desde su primera
+ejecución y se guardaron sin una etapa RED ficticia (`1b7eba5`). REFACTOR evaluado sin necesidad
+de otra mejora. Postman comprueba supervivientes y ganadores del cuadro y describe los conflictos.
+Suite Release: 1025/1025 (212 Dominio, 320 Servicios, 185 Repositorios, 295 WebAPI y 13 Fabrica).
+Build y `dotnet format --verify-no-changes` correctos; cobertura 2083/2083 líneas y 531/532 ramas,
+superior al 90 % por assembly en métricas aplicables, con las exclusiones originales. El test WebAPI
+existente de errores globales requirió ejecutar fuera del sandbox para escribir en el Event Log.
+La colección conserva 403 requests: scripts analizados sintácticamente y ocho assertions de los
+dos casos modificados verificadas con respuestas simuladas, incluyendo rechazo de eliminados.
+La verificación SQL Server/HTTP y la ejecución real de los casos Postman actualizados siguen
+pendientes, al igual que la incorporación al documento final de API, UML del equipo y checks/review.
+
+**Participación de IA:** Codex asistió en localizar y contrastar el código con Graphify y las fuentes
+del repositorio, comparar alternativas, escribir pruebas y correcciones y ejecutar validaciones.
+Se reutilizó la versión existente y se descartó infraestructura nueva. Las instrucciones del
+repositorio y las skills DA2 pertinentes guiaron el trabajo. La autoría Git corresponde exclusivamente
+al integrante; la revisión humana, publicación y diagramas permanecen a cargo del equipo.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)

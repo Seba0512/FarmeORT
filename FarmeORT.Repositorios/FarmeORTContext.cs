@@ -61,7 +61,9 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     public override int SaveChanges(bool acceptAllChangesOnSuccess)
     {
         ChangeTracker.DetectChanges();
-        foreach(var inscripcion in ChangeTracker.Entries<Inscripcion>().Where(e => e.State == EntityState.Added).ToList())
+        foreach(var inscripcion in ChangeTracker.Entries<Inscripcion>().Where(e => e.State == EntityState.Added
+            || (e.State == EntityState.Modified && e.Property(i => i.Estado).IsModified
+                && e.Entity.Estado == EstadoInscripcion.Eliminada)).ToList())
         {
             var torneo = Entry(inscripcion.Entity.Torneo);
             if(torneo.State != EntityState.Added)
@@ -70,7 +72,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
             }
         }
 
-        // La versión cambia en la misma transacción que las inscripciones o los cambios del torneo.
+        // Altas y eliminaciones invalidan las lecturas previas de participantes en la misma transacción.
         foreach(var torneo in ChangeTracker.Entries<Torneo>().Where(e => e.State == EntityState.Modified))
         {
             torneo.Property<Guid>("Version").CurrentValue = Guid.NewGuid();
