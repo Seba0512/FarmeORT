@@ -123,6 +123,30 @@ public sealed class RepositorioSesionesTests
         Assert.IsFalse(verificacion.Sesiones.Any(s => s.Token == Token));
     }
 
+    [TestMethod]
+    [DataRow(false)]
+    [DataRow(true)]
+    public void ObtenerPorToken_BajaConcurrenteConSesionResidual_NoDevuelveSesion(bool cargarAntes)
+    {
+        var usuario = CrearUsuario("residual@farmeort.com", Rol.Organizador, "hash");
+        _baseDeDatos.Contexto.Sesiones.Add(new Sesion(Token, usuario));
+        _baseDeDatos.Contexto.SaveChanges();
+        using var lectura = _baseDeDatos.CrearContexto();
+        if(cargarAntes)
+        {
+            lectura.Sesiones.Include(s => s.Usuario).Load();
+        }
+
+        using var baja = _baseDeDatos.CrearContexto();
+        var eliminado = baja.Usuarios.Single(u => u.Id == usuario.Id);
+        eliminado.Eliminar();
+        baja.SaveChanges();
+
+        var resultado = new RepositorioSesiones(lectura).ObtenerPorToken(Token);
+
+        Assert.IsNull(resultado);
+    }
+
     private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
     {
         var nickname = email.Split('@')[0];
