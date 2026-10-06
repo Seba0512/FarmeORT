@@ -1,6 +1,9 @@
 using FarmeORT.Dominio.Sesiones;
 using FarmeORT.Dominio.Usuarios;
+using FarmeORT.Excepciones;
 using FarmeORT.Repositorios.Sesiones;
+using FarmeORT.Repositorios.Usuarios;
+using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Sesiones;
 
@@ -94,6 +97,30 @@ public sealed class RepositorioSesionesTests
         var resultado = _repositorio.ObtenerPorToken(Token);
 
         Assert.IsNull(resultado);
+    }
+
+    [TestMethod]
+    [DataRow(Rol.Jugador)]
+    [DataRow(Rol.Organizador)]
+    [DataRow(Rol.Administrador)]
+    public void Agregar_BajaConfirmadaTrasLeerUsuario_RechazaSesionSinReactivarUsuario(Rol rol)
+    {
+        var usuario = CrearUsuario("usuario@farmeort.com", rol, "hash");
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        using var login = _baseDeDatos.CrearContexto();
+        using var baja = _baseDeDatos.CrearContexto();
+        var leido = login.Usuarios.Single(u => u.Id == usuario.Id);
+        var eliminado = baja.Usuarios.Single(u => u.Id == usuario.Id);
+        eliminado.Eliminar();
+        new RepositorioUsuarios(baja).Eliminar(eliminado);
+
+        Assert.ThrowsExactly<CredencialesInvalidasException>(() => new RepositorioSesiones(login).Agregar(new Sesion(Token, leido)));
+
+        using var verificacion = _baseDeDatos.CrearContexto();
+        Assert.IsTrue(verificacion.Usuarios.Single(u => u.Id == usuario.Id).Eliminado);
+        Assert.AreEqual(1200, verificacion.Usuarios.Single(u => u.Id == usuario.Id).Elo);
+        Assert.IsFalse(verificacion.Sesiones.Any(s => s.Token == Token));
     }
 
     private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
