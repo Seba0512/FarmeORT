@@ -1,3 +1,4 @@
+using System.Data;
 using FarmeORT.Dominio.Inscripciones;
 using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
@@ -71,12 +72,14 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
         Guardar(usuario);
     }
 
-    // La baja y el cierre de sesiones se guardan juntos: un solo SaveChanges es una transacción.
+    // Primero se bloquea la fila del usuario; luego se revocan sus sesiones, en la misma transacción.
     public void Eliminar(Usuario usuario)
     {
-        contexto.Sesiones.RemoveRange(contexto.Sesiones.Where(s => s.UsuarioId == usuario.Id));
+        using var transaccion = contexto.Database.BeginTransaction(IsolationLevel.Serializable);
         contexto.Usuarios.Update(usuario);
         contexto.SaveChanges();
+        contexto.Sesiones.Where(s => s.UsuarioId == usuario.Id).ExecuteDelete();
+        transaccion.Commit();
     }
 
     // El jugador viene de ObtenerConRepertorio, en seguimiento: EF detecta solas las skills agregadas y
