@@ -21,8 +21,19 @@ internal sealed class ServicioRondas(
     public RondaResponse Generar(int torneoId, int usuarioId, string rol)
     {
         var torneo = ObtenerTorneoDelOrganizador(torneoId, usuarioId, rol);
+        var numero = PrepararRonda(torneo);
+
+        // Leer supervivientes después de comprobar los fallos evita una lista temporal impar.
         var jugadores = repositorioInscripciones.ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
-        var numero = PrepararRonda(torneo, jugadores.Count);
+        if(numero == 1)
+        {
+            torneo.Iniciar(jugadores.Count);
+        }
+        else if(jugadores.Count < 2)
+        {
+            throw new TorneoListoParaFinalizarException();
+        }
+
         var batallas = CrearBatallas(torneo, numero, estrategiaEmparejamiento.Emparejar(jugadores));
 
         // Un solo guardado: las batallas nuevas y el cambio de estado del torneo quedan juntos o no queda nada.
@@ -76,13 +87,11 @@ internal sealed class ServicioRondas(
         }
     }
 
-    // La primera ronda inicia el torneo. Las siguientes exigen que la anterior esté resuelta y que queden al menos dos
-    // jugadores sin eliminar: con uno solo ya hay campeón y corresponde finalizar el torneo.
-    private int PrepararRonda(Torneo torneo, int jugadoresQueSiguen)
+    // Las rondas siguientes exigen que la anterior esté resuelta antes de consultar quiénes siguen.
+    private int PrepararRonda(Torneo torneo)
     {
         if(torneo.Estado != EstadoTorneo.EnCurso)
         {
-            torneo.Iniciar(jugadoresQueSiguen);
             return 1;
         }
 
@@ -98,11 +107,6 @@ internal sealed class ServicioRondas(
         if(anteriores.Any(b => b.NumeroRonda == ultima && !EstaResuelta(b)))
         {
             throw new RondaSinResolverException();
-        }
-
-        if(jugadoresQueSiguen < 2)
-        {
-            throw new TorneoListoParaFinalizarException();
         }
 
         return ultima + 1;
