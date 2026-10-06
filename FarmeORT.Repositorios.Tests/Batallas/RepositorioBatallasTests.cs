@@ -233,6 +233,25 @@ public sealed class RepositorioBatallasTests
     }
 
     [TestMethod]
+    public void Guardar_LanzamientoNuevo_LaBaseLeAsignaUnIdPropio()
+    {
+        var batalla = GuardarBatallaConHistorial();
+        var skill = new Skill("AURASTARE", "Aura Stare", "Mirada fija para farmear aura en la batalla.", CategoriaSkill.Gestual, 2) { Id = 4 };
+        var lanzamiento = new Lanzamiento(batalla, 3, batalla.Jugador1, skill, FechaLanzamiento.AddMinutes(2));
+        _baseDeDatos.Contexto.Lanzamientos.Add(lanzamiento);
+
+        _repositorio.Guardar();
+
+        _baseDeDatos.Contexto.ChangeTracker.Clear();
+        var guardados = _baseDeDatos.Contexto.Lanzamientos.Where(l => l.BatallaId == batalla.Id).ToList();
+        var ids = guardados.Select(l => l.Id).ToList();
+        Assert.HasCount(3, ids);
+        CollectionAssert.AllItemsAreUnique(ids);
+        CollectionAssert.Contains(ids, lanzamiento.Id);
+        Assert.IsGreaterThan(0, lanzamiento.Id);
+    }
+
+    [TestMethod]
     public void Persistencia_TurnoDuplicado_RechazaSinGuardarLanzamientoNiCambioDeTurno()
     {
         var batalla = GuardarBatallaConHistorial();
