@@ -3,6 +3,7 @@ using FarmeORT.Dominio.Usuarios;
 using FarmeORT.Excepciones;
 using FarmeORT.IRepositorios.Usuarios;
 using FarmeORT.Repositorios.Usuarios;
+using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 
 namespace FarmeORT.Repositorios.Tests.Usuarios;
@@ -420,6 +421,29 @@ public sealed class RepositorioUsuariosTests
         using var verificacion = _baseDeDatos.CrearContexto();
         Assert.IsTrue(verificacion.Usuarios.Single(u => u.Id == usuario.Id).Eliminado);
         Assert.IsFalse(verificacion.Sesiones.Any(s => s.UsuarioId == usuario.Id));
+    }
+
+    [TestMethod]
+    public void Eliminar_FallaRevocacion_RevierteBajaYConservaSesiones()
+    {
+        var usuario = GuardarUsuario(Email, "rollback");
+        _baseDeDatos.Contexto.Sesiones.Add(new Sesion(Guid.NewGuid(), usuario));
+        _baseDeDatos.Contexto.SaveChanges();
+        _baseDeDatos.Contexto.Database.ExecuteSqlRaw("""
+            CREATE TRIGGER impedir_revocacion BEFORE DELETE ON Sesiones
+            BEGIN
+                SELECT RAISE(ABORT, 'fallo de prueba');
+            END;
+            """);
+        usuario.Eliminar();
+
+        Assert.ThrowsExactly<SqliteException>(() => _repositorio.Eliminar(usuario));
+
+        Assert.IsNull(_baseDeDatos.Contexto.Database.CurrentTransaction);
+        using var verificacion = _baseDeDatos.CrearContexto();
+        Assert.IsFalse(verificacion.Usuarios.Single(u => u.Id == usuario.Id).Eliminado);
+        Assert.AreEqual(1, verificacion.Sesiones.Count(s => s.UsuarioId == usuario.Id));
+        Assert.AreEqual(1200, verificacion.Usuarios.Single(u => u.Id == usuario.Id).Elo);
     }
 
     // Deja el usuario guardado y cargado desde el contexto, como lo recibe el servicio antes de modificarlo.

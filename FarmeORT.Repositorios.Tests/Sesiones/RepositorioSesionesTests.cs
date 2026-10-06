@@ -147,6 +147,47 @@ public sealed class RepositorioSesionesTests
         Assert.IsNull(resultado);
     }
 
+    [TestMethod]
+    public void Agregar_LoginConfirmadoTrasLeerBaja_LaBajaRevocaLaSesion()
+    {
+        var usuario = CrearUsuario("primero@farmeort.com", Rol.Jugador, "hash");
+        usuario.ActualizarElo(1300);
+        _baseDeDatos.Contexto.Usuarios.Add(usuario);
+        _baseDeDatos.Contexto.SaveChanges();
+        using var baja = _baseDeDatos.CrearContexto();
+        var eliminado = baja.Usuarios.Single(u => u.Id == usuario.Id);
+        eliminado.Eliminar();
+        using var login = _baseDeDatos.CrearContexto();
+        var activo = login.Usuarios.Single(u => u.Id == usuario.Id);
+        new RepositorioSesiones(login).Agregar(new Sesion(Token, activo));
+
+        new RepositorioUsuarios(baja).Eliminar(eliminado);
+
+        using var verificacion = _baseDeDatos.CrearContexto();
+        Assert.IsFalse(verificacion.Sesiones.Any(s => s.UsuarioId == usuario.Id));
+        var guardado = verificacion.Usuarios.Single(u => u.Id == usuario.Id);
+        Assert.IsTrue(guardado.Eliminado);
+        Assert.AreEqual(1300, guardado.Elo);
+        Assert.AreEqual(usuario.Nickname, guardado.Nickname);
+    }
+
+    [TestMethod]
+    public void Agregar_TokenDuplicado_RevierteAltaYLiberaTransaccion()
+    {
+        var usuario = CrearUsuario("rollback@farmeort.com", Rol.Jugador, "hash");
+        _baseDeDatos.Contexto.Sesiones.Add(new Sesion(Token, usuario));
+        _baseDeDatos.Contexto.SaveChanges();
+        using var login = _baseDeDatos.CrearContexto();
+        var leido = login.Usuarios.Single(u => u.Id == usuario.Id);
+
+        Assert.ThrowsExactly<DbUpdateException>(() => new RepositorioSesiones(login).Agregar(new Sesion(Token, leido)));
+
+        Assert.IsNull(login.Database.CurrentTransaction);
+        using var verificacion = _baseDeDatos.CrearContexto();
+        Assert.AreEqual(1, verificacion.Sesiones.Count(s => s.UsuarioId == usuario.Id));
+        Assert.IsFalse(verificacion.Usuarios.Single(u => u.Id == usuario.Id).Eliminado);
+    }
+
     private static Usuario CrearUsuario(string email, Rol rol, string contrasenaHash)
     {
         var nickname = email.Split('@')[0];
