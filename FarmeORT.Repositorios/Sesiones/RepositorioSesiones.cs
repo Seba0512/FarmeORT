@@ -33,7 +33,8 @@ internal sealed class RepositorioSesiones(FarmeORTContext contexto) : IRepositor
     public Sesion? ObtenerPorToken(Guid token)
     {
         return contexto.Sesiones
+            .AsNoTracking()
             .Include(s => s.Usuario)
-            .SingleOrDefault(s => s.Token == token);
+            .SingleOrDefault(s => s.Token == token && !s.Usuario.Eliminado);
     }
 }
