@@ -260,6 +260,30 @@ public sealed class ServicioRondasTests
     }
 
     [TestMethod]
+    public void Generar_OtraRondaYUnFalloEntreLasLecturas_RechazaListaImparComoConflicto()
+    {
+        _torneo = new Torneo("COPAAURA", "Copa Aura", "Torneo eliminatorio de batallas de aura.", FechaActual, FechaActual.AddDays(10), 8, _torneo.Organizador, FechaActual) { Id = TorneoId };
+        _jugadores = Enumerable.Range(7, 8).Select(id => CrearUsuario(id, Rol.Jugador)).ToList();
+        var supervivientes = _jugadores.Take(3).Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
+        _torneo.Iniciar(8);
+        IReadOnlyList<Batalla> anteriores =
+        [
+            CrearBatallaFallada(10, 1, 0, 7), CrearBatallaFallada(11, 1, 1, 6),
+            CrearBatallaFallada(12, 1, 2, 5), CrearBatallaFallada(13, 1, 3, 4),
+        ];
+        _repositorioTorneos.Setup(r => r.ObtenerPorId(TorneoId)).Returns(_torneo);
+        _repositorioBatallas.Setup(r => r.ListarDelTorneo(TorneoId)).Returns(anteriores);
+
+        // Después de leer la ronda 1 resuelta, otro pedido genera la 2 y un fallo deja tres aceptadas.
+        _repositorioInscripciones.Setup(r => r.ListarAceptadasDelTorneo(TorneoId)).Returns(supervivientes);
+        var servicio = new ServicioRondas(_repositorioTorneos.Object, _repositorioInscripciones.Object, _repositorioBatallas.Object, new EmparejamientoPorElo(), _sorteo.Object);
+
+        Assert.ThrowsExactly<TorneoModificadoException>(() => servicio.Generar(TorneoId, OrganizadorId, Roles.Organizador));
+
+        _repositorioBatallas.Verify(r => r.GuardarRonda(It.IsAny<Torneo>(), It.IsAny<IReadOnlyList<Batalla>>()), Times.Never);
+    }
+
+    [TestMethod]
     public void Generar_RondaAnteriorSinResolver_LanzaRondaSinResolver()
     {
         var siguen = _jugadores.Take(3).Select(j => new Inscripcion(_torneo, j, new DateTime(2026, 10, 2))).ToList();
