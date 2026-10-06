@@ -33,6 +33,10 @@ internal sealed class ServicioRondas(
         {
             throw new TorneoListoParaFinalizarException();
         }
+        else if(jugadores.Count % 2 != 0)
+        {
+            throw new TorneoModificadoException();
+        }
 
         var batallas = CrearBatallas(torneo, numero, estrategiaEmparejamiento.Emparejar(jugadores));
 
