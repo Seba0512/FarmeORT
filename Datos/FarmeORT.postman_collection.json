@@ -20342,7 +20342,7 @@
           ]
         }
       ],
-      "description": "Ejecutar después de Lanzamientos. bBattleId queda EnArbitraje; bBattleAbandonoId sigue Pendiente con otros dos jugadores. Los conflictos de concurrencia y REGISTRATION_NOT_ACTIVE se verifican en los tests SQLite/servicio: no se fuerzan estados inconsistentes mediante la API."
+      "description": "Ejecutar después de Lanzamientos. bBattleId queda EnArbitraje; bBattleAbandonoId sigue Pendiente con otros dos jugadores. Cada fallo confirma ELO, resultado, eliminación y renovación de Torneo.Version juntos. Dos fallos distintos preparados sobre la misma versión del torneo pueden competir: uno confirma y el otro responde 409 BATTLE_CHANGED sin efectos parciales; volver a consultar y reenviar. La generación con una versión anterior responde 409 TOURNAMENT_CHANGED sin batallas nuevas (o ROUND_NOT_RESOLVED si la anterior sigue pendiente). Los intercalados se verifican con dos contextos SQLite; el Runner es secuencial y no fuerza conflictos ni estados inconsistentes. REGISTRATION_NOT_ACTIVE conserva su contrato."
     },
     {
       "name": "Rondas siguientes",
@@ -20444,6 +20444,14 @@
                   "    pm.expect(participantes).to.include(ronda.batallas[0].jugador1.id);",
                   "    pm.expect(participantes).to.include(ronda.batallas[0].jugador2.id);",
                   "});",
+                  "pm.test(\"Solo supervivientes en la final, ningún eliminado\", () => {",
+                  "    const ids = ronda.batallas.flatMap(b => [b.jugador1.id, b.jugador2.id]);",
+                  "    const ganadores = [\"bJugador1Id\", \"bJugador3Id\"].map(v => Number(pm.collectionVariables.get(v)));",
+                  "    const eliminados = [\"bJugador2Id\", \"bJugador4Id\"].map(v => Number(pm.collectionVariables.get(v)));",
+                  "    pm.expect(ids).to.have.members(ganadores);",
+                  "    pm.expect(ids.some(id => eliminados.includes(id))).to.eql(false);",
+                  "    pm.expect(new Set(ids).size).to.eql(ids.length);",
+                  "});",
                   "pm.collectionVariables.set(\"rondasFinalId\", ronda.batallas[0].id);",
                   "pm.collectionVariables.set(\"rondasFinalGanadorId\", ronda.batallas[0].jugador1.id);"
                 ]
@@ -20486,7 +20494,12 @@
                   "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                   "const torneo = pm.response.json();",
                   "pm.test(\"Dos rondas en el cuadro\", () => pm.expect(torneo.rondas.map(r => r.numero)).to.eql([1, 2]));",
-                  "pm.test(\"La ronda 1 tiene sus ganadores\", () => torneo.rondas[0].batallas.forEach(b => pm.expect(b.ganadorId).to.not.eql(null)));"
+                  "pm.test(\"La ronda 1 tiene sus ganadores\", () => torneo.rondas[0].batallas.forEach(b => pm.expect(b.ganadorId).to.not.eql(null)));",
+                  "pm.test(\"La ronda 2 contiene exactamente los ganadores de la anterior\", () => {",
+                  "    const ganadores = torneo.rondas[0].batallas.map(b => b.ganadorId);",
+                  "    const participantes = torneo.rondas[1].batallas.flatMap(b => [b.jugador1.id, b.jugador2.id]);",
+                  "    pm.expect(participantes).to.have.members(ganadores);",
+                  "});"
                 ]
               }
             }
