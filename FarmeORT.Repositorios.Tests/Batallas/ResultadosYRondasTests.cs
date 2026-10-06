@@ -64,6 +64,72 @@ public sealed class ResultadosYRondasTests
         Assert.IsEmpty(generacion.ChangeTracker.Entries().ToList());
     }
 
+    [TestMethod]
+    [DataRow(4, 1)]
+    [DataRow(8, 1)]
+    [DataRow(8, 2)]
+    public void GuardarRonda_FallosAntesDeLaGeneracion_IncluyeSoloSupervivientes(int cupo, int rondaAnterior)
+    {
+        var torneoId = PrepararTorneo(cupo, rondaAnterior);
+        ResolverSalvoUltimas(torneoId, rondaAnterior, 0);
+        using var generacion = _baseDeDatos.CrearContexto();
+        var torneo = new RepositorioTorneos(generacion).ObtenerPorId(torneoId)!;
+        var anteriores = new RepositorioBatallas(generacion).ListarDelTorneo(torneoId);
+        Assert.IsTrue(anteriores.All(b => b.Estado == EstadoBatalla.Finalizada));
+        var jugadores = new RepositorioInscripciones(generacion).ListarAceptadasDelTorneo(torneoId).Select(i => i.Jugador).ToList();
+        var nuevas = CrearBatallas(torneo, rondaAnterior + 1, jugadores);
+
+        new RepositorioBatallas(generacion).GuardarRonda(torneo, nuevas);
+
+        var participantes = _baseDeDatos.Contexto.Batallas.Where(b => b.TorneoId == torneoId && b.NumeroRonda == rondaAnterior + 1)
+            .Select(b => new { b.Jugador1Id, b.Jugador2Id }).ToList().SelectMany(b => new[] { b.Jugador1Id, b.Jugador2Id }).ToArray();
+        var supervivientes = _baseDeDatos.Contexto.Inscripciones.Where(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Aceptada).Select(i => i.JugadorId).ToArray();
+        var eliminados = _baseDeDatos.Contexto.Inscripciones.Where(i => i.TorneoId == torneoId && i.Estado == EstadoInscripcion.Eliminada).Select(i => i.JugadorId).ToArray();
+        CollectionAssert.AreEquivalent(supervivientes, participantes);
+        Assert.HasCount(cupo / (1 << rondaAnterior), participantes);
+        Assert.IsFalse(participantes.Intersect(eliminados).Any());
+        CollectionAssert.AllItemsAreUnique(participantes);
+    }
+
+    [TestMethod]
+    [DataRow(4, 1)]
+    [DataRow(8, 2)]
+    public void Guardar_DosFallosDistintosDelMismoTorneo_ConflictoSinEloNiEliminacionParcial(int cupo, int numero)
+    {
+        var torneoId = PrepararTorneo(cupo, numero);
+        var ids = _baseDeDatos.Contexto.Batallas.Where(b => b.TorneoId == torneoId && b.NumeroRonda == numero).OrderBy(b => b.Id).Select(b => b.Id).ToArray();
+        using var primero = _baseDeDatos.CrearContexto();
+        using var segundo = _baseDeDatos.CrearContexto();
+        var batalla1 = PrepararFallo(primero, ids[0]);
+        var batalla2 = PrepararFallo(segundo, ids[1]);
+        var eloPrevio = 1200 + (16 * (numero - 1));
+        new RepositorioBatallas(primero).Guardar();
+
+        Assert.ThrowsExactly<BatallaModificadaException>(() => new RepositorioBatallas(segundo).Guardar());
+
+        var guardada1 = _baseDeDatos.Contexto.Batallas.AsNoTracking().Single(b => b.Id == batalla1.Id);
+        var guardada2 = _baseDeDatos.Contexto.Batallas.AsNoTracking().Single(b => b.Id == batalla2.Id);
+        Assert.AreEqual(EstadoBatalla.Finalizada, guardada1.Estado);
+        Assert.AreEqual(16, guardada1.CambioEloJugador1);
+        Assert.AreEqual(-16, guardada1.CambioEloJugador2);
+        Assert.AreEqual(eloPrevio + 16, _baseDeDatos.Contexto.Usuarios.AsNoTracking().Single(u => u.Id == batalla1.Jugador1Id).Elo);
+        Assert.AreEqual(eloPrevio - 16, _baseDeDatos.Contexto.Usuarios.AsNoTracking().Single(u => u.Id == batalla1.Jugador2Id).Elo);
+        Assert.AreEqual(EstadoInscripcion.Eliminada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.TorneoId == torneoId && i.JugadorId == batalla1.Jugador2Id).Estado);
+        Assert.AreEqual(EstadoBatalla.Pendiente, guardada2.Estado);
+        Assert.IsNull(guardada2.GanadorId);
+        Assert.IsNull(guardada2.Comentario);
+        Assert.IsNull(guardada2.CambioEloJugador1);
+        Assert.IsNull(guardada2.CambioEloJugador2);
+        Assert.AreEqual(eloPrevio, _baseDeDatos.Contexto.Usuarios.AsNoTracking().Single(u => u.Id == batalla2.Jugador1Id).Elo);
+        Assert.AreEqual(eloPrevio, _baseDeDatos.Contexto.Usuarios.AsNoTracking().Single(u => u.Id == batalla2.Jugador2Id).Elo);
+        Assert.AreEqual(EstadoInscripcion.Aceptada, _baseDeDatos.Contexto.Inscripciones.Single(i => i.TorneoId == torneoId && i.JugadorId == batalla2.Jugador2Id).Estado);
+        Assert.IsEmpty(segundo.ChangeTracker.Entries().ToList());
+
+        // Un pedido nuevo vuelve a leer la versión y puede confirmar el fallo que perdió el conflicto.
+        Fallar(segundo, batalla2.Id);
+        Assert.AreEqual(EstadoBatalla.Finalizada, segundo.Batallas.AsNoTracking().Single(b => b.Id == batalla2.Id).Estado);
+    }
+
     private int PrepararTorneo(int cupo, int rondaAnterior)
     {
         var organizador = CrearUsuario(2, Rol.Organizador);
@@ -100,6 +166,12 @@ public sealed class ResultadosYRondasTests
 
     private static void Fallar(FarmeORTContext contexto, int batallaId)
     {
+        PrepararFallo(contexto, batallaId);
+        new RepositorioBatallas(contexto).Guardar();
+    }
+
+    private static Batalla PrepararFallo(FarmeORTContext contexto, int batallaId)
+    {
         var repositorio = new RepositorioBatallas(contexto);
         var batalla = repositorio.ObtenerPorId(batallaId)!;
         var inscripcion = new RepositorioInscripciones(contexto).ObtenerAceptada(batalla.TorneoId, batalla.Jugador2Id)!;
@@ -110,7 +182,7 @@ public sealed class ResultadosYRondasTests
         batalla.Jugador2.ActualizarElo(resultado.NuevoEloPerdedor);
         batalla.Fallar(batalla.Jugador1Id, "Victoria por abandono.", cambio1, cambio2);
         inscripcion.Eliminar();
-        repositorio.Guardar();
+        return batalla;
     }
 
     private static List<Batalla> CrearBatallas(Torneo torneo, int numero, List<Usuario> jugadores)
