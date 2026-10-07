@@ -29,26 +29,7 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
 
     public IReadOnlyList<Usuario> Listar(FiltroUsuarios filtro)
     {
-        var consulta = contexto.Usuarios.Where(u => !u.Eliminado);
-        if(!string.IsNullOrWhiteSpace(filtro.Nombre))
-        {
-            var nombre = filtro.Nombre.ToLower();
-            consulta = consulta.Where(u => u.Nombre.ToLower().Contains(nombre));
-        }
-
-        if(!string.IsNullOrWhiteSpace(filtro.Apellido))
-        {
-            var apellido = filtro.Apellido.ToLower();
-            consulta = consulta.Where(u => u.Apellido.ToLower().Contains(apellido));
-        }
-
-        if(!string.IsNullOrWhiteSpace(filtro.Nickname))
-        {
-            var nickname = filtro.Nickname.ToLower();
-            consulta = consulta.Where(u => u.Nickname.ToLower().Contains(nickname));
-        }
-
-        return consulta
+        return FiltrarPorTexto(contexto.Usuarios.Where(u => !u.Eliminado), filtro)
             .OrderBy(u => u.Id)
             .Skip(filtro.Desplazamiento)
             .Take(filtro.Limite)
@@ -123,6 +104,30 @@ internal sealed class RepositorioUsuarios(FarmeORTContext contexto) : IRepositor
             .Where(u => contexto.Inscripciones.Any(i => i.JugadorId == u.Id && i.TorneoId == torneoId
                 && (i.Estado == EstadoInscripcion.Aceptada || i.Estado == EstadoInscripcion.Eliminada)));
         return OrdenarParaRanking(participantes, cantidad);
+    }
+
+    // Cada texto busca por contenido y sin distinguir mayúsculas.
+    private static IQueryable<Usuario> FiltrarPorTexto(IQueryable<Usuario> consulta, FiltroUsuarios filtro)
+    {
+        if(!string.IsNullOrWhiteSpace(filtro.Nombre))
+        {
+            var nombre = filtro.Nombre.ToLower();
+            consulta = consulta.Where(u => u.Nombre.ToLower().Contains(nombre));
+        }
+
+        if(!string.IsNullOrWhiteSpace(filtro.Apellido))
+        {
+            var apellido = filtro.Apellido.ToLower();
+            consulta = consulta.Where(u => u.Apellido.ToLower().Contains(apellido));
+        }
+
+        if(!string.IsNullOrWhiteSpace(filtro.Nickname))
+        {
+            var nickname = filtro.Nickname.ToLower();
+            consulta = consulta.Where(u => u.Nickname.ToLower().Contains(nickname));
+        }
+
+        return consulta;
     }
 
     // Los dos rankings ordenan igual: ELO de mayor a menor y, si empatan, id de menor a mayor (D-61).
