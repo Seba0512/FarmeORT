@@ -14,6 +14,7 @@ public class RegistroJugadorRequest
 
     [Required(ErrorMessage = "El email es obligatorio.")]
     [EmailAddress(ErrorMessage = "El email no tiene un formato válido.")]
+    [StringLength(254, ErrorMessage = "El email no puede tener más de 254 caracteres.")]
     public string Email { get; init; } = string.Empty;
 
     [Required(ErrorMessage = "El nickname es obligatorio.")]
