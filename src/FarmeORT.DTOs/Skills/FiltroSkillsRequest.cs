@@ -12,7 +12,7 @@ public sealed class FiltroSkillsRequest
 
     public string? Nombre { get; init; }
 
-    public int Limit { get; init; } = 20;
+    public int Limit { get; init; } = Paginado.LimitePorDefecto;
 
     public int Offset { get; init; }
 }

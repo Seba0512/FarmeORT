@@ -27,6 +27,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     private const int LargoMaximoEstadoInscripcion = 20;
     private const int LargoMaximoEstadoBatalla = 20;
     private const int LargoMaximoComentarioFallo = 500;
+    private const int PrimerTurno = 1;
 
     // Objeto anónimo porque HasData necesita fijar el Id, que el constructor de Usuario no recibe.
     // Hash PBKDF2 (formato de HasheadorContrasenas) calculado una sola vez, para que la migración no cambie en cada build.
@@ -83,6 +84,21 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        ConfigurarUsuarios(modelBuilder);
+        ConfigurarRepertorios(modelBuilder);
+        ConfigurarSesiones(modelBuilder);
+        ConfigurarSkills(modelBuilder);
+        ConfigurarTorneos(modelBuilder);
+        ConfigurarSkillsObligatorias(modelBuilder);
+        ConfigurarInscripciones(modelBuilder);
+        ConfigurarBatallas(modelBuilder);
+        ConfigurarLanzamientos(modelBuilder);
+        ConfigurarFallos(modelBuilder);
+        ConfigurarFinalizacion(modelBuilder);
+    }
+
+    private static void ConfigurarUsuarios(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Usuario>(usuario =>
         {
             usuario.HasKey(u => u.Id);
@@ -99,7 +115,10 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
             // El repertorio se lee y se escribe a través del campo: la colección pública es de solo lectura.
             usuario.Navigation(u => u.Repertorio).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
+    }
 
+    private static void ConfigurarRepertorios(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<SkillDeclarada>(declarada =>
         {
             // La clave compuesta impide declarar dos veces la misma skill también en la base.
@@ -114,7 +133,10 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
                 .HasForeignKey(d => d.SkillId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
+    }
 
+    private static void ConfigurarSesiones(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Sesion>(sesion =>
         {
             sesion.HasKey(s => s.Token);
@@ -124,7 +146,10 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
                 .HasForeignKey(s => s.UsuarioId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+    }
 
+    private static void ConfigurarSkills(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Skill>(skill =>
         {
             skill.HasKey(s => s.Id);
@@ -134,7 +159,10 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
             skill.Property(s => s.Descripcion).HasMaxLength(LargoMaximoDescripcionSkill).IsRequired();
             skill.Property(s => s.Categoria).HasConversion<string>().HasMaxLength(LargoMaximoCategoriaSkill);
         });
+    }
 
+    private static void ConfigurarTorneos(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Torneo>(torneo =>
         {
             torneo.HasKey(t => t.Id);
@@ -152,12 +180,6 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
                 .HasForeignKey(t => t.OrganizadorId)
                 .OnDelete(DeleteBehavior.Restrict);
         });
-
-        ConfigurarSkillsObligatorias(modelBuilder);
-        ConfigurarInscripciones(modelBuilder);
-        ConfigurarBatallas(modelBuilder);
-        ConfigurarFallos(modelBuilder);
-        ConfigurarFinalizacion(modelBuilder);
     }
 
     // Muchos a muchos sin datos propios: una skill puede ser obligatoria en varios torneos (D-40).
@@ -210,7 +232,6 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         });
     }
 
-    // Los índices únicos de los lanzamientos impiden repetir un turno o una skill también en la base (D-52).
     private static void ConfigurarBatallas(ModelBuilder modelBuilder)
     {
         modelBuilder.Entity<Batalla>(batalla =>
@@ -231,11 +252,17 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
                 .OnDelete(DeleteBehavior.Restrict);
             batalla.Navigation(b => b.Lanzamientos).UsePropertyAccessMode(PropertyAccessMode.Field);
         });
+    }
 
+    // Los índices únicos de los lanzamientos impiden repetir un turno o una skill también en la base (D-52).
+    private static void ConfigurarLanzamientos(ModelBuilder modelBuilder)
+    {
         modelBuilder.Entity<Lanzamiento>(lanzamiento =>
         {
             lanzamiento.ToTable("Lanzamientos", tabla =>
-                tabla.HasCheckConstraint("CK_Lanzamientos_Turno", "[Turno] BETWEEN 1 AND 8"));
+                tabla.HasCheckConstraint(
+                    "CK_Lanzamientos_Turno",
+                    $"[Turno] BETWEEN {PrimerTurno} AND {Batalla.LanzamientosTotales}"));
             lanzamiento.HasKey(l => l.Id);
             lanzamiento.HasIndex(l => new { l.BatallaId, l.Turno }).IsUnique();
             lanzamiento.HasIndex(l => new { l.BatallaId, l.JugadorId, l.SkillId }).IsUnique();

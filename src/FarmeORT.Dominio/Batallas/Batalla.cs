@@ -7,7 +7,9 @@ namespace FarmeORT.Dominio.Batallas;
 
 public sealed class Batalla
 {
-    private const int LanzamientosTotales = 8;
+    // La base también limita el turno de cada lanzamiento con este valor.
+    public const int LanzamientosTotales = 8;
+
     private const int LanzamientosPorJugador = 4;
     private const int LargoMinimoComentario = 10;
     private const int LargoMaximoComentario = 500;
@@ -16,16 +18,7 @@ public sealed class Batalla
 
     public Batalla(Torneo torneo, int numeroRonda, Usuario jugador1, Usuario jugador2, ISorteo sorteo)
     {
-        if(jugador1.Id == jugador2.Id)
-        {
-            throw new DatosInvalidosException("La batalla requiere dos jugadores distintos.");
-        }
-
-        if(jugador1.Rol != Rol.Jugador || jugador2.Rol != Rol.Jugador)
-        {
-            throw new DatosInvalidosException("Los participantes de la batalla deben tener rol Jugador.");
-        }
-
+        ValidarParticipantes(jugador1, jugador2);
         if(numeroRonda < 1)
         {
             throw new DatosInvalidosException("El número de ronda debe ser positivo.");
@@ -145,7 +138,28 @@ public sealed class Batalla
         JugadorTurnoId = null;
     }
 
+    private static void ValidarParticipantes(Usuario jugador1, Usuario jugador2)
+    {
+        if(jugador1.Id == jugador2.Id)
+        {
+            throw new DatosInvalidosException("La batalla requiere dos jugadores distintos.");
+        }
+
+        if(jugador1.Rol != Rol.Jugador || jugador2.Rol != Rol.Jugador)
+        {
+            throw new DatosInvalidosException("Los participantes de la batalla deben tener rol Jugador.");
+        }
+    }
+
     private void ValidarLanzamiento(Usuario jugador, Skill skill)
+    {
+        ValidarTurno(jugador);
+        ValidarSkillDisponible(jugador, skill);
+        ValidarObligatoriasPendientes(jugador, skill);
+    }
+
+    // La batalla espera un lanzamiento y le toca a este jugador.
+    private void ValidarTurno(Usuario jugador)
     {
         if(Estado != EstadoBatalla.Pendiente)
         {
@@ -161,7 +175,11 @@ public sealed class Batalla
         {
             throw new TurnoIncorrectoException();
         }
+    }
 
+    // La skill está en el repertorio del jugador y todavía no la lanzó en esta batalla.
+    private void ValidarSkillDisponible(Usuario jugador, Skill skill)
+    {
         if(!jugador.Repertorio.Any(d => d.SkillId == skill.Id))
         {
             throw new SkillFueraDelRepertorioException();
@@ -171,8 +189,11 @@ public sealed class Batalla
         {
             throw new SkillYaLanzadaException();
         }
+    }
 
-        // Si le quedan tantas obligatorias pendientes como turnos, solo puede lanzar una obligatoria (letra 1.8).
+    // Si le quedan tantas obligatorias pendientes como turnos, solo puede lanzar una obligatoria (letra 1.8).
+    private void ValidarObligatoriasPendientes(Usuario jugador, Skill skill)
+    {
         var pendientes = ObligatoriasPendientes(jugador);
         var turnosRestantes = LanzamientosPorJugador - CantidadDeLanzamientos(jugador);
         var lanzaUnaPendiente = pendientes.Any(obligatoria => obligatoria.Id == skill.Id);

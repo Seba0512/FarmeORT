@@ -12,7 +12,7 @@ public sealed class FiltroTorneosRequest
 
     public int? SkillObligatoriaId { get; init; }
 
-    public int Limit { get; init; } = 20;
+    public int Limit { get; init; } = Paginado.LimitePorDefecto;
 
     public int Offset { get; init; }
 }

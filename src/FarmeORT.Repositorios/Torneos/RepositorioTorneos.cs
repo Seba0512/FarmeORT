@@ -19,26 +19,8 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
     public IReadOnlyList<Torneo> Listar(FiltroTorneos filtro)
     {
         var consulta = contexto.Torneos.Include(t => t.Organizador).AsQueryable();
-        if(filtro.Estado != null)
-        {
-            consulta = consulta.Where(t => t.Estado == filtro.Estado.Value);
-        }
-
-        if(filtro.ExcluirCancelados)
-        {
-            consulta = consulta.Where(t => t.Estado != EstadoTorneo.Cancelado);
-        }
-
-        if(filtro.FechaDesde != null)
-        {
-            consulta = consulta.Where(t => t.FechaInicio >= filtro.FechaDesde.Value);
-        }
-
-        if(filtro.FechaHasta != null)
-        {
-            consulta = consulta.Where(t => t.FechaInicio <= filtro.FechaHasta.Value);
-        }
-
+        consulta = FiltrarPorEstado(consulta, filtro);
+        consulta = FiltrarPorFechaDeInicio(consulta, filtro.FechaDesde, filtro.FechaHasta);
         if(!string.IsNullOrWhiteSpace(filtro.Nombre))
         {
             var nombre = filtro.Nombre.ToLower();
@@ -82,6 +64,40 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
             && t.Estado != EstadoTorneo.Finalizado && t.Estado != EstadoTorneo.Cancelado);
     }
 
+    // El anónimo no ve los Cancelados aunque los pida por estado (D-36).
+    private static IQueryable<Torneo> FiltrarPorEstado(IQueryable<Torneo> consulta, FiltroTorneos filtro)
+    {
+        if(filtro.Estado != null)
+        {
+            consulta = consulta.Where(t => t.Estado == filtro.Estado.Value);
+        }
+
+        if(filtro.ExcluirCancelados)
+        {
+            consulta = consulta.Where(t => t.Estado != EstadoTorneo.Cancelado);
+        }
+
+        return consulta;
+    }
+
+    private static IQueryable<Torneo> FiltrarPorFechaDeInicio(
+        IQueryable<Torneo> consulta,
+        DateOnly? fechaDesde,
+        DateOnly? fechaHasta)
+    {
+        if(fechaDesde != null)
+        {
+            consulta = consulta.Where(t => t.FechaInicio >= fechaDesde.Value);
+        }
+
+        if(fechaHasta != null)
+        {
+            consulta = consulta.Where(t => t.FechaInicio <= fechaHasta.Value);
+        }
+
+        return consulta;
+    }
+
     // Otro torneo puede ocupar el código entre la validación del servicio y el guardado (D-23).
     private void Guardar(Torneo torneo)
     {
@@ -91,15 +107,7 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
         }
         catch(DbUpdateConcurrencyException excepcion)
         {
-            // SaveChanges revierte todo; se distingue el torneo de los tokens de batalla/ELO existentes.
-            var cambioElTorneo = excepcion.Entries.Any(e => e.Entity is Torneo);
-            contexto.ChangeTracker.Clear();
-            if(cambioElTorneo)
-            {
-                throw new TorneoModificadoException();
-            }
-
-            throw new BatallaModificadaException();
+            throw TraducirConflictoDeConcurrencia(excepcion);
         }
         catch(DbUpdateException)
         {
@@ -112,6 +120,19 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
 
             throw;
         }
+    }
+
+    // SaveChanges revierte todo; se distingue el torneo de los tokens de batalla/ELO existentes.
+    private Exception TraducirConflictoDeConcurrencia(DbUpdateConcurrencyException excepcion)
+    {
+        var cambioElTorneo = excepcion.Entries.Any(e => e.Entity is Torneo);
+        contexto.ChangeTracker.Clear();
+        if(cambioElTorneo)
+        {
+            return new TorneoModificadoException();
+        }
+
+        return new BatallaModificadaException();
     }
 
     private bool ExisteOtroTorneoConElCodigo(Torneo torneo)

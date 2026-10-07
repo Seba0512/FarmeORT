@@ -47,24 +47,11 @@ internal sealed class ServicioInscripciones(
 
     public IReadOnlyList<InscripcionResponse> Listar(FiltroInscripcionesRequest filtro, int usuarioId, string rol)
     {
-        EstadoInscripcion? estado = null;
-        if(filtro.Estado != null)
-        {
-            estado = ValoresPorNombre.Buscar<EstadoInscripcion>(filtro.Estado);
-        }
+        var estado = ValoresPorNombre.Buscar<EstadoInscripcion>(filtro.Estado);
 
         // Un Jugador ve solo las propias; un Organizador, las de sus torneos; un Administrador, todas (letra 1.6).
-        int? jugadorId = null;
-        int? organizadorId = null;
-        if(rol == Roles.Jugador)
-        {
-            jugadorId = usuarioId;
-        }
-
-        if(rol == Roles.Organizador)
-        {
-            organizadorId = usuarioId;
-        }
+        int? jugadorId = rol == Roles.Jugador ? usuarioId : null;
+        int? organizadorId = rol == Roles.Organizador ? usuarioId : null;
 
         var filtroRepositorio = new FiltroInscripciones(
             filtro.TorneoId,

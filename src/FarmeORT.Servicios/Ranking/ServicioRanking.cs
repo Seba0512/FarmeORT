@@ -14,7 +14,6 @@ internal sealed class ServicioRanking(
     IRepositorioBatallas repositorioBatallas) : IServicioRanking
 {
     private const int CantidadMaxima = 100;
-    private const int CantidadPorDefecto = 10;
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro, bool esAnonimo)
     {
@@ -29,26 +28,34 @@ internal sealed class ServicioRanking(
         List<JugadorRankingResponse> ranking = [];
         for(var i = 0; i < jugadores.Count; i++)
         {
-            // Un jugador sin batallas Finalizadas no figura en los resultados: tiene 0 ganadas y 0 perdidas.
-            var ganadas = 0;
-            var perdidas = 0;
-            if(resultados.TryGetValue(jugadores[i].Id, out var resultado))
-            {
-                ganadas = resultado.Ganadas;
-                perdidas = resultado.Perdidas;
-            }
-
-            ranking.Add(new JugadorRankingResponse
-            {
-                Posicion = i + 1,
-                Nickname = jugadores[i].Nickname,
-                Elo = jugadores[i].Elo,
-                BatallasGanadas = ganadas,
-                BatallasPerdidas = perdidas,
-            });
+            ranking.Add(CrearFila(jugadores[i], i + 1, resultados));
         }
 
         return ranking;
+    }
+
+    private static JugadorRankingResponse CrearFila(
+        Usuario jugador,
+        int posicion,
+        IReadOnlyDictionary<int, ResultadosDeBatallas> resultados)
+    {
+        // Un jugador sin batallas Finalizadas no figura en los resultados: tiene 0 ganadas y 0 perdidas.
+        var ganadas = 0;
+        var perdidas = 0;
+        if(resultados.TryGetValue(jugador.Id, out var resultado))
+        {
+            ganadas = resultado.Ganadas;
+            perdidas = resultado.Perdidas;
+        }
+
+        return new JugadorRankingResponse
+        {
+            Posicion = posicion,
+            Nickname = jugador.Nickname,
+            Elo = jugador.Elo,
+            BatallasGanadas = ganadas,
+            BatallasPerdidas = perdidas,
+        };
     }
 
     private IReadOnlyList<Usuario> ListarJugadores(int? torneoId, int cantidad, bool esAnonimo)
@@ -88,7 +95,7 @@ internal sealed class ServicioRanking(
 
         if(cantidad < 1)
         {
-            return CantidadPorDefecto;
+            return FiltroRankingRequest.CantidadPorDefecto;
         }
 
         return cantidad;

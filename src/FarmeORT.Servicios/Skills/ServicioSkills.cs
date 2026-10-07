@@ -29,11 +29,7 @@ internal sealed class ServicioSkills(IRepositorioSkills repositorioSkills) : ISe
 
     public IReadOnlyList<SkillResponse> Listar(FiltroSkillsRequest filtro)
     {
-        CategoriaSkill? categoria = null;
-        if(filtro.Categoria != null)
-        {
-            categoria = ValoresPorNombre.Buscar<CategoriaSkill>(filtro.Categoria);
-        }
+        var categoria = ValoresPorNombre.Buscar<CategoriaSkill>(filtro.Categoria);
 
         var limite = Paginacion.AjustarLimite(filtro.Limit);
         var desplazamiento = Paginacion.AjustarDesplazamiento(filtro.Offset);

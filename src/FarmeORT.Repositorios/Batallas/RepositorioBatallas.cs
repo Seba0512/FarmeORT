@@ -32,25 +32,7 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
         }
         catch(DbUpdateException)
         {
-            var nuevos = contexto.ChangeTracker.Entries<Lanzamiento>()
-                .Where(e => e.State == EntityState.Added)
-                .Select(e => e.Entity)
-                .ToList();
-            if(nuevos.Any(l => contexto.Lanzamientos.AsNoTracking()
-                .Any(guardado => guardado.BatallaId == l.BatallaId && guardado.Turno == l.Turno)))
-            {
-                contexto.ChangeTracker.Clear();
-                throw new TurnoIncorrectoException();
-            }
-
-            if(nuevos.Any(l => contexto.Lanzamientos.AsNoTracking()
-                .Any(guardado => guardado.BatallaId == l.BatallaId
-                    && guardado.JugadorId == l.JugadorId && guardado.SkillId == l.SkillId)))
-            {
-                contexto.ChangeTracker.Clear();
-                throw new SkillYaLanzadaException();
-            }
-
+            ValidarConflictoDeLanzamiento();
             throw;
         }
     }
@@ -148,5 +130,45 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
 
             throw new TorneoModificadoException();
         }
+    }
+
+    // Traduce a la regla de negocio el choque con un lanzamiento que otro pedido guardó antes (D-52).
+    private void ValidarConflictoDeLanzamiento()
+    {
+        var nuevos = LanzamientosNuevos();
+        if(nuevos.Any(OcupaUnTurnoGuardado))
+        {
+            contexto.ChangeTracker.Clear();
+            throw new TurnoIncorrectoException();
+        }
+
+        if(nuevos.Any(RepiteUnaSkillGuardada))
+        {
+            contexto.ChangeTracker.Clear();
+            throw new SkillYaLanzadaException();
+        }
+    }
+
+    private List<Lanzamiento> LanzamientosNuevos()
+    {
+        return contexto.ChangeTracker.Entries<Lanzamiento>()
+            .Where(e => e.State == EntityState.Added)
+            .Select(e => e.Entity)
+            .ToList();
+    }
+
+    // Otro pedido ya guardó un lanzamiento en ese turno de la batalla (D-52).
+    private bool OcupaUnTurnoGuardado(Lanzamiento lanzamiento)
+    {
+        return contexto.Lanzamientos.AsNoTracking()
+            .Any(guardado => guardado.BatallaId == lanzamiento.BatallaId && guardado.Turno == lanzamiento.Turno);
+    }
+
+    // Otro pedido ya guardó esa skill del mismo jugador en la batalla (D-52).
+    private bool RepiteUnaSkillGuardada(Lanzamiento lanzamiento)
+    {
+        return contexto.Lanzamientos.AsNoTracking()
+            .Any(guardado => guardado.BatallaId == lanzamiento.BatallaId
+                && guardado.JugadorId == lanzamiento.JugadorId && guardado.SkillId == lanzamiento.SkillId);
     }
 }

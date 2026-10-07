@@ -14,22 +14,7 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
 
     public IReadOnlyList<Skill> Listar(FiltroSkills filtro)
     {
-        var consulta = contexto.Skills.AsQueryable();
-        if(filtro.Categoria != null)
-        {
-            consulta = consulta.Where(s => s.Categoria == filtro.Categoria.Value);
-        }
-
-        if(filtro.Dificultad != null)
-        {
-            consulta = consulta.Where(s => s.Dificultad == filtro.Dificultad.Value);
-        }
-
-        if(filtro.Activa != null)
-        {
-            consulta = consulta.Where(s => s.Activa == filtro.Activa.Value);
-        }
-
+        var consulta = FiltrarPorAtributos(contexto.Skills, filtro);
         if(!string.IsNullOrWhiteSpace(filtro.Nombre))
         {
             var nombre = filtro.Nombre.ToLower();
@@ -86,5 +71,25 @@ internal sealed class RepositorioSkills(FarmeORTContext contexto) : IRepositorio
     {
         var codigo = skill.Codigo.ToLower();
         return contexto.Skills.Any(s => s.Codigo.ToLower() == codigo && s.Id != skill.Id);
+    }
+
+    private static IQueryable<Skill> FiltrarPorAtributos(IQueryable<Skill> consulta, FiltroSkills filtro)
+    {
+        if(filtro.Categoria != null)
+        {
+            consulta = consulta.Where(s => s.Categoria == filtro.Categoria.Value);
+        }
+
+        if(filtro.Dificultad != null)
+        {
+            consulta = consulta.Where(s => s.Dificultad == filtro.Dificultad.Value);
+        }
+
+        if(filtro.Activa != null)
+        {
+            consulta = consulta.Where(s => s.Activa == filtro.Activa.Value);
+        }
+
+        return consulta;
     }
 }

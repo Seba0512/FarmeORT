@@ -1,4 +1,5 @@
 using FarmeORT.Dominio.Torneos;
+using FarmeORT.Dominio.Usuarios;
 using FarmeORT.DTOs.Batallas;
 using FarmeORT.DTOs.Finalizaciones;
 using FarmeORT.Excepciones;
@@ -17,12 +18,7 @@ internal sealed class ServicioFinalizaciones(
 {
     public FinalizacionResponse Finalizar(int torneoId, int usuarioId, string rol)
     {
-        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
-        if(torneo == null)
-        {
-            throw new TorneoNoEncontradoException();
-        }
-
+        var torneo = ObtenerTorneoExistente(torneoId);
         PermisosDelTorneo.ValidarOrganizadorOAdministrador(torneo, usuarioId, rol);
 
         // Primero el estado: un torneo Abierto, Finalizado o Cancelado no está en curso, tenga o no campeón (D-64).
@@ -31,6 +27,25 @@ internal sealed class ServicioFinalizaciones(
             throw new TorneoNoEnCursoException();
         }
 
+        var campeon = ObtenerCampeon(torneoId);
+        torneo.Finalizar(campeon);
+        repositorioTorneos.Actualizar(torneo);
+        return CrearResponse(torneo, campeon);
+    }
+
+    private Torneo ObtenerTorneoExistente(int torneoId)
+    {
+        var torneo = repositorioTorneos.ObtenerPorId(torneoId);
+        if(torneo == null)
+        {
+            throw new TorneoNoEncontradoException();
+        }
+
+        return torneo;
+    }
+
+    private Usuario ObtenerCampeon(int torneoId)
+    {
         if(repositorioBatallas.ListarSinResolverDelTorneo(torneoId).Count > 0)
         {
             throw new TorneoConBatallasSinResolverException();
@@ -43,9 +58,11 @@ internal sealed class ServicioFinalizaciones(
             throw new TorneoSinCampeonException();
         }
 
-        var campeon = sinEliminar[0].Jugador;
-        torneo.Finalizar(campeon);
-        repositorioTorneos.Actualizar(torneo);
+        return sinEliminar[0].Jugador;
+    }
+
+    private static FinalizacionResponse CrearResponse(Torneo torneo, Usuario campeon)
+    {
         return new FinalizacionResponse
         {
             TorneoId = torneo.Id,

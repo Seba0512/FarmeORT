@@ -10,7 +10,7 @@ public sealed class FiltroUsuariosRequest
 
     public string? Nickname { get; init; }
 
-    public int Limit { get; init; } = 20;
+    public int Limit { get; init; } = Paginado.LimitePorDefecto;
 
     public int Offset { get; init; }
 }
