@@ -20,7 +20,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FarmeORT.Fabrica\FarmeORT.Fabrica.csproj" />
+    <ProjectReference Include="..\..\src\FarmeORT.Dominio\FarmeORT.Dominio.csproj" />
   </ItemGroup>
 
 </Project>
