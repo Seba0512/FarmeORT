@@ -59,11 +59,7 @@ internal sealed class ServicioTorneos(
 
     public IReadOnlyList<TorneoResponse> Listar(FiltroTorneosRequest filtro, bool esAnonimo)
     {
-        EstadoTorneo? estado = null;
-        if(filtro.Estado != null)
-        {
-            estado = ValoresPorNombre.Buscar<EstadoTorneo>(filtro.Estado);
-        }
+        var estado = ValoresPorNombre.Buscar<EstadoTorneo>(filtro.Estado);
 
         var filtroRepositorio = new FiltroTorneos(
             estado,

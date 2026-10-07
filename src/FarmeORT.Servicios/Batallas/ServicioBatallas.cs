@@ -49,11 +49,7 @@ internal sealed class ServicioBatallas(
     // Un filtro opcional con un valor inválido no se aplica, en lugar de rechazar el pedido (D-35).
     private static FiltroBatallas CrearConsulta(int torneoId, FiltroBatallasRequest filtro)
     {
-        EstadoBatalla? estado = null;
-        if(filtro.Estado != null)
-        {
-            estado = ValoresPorNombre.Buscar<EstadoBatalla>(filtro.Estado);
-        }
+        var estado = ValoresPorNombre.Buscar<EstadoBatalla>(filtro.Estado);
 
         int? ronda = null;
         if(filtro.Ronda > 0)
