@@ -2811,6 +2811,51 @@ al integrante; la revisión humana, publicación y diagramas permanecen a cargo 
 
 ---
 
+### D-75 — Alinear la longitud del email con su capacidad de almacenamiento
+
+**Problema:** el DTO de registro, heredado por el mantenimiento administrativo, y el dominio
+aceptaban emails con formato válido de más de 254 caracteres. La columna `Usuarios.Email` ya
+está definida como `nvarchar(254)`: esos datos podían llegar al guardado y provocar un error
+inesperado del proveedor. La letra (§1.2 y §2.1) exige formato válido y unicidad, pero no fija 254.
+
+**Alternativas consideradas:** ampliar la columna mediante una migración, o mantener la capacidad
+actual y rechazar el exceso en las validaciones existentes. Compartir una constante entre capas
+agregaría acoplamiento para una única cifra; se conserva la duplicación deliberada de validación
+de D-16 y se comprueba la coherencia con los límites del esquema.
+
+**Decisión adoptada:** mantener el esquema vigente. Agregar `StringLength(254)` al email de
+`RegistroJugadorRequest`, heredado por `UsuarioAdminRequest`, y una guardia en `Usuario.ValidarEmail`.
+Ambas capas indican: «El email no puede tener más de 254 caracteres.». El límite es una decisión
+técnica compatible con la persistencia actual; no una exigencia numérica de la letra ni una nueva
+regla de formato. Se conservan `EmailAddress`, `MailAddress`, unicidad, rutas y roles.
+
+**Justificación:** la API corta el dato inválido con 400 `VALIDATION_ERROR`. El dominio protege las
+llamadas sin HTTP con `DatosInvalidosException` (400 `INVALID_DATA` en el filtro existente).
+Constructor y modificación comparten la validación; esta ocurre antes de asignar propiedades,
+y los servicios no llaman a `Agregar`/`Actualizar` cuando falla. No se necesitan servicios nuevos,
+excepciones nuevas ni migraciones. El login solo consulta emails y no se modifica en este ajuste.
+
+**Conceptos del curso:** Information Expert, validación en el borde y dominio, bajo acoplamiento,
+consistencia de entidades y TDD Outside-In.
+
+**Evidencia:** dos ciclos RED/GREEN separados (`75aa309` → `84c3a82`, `ab7deb4` → `580c473`),
+21 casos nuevos para 254/255/262 en DTOs, dominio y servicios (registro, alta y modificación).
+REFACTOR evaluado sin una mejora concreta que justifique otro cambio. Suite Release 1046/1046,
+build y formato correctos; cobertura 2085/2085 líneas y 533/534 ramas, métricas aplicables ≥90 %
+en cada assembly. SQL Server Express 2025 sobre bases nuevas y descartables: columna de capacidad
+254, HTTP 201/201/200 para el máximo y 400 para 255/262; comprobación de datos persistidos y
+rechazo sin efectos parciales. Llamadas directas al servicio con proveedor SQL rechazan el exceso
+sin cambios pendientes. Postman incorpora nueve casos, ejecutados con Newman (27 assertions,
+sin fallos); no se ejecutó toda la colección. La ficha final de la API debe reflejar este límite
+como decisión técnica. Publicación del PR, checks remotos y aprobación humana quedan a cargo del equipo.
+
+**Participación de IA:** Codex ayudó a contrastar validaciones y esquema, preparar y ejecutar los
+ciclos TDD, comprobar SQL/HTTP y agregar los casos Postman. Se mantuvo la corrección mínima indicada
+por el integrante, sin ampliar el esquema ni introducir reglas adicionales de email. La autoría
+Git corresponde exclusivamente al integrante; el equipo debe revisar y poder justificar el cambio.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)

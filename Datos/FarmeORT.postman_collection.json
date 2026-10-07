@@ -615,6 +615,18 @@
     {
       "key": "cupoBajoTokenActual",
       "value": ""
+    },
+    {
+      "key": "emailLimite",
+      "value": ""
+    },
+    {
+      "key": "emailLimiteNickname",
+      "value": ""
+    },
+    {
+      "key": "emailLimiteUsuarioId",
+      "value": ""
     }
   ],
   "item": [
@@ -1904,6 +1916,651 @@
                   "pm.test(\"Fecha requerida\", () => pm.expect(JSON.stringify(error.detalles)).to.include(\"La fecha de nacimiento es obligatoria.\"));"
                 ]
               }
+            }
+          ]
+        },
+        {
+          "name": "Usuarios - límites de email",
+          "item": [
+            {
+              "name": "Email - registro con 254 caracteres → 201",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(242, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Email completo\", () => pm.expect(body.email).to.eql(pm.collectionVariables.get(\"emailLimite\")));",
+                      "pm.test(\"Máximo persistible\", () => pm.expect(body.email.length).to.eql(254));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - registro con 255 caracteres → 400",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(243, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Código uniforme\", () => pm.expect(body.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                      "pm.test(\"Límite claro\", () => pm.expect(JSON.stringify(body.detalles)).to.include(\"El email no puede tener más de 254 caracteres.\"));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - registro con 262 caracteres → 400",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "noauth"
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/jugadores",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "jugadores"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(250, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Código uniforme\", () => pm.expect(body.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                      "pm.test(\"Límite claro\", () => pm.expect(JSON.stringify(body.detalles)).to.include(\"El email no puede tener más de 254 caracteres.\"));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - alta con 254 caracteres → 201",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Jugador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(242, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Email completo\", () => pm.expect(body.email).to.eql(pm.collectionVariables.get(\"emailLimite\")));",
+                      "pm.test(\"Máximo persistible\", () => pm.expect(body.email.length).to.eql(254));",
+                      "pm.collectionVariables.set(\"emailLimiteUsuarioId\", body.id);"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - alta con 255 caracteres → 400",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Jugador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(243, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Código uniforme\", () => pm.expect(body.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                      "pm.test(\"Límite claro\", () => pm.expect(JSON.stringify(body.detalles)).to.include(\"El email no puede tener más de 254 caracteres.\"));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - alta con 262 caracteres → 400",
+              "request": {
+                "method": "POST",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Jugador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(250, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Código uniforme\", () => pm.expect(body.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                      "pm.test(\"Límite claro\", () => pm.expect(JSON.stringify(body.detalles)).to.include(\"El email no puede tener más de 254 caracteres.\"));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - modificacion con 254 caracteres → 200",
+              "request": {
+                "method": "PUT",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios/{{emailLimiteUsuarioId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios",
+                    "{{emailLimiteUsuarioId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Jugador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(242, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Email completo\", () => pm.expect(body.email).to.eql(pm.collectionVariables.get(\"emailLimite\")));",
+                      "pm.test(\"Máximo persistible\", () => pm.expect(body.email.length).to.eql(254));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - modificacion con 255 caracteres → 400",
+              "request": {
+                "method": "PUT",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios/{{emailLimiteUsuarioId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios",
+                    "{{emailLimiteUsuarioId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Jugador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(243, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Código uniforme\", () => pm.expect(body.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                      "pm.test(\"Límite claro\", () => pm.expect(JSON.stringify(body.detalles)).to.include(\"El email no puede tener más de 254 caracteres.\"));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
+            },
+            {
+              "name": "Email - modificacion con 262 caracteres → 400",
+              "request": {
+                "method": "PUT",
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{adminToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/usuarios/{{emailLimiteUsuarioId}}",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "usuarios",
+                    "{{emailLimiteUsuarioId}}"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nombre\": \"Prueba\",\n  \"apellido\": \"Persona\",\n  \"email\": \"{{emailLimite}}\",\n  \"nickname\": \"{{emailLimiteNickname}}\",\n  \"contrasena\": \"ClaveSegura123!!\",\n  \"fechaNacimiento\": \"2000-01-15\",\n  \"rol\": \"Jugador\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Límite técnico de 254 caracteres, alineado con nvarchar(254); no es una cifra exigida por la letra."
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "const sufijo = pm.variables.replaceIn(\"{{$guid}}\").replace(/-/g, \"\").slice(0, 16);",
+                      "pm.collectionVariables.set(\"emailLimite\", sufijo.padEnd(250, \"a\") + \"@example.com\");",
+                      "pm.collectionVariables.set(\"emailLimiteNickname\", \"lim\" + sufijo);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "const body = pm.response.json();",
+                      "pm.test(\"Código uniforme\", () => pm.expect(body.errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                      "pm.test(\"Límite claro\", () => pm.expect(JSON.stringify(body.detalles)).to.include(\"El email no puede tener más de 254 caracteres.\"));"
+                    ]
+                  }
+                }
+              ],
+              "response": []
             }
           ]
         },
