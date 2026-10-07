@@ -86,6 +86,35 @@ public sealed class RegistroJugadorRequestTests
         AssertCampoInvalido(new RegistroJugadorRequest(), nameof(RegistroJugadorRequest.FechaNacimiento));
     }
 
+    [TestMethod]
+    public void Validar_EmailDe254Caracteres_EsValido()
+    {
+        var email = new string('a', 242) + "@example.com";
+        var request = CrearRequest(email: email);
+        var errores = new List<ValidationResult>();
+
+        var esValido = Validator.TryValidateObject(request, new ValidationContext(request), errores, validateAllProperties: true);
+
+        Assert.IsTrue(esValido);
+        Assert.IsEmpty(errores);
+    }
+
+    [TestMethod]
+    [DataRow(255)]
+    [DataRow(262)]
+    public void Validar_EmailMayorA254Caracteres_EsInvalido(int longitud)
+    {
+        var email = new string('a', longitud - 12) + "@example.com";
+        var request = CrearRequest(email: email);
+        var errores = new List<ValidationResult>();
+
+        var esValido = Validator.TryValidateObject(request, new ValidationContext(request), errores, validateAllProperties: true);
+
+        Assert.IsFalse(esValido);
+        var error = errores.Single(e => e.MemberNames.Contains(nameof(request.Email)));
+        Assert.AreEqual("El email no puede tener más de 254 caracteres.", error.ErrorMessage);
+    }
+
     private static RegistroJugadorRequest CrearRequest(
         string nombre = "Ana",
         string apellido = "Pérez",

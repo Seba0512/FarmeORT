@@ -213,23 +213,128 @@ public sealed class ServicioUsuariosTests
         _repositorioUsuarios.Verify(r => r.Listar(new FiltroUsuarios(null, null, null, 20, 0)), Times.Once);
     }
 
-    private void ConfigurarAltaValida()
+    [TestMethod]
+    public void RegistrarJugador_EmailDe254Caracteres_GuardaEmailCompleto()
     {
-        _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(Email)).Returns((Usuario?)null);
+        var email = new string('a', 242) + "@example.com";
+        ConfigurarAltaValida(email);
+
+        var response = _servicio.RegistrarJugador(CrearRequest(email: email));
+
+        Assert.AreEqual(email, response.Email);
+        Assert.AreEqual(Roles.Jugador, response.Rol);
+        _repositorioUsuarios.Verify(r => r.Agregar(It.Is<Usuario>(u => u.Email == email && u.Rol == Rol.Jugador)), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(255)]
+    [DataRow(262)]
+    public void RegistrarJugador_EmailMayorA254Caracteres_RechazaSinGuardar(int longitud)
+    {
+        var email = new string('a', longitud - 12) + "@example.com";
+        ConfigurarDatosValidos(email);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.RegistrarJugador(CrearRequest(email: email)));
+
+        Assert.AreEqual("El email no puede tener más de 254 caracteres.", excepcion.Message);
+        _repositorioUsuarios.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Crear_EmailDe254Caracteres_GuardaEmailCompleto()
+    {
+        var email = new string('a', 242) + "@example.com";
+        ConfigurarAltaValida(email);
+
+        var response = _servicio.Crear(CrearRequest(email: email));
+
+        Assert.AreEqual(email, response.Email);
+        _repositorioUsuarios.Verify(r => r.Agregar(It.Is<Usuario>(u => u.Email == email)), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(255)]
+    [DataRow(262)]
+    public void Crear_EmailMayorA254Caracteres_RechazaSinGuardar(int longitud)
+    {
+        var email = new string('a', longitud - 12) + "@example.com";
+        ConfigurarDatosValidos(email);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(CrearRequest(email: email)));
+
+        Assert.AreEqual("El email no puede tener más de 254 caracteres.", excepcion.Message);
+        _repositorioUsuarios.Verify(r => r.Agregar(It.IsAny<Usuario>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_EmailDe254Caracteres_ActualizaEmailCompleto()
+    {
+        var email = new string('a', 242) + "@example.com";
+        var usuario = ConfigurarModificacionEmail(email);
+        _repositorioUsuarios.Setup(r => r.Actualizar(usuario));
+
+        var response = _servicio.Modificar(5, CrearRequest(email: email), 1);
+
+        Assert.AreEqual(email, response.Email);
+        Assert.AreEqual(email, usuario.Email);
+        _repositorioUsuarios.Verify(r => r.Actualizar(usuario), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(255)]
+    [DataRow(262)]
+    public void Modificar_EmailMayorA254Caracteres_RechazaSinCambiarNiGuardar(int longitud)
+    {
+        var email = new string('a', longitud - 12) + "@example.com";
+        var usuario = ConfigurarModificacionEmail(email);
+
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(5, CrearRequest(email: email), 1));
+
+        Assert.AreEqual("El email no puede tener más de 254 caracteres.", excepcion.Message);
+        _repositorioUsuarios.Verify(r => r.Actualizar(It.IsAny<Usuario>()), Times.Never);
+        Assert.AreEqual("Original", usuario.Nombre);
+        Assert.AreEqual("Persona", usuario.Apellido);
+        Assert.AreEqual("original@example.com", usuario.Email);
+        Assert.AreEqual("original", usuario.Nickname);
+        Assert.AreEqual(new DateOnly(1998, 6, 3), usuario.FechaNacimiento);
+        Assert.AreEqual(Rol.Organizador, usuario.Rol);
+        Assert.AreEqual("hash-anterior", usuario.ContrasenaHash);
+        Assert.AreEqual(1200, usuario.Elo);
+    }
+
+    private Usuario ConfigurarModificacionEmail(string email)
+    {
+        var usuario = new Usuario("Original", "Persona", "original@example.com", "original", new DateOnly(1998, 6, 3), Rol.Organizador, "hash-anterior", FechaActual)
+        {
+            Id = 5,
+        };
+        ConfigurarDatosValidos(email);
+        _repositorioUsuarios.Setup(r => r.ObtenerPorId(5)).Returns(usuario);
+        return usuario;
+    }
+
+    private void ConfigurarAltaValida(string email = Email)
+    {
+        ConfigurarDatosValidos(email);
+        _repositorioUsuarios.Setup(r => r.Agregar(It.Is<Usuario>(u => u.Email == email)));
+    }
+
+    private void ConfigurarDatosValidos(string email)
+    {
+        _repositorioUsuarios.Setup(r => r.ObtenerPorEmail(email)).Returns((Usuario?)null);
         _repositorioUsuarios.Setup(r => r.ExistePorNickname(Nickname)).Returns(false);
         _hasheadorContrasenas.Setup(h => h.Hashear(Contrasena)).Returns(ContrasenaHash);
         _reloj.Setup(r => r.GetUtcNow()).Returns(new DateTimeOffset(2026, 9, 30, 12, 0, 0, TimeSpan.Zero));
         _reloj.Setup(r => r.LocalTimeZone).Returns(TimeZoneInfo.Utc);
-        _repositorioUsuarios.Setup(r => r.Agregar(It.Is<Usuario>(u => u.Email == Email)));
     }
 
-    private static UsuarioAdminRequest CrearRequest(string rol = Roles.Organizador, string contrasena = Contrasena)
+    private static UsuarioAdminRequest CrearRequest(string rol = Roles.Organizador, string contrasena = Contrasena, string email = Email)
     {
         return new UsuarioAdminRequest
         {
             Nombre = "Ana",
             Apellido = "Pérez",
-            Email = Email,
+            Email = email,
             Nickname = Nickname,
             Contrasena = contrasena,
             FechaNacimiento = new DateOnly(2000, 1, 15),
