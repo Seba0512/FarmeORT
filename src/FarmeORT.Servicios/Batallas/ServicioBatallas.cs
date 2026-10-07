@@ -51,17 +51,8 @@ internal sealed class ServicioBatallas(
     {
         var estado = ValoresPorNombre.Buscar<EstadoBatalla>(filtro.Estado);
 
-        int? ronda = null;
-        if(filtro.Ronda > 0)
-        {
-            ronda = filtro.Ronda;
-        }
-
-        int? jugadorId = null;
-        if(filtro.JugadorId > 0)
-        {
-            jugadorId = filtro.JugadorId;
-        }
+        var ronda = filtro.Ronda > 0 ? filtro.Ronda : null;
+        var jugadorId = filtro.JugadorId > 0 ? filtro.JugadorId : null;
 
         return new FiltroBatallas(
             torneoId,
