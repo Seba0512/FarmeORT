@@ -60,20 +60,7 @@ internal sealed class ServicioUsuarios(
         var rol = ConvertirRol(request.Rol);
         var fechaNacimiento = ObtenerFechaNacimiento(request);
         var usuario = ObtenerUsuarioExistente(id);
-        if(usuario.Rol != rol)
-        {
-            ValidarSinParticipacionVigente(usuario);
-        }
-
-        if(!MismoTexto(usuario.Email, request.Email))
-        {
-            ValidarEmailDisponible(request.Email);
-        }
-
-        if(!MismoTexto(usuario.Nickname, request.Nickname))
-        {
-            ValidarNicknameDisponible(request.Nickname);
-        }
+        ValidarCambios(usuario, request, rol);
 
         var fechaActual = ObtenerFechaActual();
         var contrasenaHash = hasheadorContrasenas.Hashear(request.Contrasena);
@@ -101,6 +88,25 @@ internal sealed class ServicioUsuarios(
         ValidarSinParticipacionVigente(usuario);
         usuario.Eliminar();
         repositorioUsuarios.Eliminar(usuario);
+    }
+
+    // Solo se controla lo que cambia: mantener el propio email o nickname no choca consigo mismo.
+    private void ValidarCambios(Usuario usuario, UsuarioAdminRequest request, Rol rol)
+    {
+        if(usuario.Rol != rol)
+        {
+            ValidarSinParticipacionVigente(usuario);
+        }
+
+        if(!MismoTexto(usuario.Email, request.Email))
+        {
+            ValidarEmailDisponible(request.Email);
+        }
+
+        if(!MismoTexto(usuario.Nickname, request.Nickname))
+        {
+            ValidarNicknameDisponible(request.Nickname);
+        }
     }
 
     // Eliminar y cambiar el rol tienen las mismas restricciones (D-43): las dos primeras son de la letra y la
