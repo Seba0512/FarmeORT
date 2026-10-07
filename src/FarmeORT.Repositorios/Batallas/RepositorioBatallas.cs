@@ -32,19 +32,7 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
         }
         catch(DbUpdateException)
         {
-            var nuevos = LanzamientosNuevos();
-            if(nuevos.Any(OcupaUnTurnoGuardado))
-            {
-                contexto.ChangeTracker.Clear();
-                throw new TurnoIncorrectoException();
-            }
-
-            if(nuevos.Any(RepiteUnaSkillGuardada))
-            {
-                contexto.ChangeTracker.Clear();
-                throw new SkillYaLanzadaException();
-            }
-
+            ValidarConflictoDeLanzamiento();
             throw;
         }
     }
@@ -141,6 +129,23 @@ internal sealed class RepositorioBatallas(FarmeORTContext contexto) : IRepositor
             }
 
             throw new TorneoModificadoException();
+        }
+    }
+
+    // Traduce a la regla de negocio el choque con un lanzamiento que otro pedido guardó antes (D-52).
+    private void ValidarConflictoDeLanzamiento()
+    {
+        var nuevos = LanzamientosNuevos();
+        if(nuevos.Any(OcupaUnTurnoGuardado))
+        {
+            contexto.ChangeTracker.Clear();
+            throw new TurnoIncorrectoException();
+        }
+
+        if(nuevos.Any(RepiteUnaSkillGuardada))
+        {
+            contexto.ChangeTracker.Clear();
+            throw new SkillYaLanzadaException();
         }
     }
 

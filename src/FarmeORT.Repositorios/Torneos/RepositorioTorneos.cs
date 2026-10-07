@@ -107,15 +107,7 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
         }
         catch(DbUpdateConcurrencyException excepcion)
         {
-            // SaveChanges revierte todo; se distingue el torneo de los tokens de batalla/ELO existentes.
-            var cambioElTorneo = excepcion.Entries.Any(e => e.Entity is Torneo);
-            contexto.ChangeTracker.Clear();
-            if(cambioElTorneo)
-            {
-                throw new TorneoModificadoException();
-            }
-
-            throw new BatallaModificadaException();
+            throw TraducirConflictoDeConcurrencia(excepcion);
         }
         catch(DbUpdateException)
         {
@@ -128,6 +120,19 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
 
             throw;
         }
+    }
+
+    // SaveChanges revierte todo; se distingue el torneo de los tokens de batalla/ELO existentes.
+    private Exception TraducirConflictoDeConcurrencia(DbUpdateConcurrencyException excepcion)
+    {
+        var cambioElTorneo = excepcion.Entries.Any(e => e.Entity is Torneo);
+        contexto.ChangeTracker.Clear();
+        if(cambioElTorneo)
+        {
+            return new TorneoModificadoException();
+        }
+
+        return new BatallaModificadaException();
     }
 
     private bool ExisteOtroTorneoConElCodigo(Torneo torneo)
