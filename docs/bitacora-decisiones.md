@@ -3107,8 +3107,9 @@ conexión rechazada, porque `baseUrl` seguía en el puerto 5088, y se corrigió 
   lo refleja. Se postergan: confirmarlo en el foro antes de que cierre.
 - Documentar en el informe de diseño qué tipos forman la interfaz de cada assembly (letra,
   "Independencia de librerías").
-- La colección de Postman trae `baseUrl` con el puerto 5088, pero `launchSettings.json` levanta la API
-  en el 5294: unificarlo o explicarlo en la guía de instalación.
+- ~~La colección de Postman trae `baseUrl` con el puerto 5088, pero `launchSettings.json` levanta la API
+  en el 5294: unificarlo o explicarlo en la guía de instalación.~~ Resuelto: la colección usa
+  `http://localhost:5294`, el perfil http de la WebAPI.
 - Completar la participación de IA de D-01 a D-28 con qué se aceptó, qué se rechazó o modificó y qué
   problemas aparecieron (lo pide la letra; no alcanza con "propuesta de la IA, aprobada"). Lo tiene que
   escribir quien trabajó en cada una.
