@@ -190,6 +190,60 @@ public sealed class UsuarioTests
         Assert.AreEqual("anaperez", usuario.Nickname);
     }
 
+    [TestMethod]
+    [DataRow(254, true)]
+    [DataRow(255, false)]
+    [DataRow(262, false)]
+    public void Constructor_LongitudEmail_RespetaCapacidadPersistente(int longitud, bool permitido)
+    {
+        var email = new string('a', longitud - 12) + "@example.com";
+
+        if(permitido)
+        {
+            var usuario = CrearUsuario(email: email);
+
+            Assert.AreEqual(email, usuario.Email);
+        }
+        else
+        {
+            var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => CrearUsuario(email: email));
+
+            Assert.AreEqual("El email no puede tener más de 254 caracteres.", excepcion.Message);
+        }
+    }
+
+    [TestMethod]
+    [DataRow(254, true)]
+    [DataRow(255, false)]
+    [DataRow(262, false)]
+    public void Modificar_LongitudEmail_ValidaAntesDeCambiarDatos(int longitud, bool permitido)
+    {
+        var usuario = CrearUsuario();
+        var email = new string('a', longitud - 12) + "@example.com";
+
+        if(permitido)
+        {
+            usuario.Modificar("Carla", "Gómez", email, "carlagomez", new DateOnly(1998, 6, 3), Rol.Organizador, "hash-carla", FechaActual);
+
+            Assert.AreEqual(email, usuario.Email);
+        }
+        else
+        {
+            var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(
+                () => usuario.Modificar("Carla", "Gómez", email, "carlagomez", new DateOnly(1998, 6, 3), Rol.Organizador, "hash-carla", FechaActual));
+
+            Assert.AreEqual("El email no puede tener más de 254 caracteres.", excepcion.Message);
+            Assert.AreEqual("Ana", usuario.Nombre);
+            Assert.AreEqual("Pérez", usuario.Apellido);
+            Assert.AreEqual("ana@farmeort.com", usuario.Email);
+            Assert.AreEqual("anaperez", usuario.Nickname);
+            Assert.AreEqual(new DateOnly(2000, 1, 15), usuario.FechaNacimiento);
+            Assert.AreEqual(Rol.Jugador, usuario.Rol);
+            Assert.AreEqual("hash-ana", usuario.ContrasenaHash);
+            Assert.AreEqual(1200, usuario.Elo);
+        }
+    }
+
     private static Usuario CrearUsuario(
         string nombre = "Ana",
         string apellido = "Pérez",
