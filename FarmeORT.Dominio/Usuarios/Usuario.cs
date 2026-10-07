@@ -167,7 +167,7 @@ public sealed class Usuario
 
         if(email.Length > LargoMaximoEmail)
         {
-            throw new DatosInvalidosException("El email no puede tener más de 254 caracteres.");
+            throw new DatosInvalidosException($"El email no puede tener más de {LargoMaximoEmail} caracteres.");
         }
     }
 
