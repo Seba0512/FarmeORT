@@ -7,6 +7,10 @@ namespace FarmeORT.WebAPI.Validaciones;
 
 internal static class RespuestaValidacion
 {
+    // System.Text.Json nombra con "$" el cuerpo entero y con "$.cupo" un dato del cuerpo.
+    private const string RaizDelJson = "$";
+    private const string PrefijoDeDato = "$.";
+
     public static IActionResult Crear(ActionContext contexto)
     {
         var error = new ErrorResponse
@@ -31,7 +35,7 @@ internal static class RespuestaValidacion
 
         // Sin cuerpo (clave vacía) o con un JSON que no se puede leer (clave "$..."), el resto de los errores es
         // consecuencia de eso: se informa solo el problema del cuerpo, sin el mensaje técnico del parser.
-        var delCuerpo = errores.Where(e => e.Campo.Length == 0 || e.Campo.StartsWith('$')).ToList();
+        var delCuerpo = errores.Where(e => e.Campo.Length == 0 || e.Campo.StartsWith(RaizDelJson, StringComparison.Ordinal)).ToList();
         if(delCuerpo.Count > 0)
         {
             return delCuerpo.Select(e => DescribirErrorDelCuerpo(e.Campo)).Distinct().ToList();
@@ -48,13 +52,13 @@ internal static class RespuestaValidacion
             return "El cuerpo de la solicitud es obligatorio.";
         }
 
-        if(campo == "$")
+        if(campo == RaizDelJson)
         {
             return "El cuerpo de la solicitud no es un JSON válido.";
         }
 
-        // "$.cupo": el JSON se leyó, pero ese dato no tiene el tipo esperado. Se saca el "$." del principio.
-        var nombreDelDato = campo.Substring(2);
+        // "$.cupo": el JSON se leyó, pero ese dato no tiene el tipo esperado. Se saca el prefijo.
+        var nombreDelDato = campo[PrefijoDeDato.Length..];
         return $"{nombreDelDato}: El valor no tiene un formato válido.";
     }
 
