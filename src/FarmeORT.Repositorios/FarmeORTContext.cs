@@ -27,6 +27,7 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
     private const int LargoMaximoEstadoInscripcion = 20;
     private const int LargoMaximoEstadoBatalla = 20;
     private const int LargoMaximoComentarioFallo = 500;
+    private const int PrimerTurno = 1;
 
     // Objeto anónimo porque HasData necesita fijar el Id, que el constructor de Usuario no recibe.
     // Hash PBKDF2 (formato de HasheadorContrasenas) calculado una sola vez, para que la migración no cambie en cada build.
@@ -235,7 +236,9 @@ public sealed class FarmeORTContext(DbContextOptions<FarmeORTContext> options) :
         modelBuilder.Entity<Lanzamiento>(lanzamiento =>
         {
             lanzamiento.ToTable("Lanzamientos", tabla =>
-                tabla.HasCheckConstraint("CK_Lanzamientos_Turno", "[Turno] BETWEEN 1 AND 8"));
+                tabla.HasCheckConstraint(
+                    "CK_Lanzamientos_Turno",
+                    $"[Turno] BETWEEN {PrimerTurno} AND {Batalla.LanzamientosTotales}"));
             lanzamiento.HasKey(l => l.Id);
             lanzamiento.HasIndex(l => new { l.BatallaId, l.Turno }).IsUnique();
             lanzamiento.HasIndex(l => new { l.BatallaId, l.JugadorId, l.SkillId }).IsUnique();

@@ -7,7 +7,9 @@ namespace FarmeORT.Dominio.Batallas;
 
 public sealed class Batalla
 {
-    private const int LanzamientosTotales = 8;
+    // La base también limita el turno de cada lanzamiento con este valor.
+    public const int LanzamientosTotales = 8;
+
     private const int LanzamientosPorJugador = 4;
     private const int LargoMinimoComentario = 10;
     private const int LargoMaximoComentario = 500;
