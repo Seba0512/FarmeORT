@@ -2870,6 +2870,58 @@ Codex aplicó el refactor y volvió a ejecutar la verificación local y la colec
 
 ---
 
+### D-76 — Colección de Postman organizada por recurso y endpoint
+
+**Problema:** la colección (412 requests) tenía una carpeta por recurso con subcarpetas Éxito y Errores
+que mezclaban endpoints; para ubicar los casos de `PUT /torneos/{id}` había que recorrer las dos. El orden
+de ejecución dependía del orden físico y de 18 saltos `setNextRequest`, varios a la carpeta siguiente.
+Agrupar por endpoint cambia ese orden, y hay casos que necesitan el estado que deja otro endpoint: un
+torneo cancelado no se modifica (`PUT`) recién después de cancelarlo (`POST …/cancelaciones`).
+
+**Alternativas consideradas:** (1) subcarpetas por endpoint dentro de Éxito y Errores, más anidado y con
+el mismo problema de orden; (2) agrupar solo los requests que ya eran consecutivos, sin riesgo pero
+dejando casi igual a la mayoría de los recursos; (3) recurso → endpoint y conservar el orden anterior con
+un salto en cada request, lo que oculta el flujo y rompe la ejecución de una sola carpeta; (4) recurso →
+endpoint con el orden físico como orden de ejecución.
+
+**Decisión adoptada:** la alternativa 4. Cada recurso tiene una subcarpeta por endpoint con su método y
+ruta (`POST /torneos`, `GET /torneos/{id}`…) y, si necesita datos de otros recursos, una subcarpeta
+Preparación al principio. Una comprobación de efectos que consulta otro endpoint queda en la carpeta del
+endpoint que produce el efecto (por ejemplo, el detalle y la modificación de un torneo cancelado están en
+`POST /torneos/{id}/cancelaciones`). El orden de las carpetas es el de ejecución, salvo el logout
+administrativo, que sigue al final. Quedan dos saltos: del logout del jugador a Usuarios y del último
+caso de Errores generales al logout administrativo. Errores generales queda sin subcarpetas, porque sus
+casos son transversales y no pertenecen a un endpoint. El historial de lanzamientos
+(`GET /batallas/{id}/lanzamientos`) pasa de Batallas a Lanzamientos, como en la tabla de la API.
+
+**Justificación:** la carpeta del endpoint muestra juntos sus casos felices, de borde y de error, que es
+lo que se revisa al corregir la API y al grabar el video. Mantener el orden físico como orden de
+ejecución deja leer el flujo de arriba hacia abajo sin seguir saltos. Ningún request cambió su método,
+URL, body ni scripts: solo se movieron, y los saltos entre carpetas se reemplazaron por el orden físico
+(los bucles «se repite» y el `setNextRequest(null)` final no cambian).
+
+**Conceptos del curso:** cohesión (cada carpeta agrupa los casos de un endpoint), contrato REST por
+recurso y método, independencia de los tests en lo posible (FIRST) y trazabilidad entre especificación
+y pruebas.
+
+**Evidencia:** comparación automática del orden anterior y el nuevo: los 412 requests están, su contenido
+es idéntico salvo los saltos, y en ninguno cambia el request que escribe por última vez cada variable que
+lee. Los casos que cambiaron de lugar respecto de un request que modifica estado se revisaron contra las
+reglas del dominio. Dos quedan con una precondición distinta y la misma respuesta: «asociar una skill
+inactiva» corre con dos obligatorias en lugar de una, y «consulta su inscripción» se hace sobre la
+inscripción ya cancelada. En el primero el dominio controla la skill inactiva antes que el límite de
+dos; en el segundo el test solo compara el id. Falta la ejecución completa con Newman o el Runner contra la API, a cargo del integrante.
+
+**Participación de IA:** Claude Code propuso las alternativas y el criterio para ubicar los casos que
+dependen de otro endpoint; el integrante eligió la alternativa 4 y correr él la colección. Claude Code
+armó la colección con un script y escribió el comparador de orden y variables. Problemas que aparecieron:
+en Repertorio, Skills obligatorias e Inscripciones el agrupamiento directo dejaba errores con una
+precondición distinta (por ejemplo, declarar una skill inactiva que ya estaba en el repertorio); se
+resolvió ordenando los casos dentro de cada carpeta, después de leer el orden de las validaciones en el
+dominio y los servicios.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
