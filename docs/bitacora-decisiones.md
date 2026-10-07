@@ -2870,6 +2870,58 @@ Codex aplicó el refactor y volvió a ejecutar la verificación local y la colec
 
 ---
 
+### D-76 — Scripts `.sql` de la entrega generados desde las migraciones
+
+**Problema:** la entrega pide en `Datos` un script de la base vacía y otro con datos de prueba, para
+probar la API sin Visual Studio ni `dotnet ef`. Si el esquema se escribe a mano, puede no coincidir con
+el modelo de EF Core, y después `dotnet ef database update` no reconoce la base.
+
+**Alternativas consideradas:** escribir el DDL a mano; exportar la base de un integrante desde SSMS
+(incluye datos y configuraciones locales); generar el esquema con `dotnet ef migrations script`.
+Para los datos: cargarlos por la API con Postman y exportarlos, o escribir los `INSERT` siguiendo las
+reglas de dominio.
+
+**Decisión adoptada:** `FarmeORT-BaseVacia.sql` y `FarmeORT-BaseConDatos.sql`, cada uno independiente.
+Ambos borran y vuelven a crear la base `FarmeORT`, aplican el esquema de
+`dotnet ef migrations script --idempotent` (las 11 migraciones, registradas en `__EFMigrationsHistory`,
+con el administrador de D-11). El segundo agrega los datos de prueba en una transacción, con ids fijos:
+2 organizadores, 11 jugadores (uno dado de baja), 10 skills (una inactiva en un repertorio) y un torneo
+en cada estado. El Finalizado tiene sus dos rondas y su campeón. El EnCurso tiene una batalla
+Finalizada, una EnArbitraje y dos Pendientes. Los usuarios de prueba comparten la contraseña
+`FarmeORT.Prueba2026`; sus hashes PBKDF2 se calcularon con los parámetros de `HasheadorContrasenas`.
+
+**Justificación:** el esquema sale del mismo modelo que usa la API, así que no puede divergir, y EF
+considera la base al día. `--idempotent` hace falta aunque la base sea nueva: el script plano deja un
+`ALTER TABLE ... ADD` y el `UPDATE` que completa esa columna en el mismo lote, y SQL Server lo rechaza
+al compilarlo (error 207); el idempotente ejecuta esos datos con `EXEC`. Borrar y recrear la base hace
+que el script deje siempre el mismo estado (a costa de perder los datos de una base existente, como
+avisa su cabecera). Los datos se escribieron siguiendo las reglas, no exportados: el ELO y los cambios
+de cada fallo se calcularon con la fórmula de `CalculadorEloBase`, los pares siguen
+`EmparejamientoPorElo` y cada lanzamiento respeta turnos, repertorio, skills sin repetir y obligatorias.
+Así cada caso queda documentado en el propio script y se puede volver a generar.
+
+**Conceptos del curso:** persistencia con EF Core Code First y migraciones, consistencia entre el
+modelo y la base, datos de prueba representativos de los estados del dominio.
+
+**Evidencia:** los dos scripts corrieron con `sqlcmd -b` sin errores en SQL Server 2025 (Docker), sobre
+una base descartable con otro nombre. La vacía quedó con 1 usuario y 11 migraciones; la de datos, con
+14 usuarios, 10 skills, 52 skills declaradas, 5 torneos, 17 inscripciones, 7 batallas y 43
+lanzamientos. Después `dotnet ef database update` respondió "No migrations were applied". La API
+sobre esa base: login de un jugador 201 y del dado de baja 401; el anónimo ve 4 torneos (no el
+Cancelado); ranking global y por torneo con los ELO y las batallas esperadas; lanzar fuera de turno 409
+`NOT_PLAYER_TURN` y en turno 201; fallar con otro organizador 403 `NOT_TOURNAMENT_ORGANIZER` y con el
+asignado 201 (ELO recalculado); inscripción sin la obligatoria 409 `MISSING_MANDATORY_SKILLS` y con
+ella 201; declarar la skill inactiva 409 `SKILL_INACTIVE`. La base de prueba se borró al terminar.
+
+**Participación de IA:** Claude propuso generar el esquema con EF, armó el set de datos, calculó los
+hashes y los ELO, y ejecutó las pruebas. El primer intento usaba el script plano de EF y falló en SQL
+Server; se cambió a `--idempotent` y se documentó el porqué. También corrigió una inscripción
+Cancelada de un jugador que no tenía la obligatoria del torneo. La contraseña inicial del
+administrador no está en el script: sigue pendiente para la guía de instalación (D-11). El equipo
+revisa y aprueba los datos antes del merge.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
