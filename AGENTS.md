@@ -160,10 +160,11 @@ Lo que piden los docentes en clase:
 ## 6. Arquitectura
 
 Cada paquete lógico es un **assembly independiente** con prefijo `FarmeORT.`: Dominio, IServicios,
-Servicios, DTOs, IRepositorios, Repositorios, WebAPI, Excepciones (solución `ObligatorioDA2.slnx`).
-Los tests van en **un proyecto por assembly con lógica** (`FarmeORT.Dominio.Tests`,
-`FarmeORT.Servicios.Tests`, `FarmeORT.Repositorios.Tests`, `FarmeORT.WebAPI.Tests`), cada uno
-referenciando solo el assembly que prueba. Antes de crear algo, **buscar si ya existe** una clase,
+Servicios, DTOs, IRepositorios, Repositorios, WebAPI, Excepciones, Fabrica, todos en `src/`
+(solución `ObligatorioDA2.slnx` en la raíz). Los tests van en `tests/`, **un proyecto por assembly con
+lógica** (`FarmeORT.Dominio.Tests`, `FarmeORT.Servicios.Tests`, `FarmeORT.Repositorios.Tests`,
+`FarmeORT.WebAPI.Tests`, `FarmeORT.Fabrica.Tests`), cada uno referenciando solo el assembly que
+prueba (D-77). Antes de crear algo, **buscar si ya existe** una clase,
 interfaz, DTO, excepción, mapper, filter o helper equivalente.
 
 ```text
@@ -340,7 +341,7 @@ Los commits no TDD (`docs`, `ci`, `chore`) van **sin** etapa. Una etapa por comm
   La aprobación la da y firma el integrante, no la IA.
 
 **Entrega**: merge a `main` y release **antes de las 21:00** del día de entrega; no tocar `main`
-después. Estructura: raíz (código), `Aplicacion` (build Release e instalables), `Datos` (scripts
+después. Estructura: raíz (solución, con el código en `src/` y `tests/`), `Aplicacion` (build Release e instalables), `Datos` (scripts
 `.sql`, colección Postman, guía de instalación).
 
 ## 10. Documentación, Postman y UML

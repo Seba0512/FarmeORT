@@ -2870,7 +2870,111 @@ Codex aplicó el refactor y volvió a ejecutar la verificación local y la colec
 
 ---
 
-### D-76 — Colección de Postman organizada por recurso y endpoint
+### D-76 — Scripts `.sql` de la entrega generados desde las migraciones
+
+**Problema:** la entrega pide en `Datos` un script de la base vacía y otro con datos de prueba, para
+probar la API sin Visual Studio ni `dotnet ef`. Si el esquema se escribe a mano, puede no coincidir con
+el modelo de EF Core, y después `dotnet ef database update` no reconoce la base.
+
+**Alternativas consideradas:** escribir el DDL a mano; exportar la base de un integrante desde SSMS
+(incluye datos y configuraciones locales); generar el esquema con `dotnet ef migrations script`.
+Para los datos: cargarlos por la API con Postman y exportarlos, o escribir los `INSERT` siguiendo las
+reglas de dominio.
+
+**Decisión adoptada:** `FarmeORT-BaseVacia.sql` y `FarmeORT-BaseConDatos.sql`, cada uno independiente.
+Ambos borran y vuelven a crear la base `FarmeORT`, aplican el esquema de
+`dotnet ef migrations script --idempotent` (las 11 migraciones, registradas en `__EFMigrationsHistory`,
+con el administrador de D-11). El segundo agrega los datos de prueba en una transacción, con ids fijos:
+2 organizadores, 11 jugadores (uno dado de baja), 10 skills (una inactiva en un repertorio) y un torneo
+en cada estado. El Finalizado tiene sus dos rondas y su campeón. El EnCurso tiene una batalla
+Finalizada, una EnArbitraje y dos Pendientes. Los usuarios de prueba comparten la contraseña
+`FarmeORT.Prueba2026`; sus hashes PBKDF2 se calcularon con los parámetros de `HasheadorContrasenas`.
+
+**Justificación:** el esquema sale del mismo modelo que usa la API, así que no puede divergir, y EF
+considera la base al día. `--idempotent` hace falta aunque la base sea nueva: el script plano deja un
+`ALTER TABLE ... ADD` y el `UPDATE` que completa esa columna en el mismo lote, y SQL Server lo rechaza
+al compilarlo (error 207); el idempotente ejecuta esos datos con `EXEC`. Borrar y recrear la base hace
+que el script deje siempre el mismo estado (a costa de perder los datos de una base existente, como
+avisa su cabecera). Los datos se escribieron siguiendo las reglas, no exportados: el ELO y los cambios
+de cada fallo se calcularon con la fórmula de `CalculadorEloBase`, los pares siguen
+`EmparejamientoPorElo` y cada lanzamiento respeta turnos, repertorio, skills sin repetir y obligatorias.
+Así cada caso queda documentado en el propio script y se puede volver a generar.
+
+**Conceptos del curso:** persistencia con EF Core Code First y migraciones, consistencia entre el
+modelo y la base, datos de prueba representativos de los estados del dominio.
+
+**Evidencia:** los dos scripts corrieron con `sqlcmd -b` sin errores en SQL Server 2025 (Docker), sobre
+una base descartable con otro nombre. La vacía quedó con 1 usuario y 11 migraciones; la de datos, con
+14 usuarios, 10 skills, 52 skills declaradas, 5 torneos, 17 inscripciones, 7 batallas y 43
+lanzamientos. Después `dotnet ef database update` respondió "No migrations were applied". La API
+sobre esa base: login de un jugador 201 y del dado de baja 401; el anónimo ve 4 torneos (no el
+Cancelado); ranking global y por torneo con los ELO y las batallas esperadas; lanzar fuera de turno 409
+`NOT_PLAYER_TURN` y en turno 201; fallar con otro organizador 403 `NOT_TOURNAMENT_ORGANIZER` y con el
+asignado 201 (ELO recalculado); inscripción sin la obligatoria 409 `MISSING_MANDATORY_SKILLS` y con
+ella 201; declarar la skill inactiva 409 `SKILL_INACTIVE`. La base de prueba se borró al terminar.
+
+**Participación de IA:** Claude propuso generar el esquema con EF, armó el set de datos, calculó los
+hashes y los ELO, y ejecutó las pruebas. El primer intento usaba el script plano de EF y falló en SQL
+Server; se cambió a `--idempotent` y se documentó el porqué. También corrigió una inscripción
+Cancelada de un jugador que no tenía la obligatoria del torneo. La contraseña inicial del
+administrador no está en el script: sigue pendiente para la guía de instalación (D-11). El equipo
+revisa y aprueba los datos antes del merge.
+
+---
+
+### D-77 — Proyectos en `src/` y tests en `tests/`
+
+**Problema:** los 14 proyectos (9 de la aplicación y 5 de test) estaban sueltos en la raíz del
+repositorio, mezclados con `Datos`, `docs`, la configuración obligatoria y los archivos del equipo. Así
+cuesta distinguir el código de la aplicación del resto y separar a simple vista lo que se entrega de
+lo que lo prueba.
+
+**Alternativas consideradas:**
+- Dejar todo en la raíz: no exige cambios, pero la raíz queda con más de 25 entradas.
+- Todo en `src/`, incluidos los tests: las referencias entre proyectos no cambian, pero los tests
+  quedan mezclados con el código de la aplicación.
+- `src/` para la aplicación y `tests/` para los proyectos de test: es la convención habitual en .NET,
+  y solo cambian la solución y la referencia de cada proyecto de test.
+
+**Decisión adoptada:** `src/` contiene `FarmeORT.Dominio`, `DTOs`, `Excepciones`, `Fabrica`,
+`IRepositorios`, `IServicios`, `Repositorios`, `Servicios` y `WebAPI`; `tests/` contiene los cinco
+`FarmeORT.*.Tests`. `ObligatorioDA2.slnx` sigue en la raíz, con las rutas nuevas, y cada proyecto de
+test referencia `..\..\src\FarmeORT.X\FarmeORT.X.csproj`. Las rutas que aparecen en la evidencia de
+las decisiones anteriores (por ejemplo `FarmeORT.Servicios/...`) pasan a estar bajo `src/` o `tests/`.
+
+**Justificación:** la separación deja claro qué assemblies se compilan para la entrega y cuáles solo
+verifican, sin cambiar ningún assembly, namespace ni dependencia. La configuración obligatoria no se
+toca: los workflows solo reciben `solution-name: ObligatorioDA2.slnx`, que sigue en la raíz, y
+MSBuild busca `Directory.Build.props` y `Directory.Build.targets` en las carpetas superiores, así que
+se aplican igual. Las exclusiones de `.runsettings` son patrones de archivo y no dependen de la
+carpeta. El comando de migraciones (`--startup-project ../FarmeORT.WebAPI`, parado en Repositorios)
+sigue valiendo porque los dos proyectos quedan juntos en `src/`. Los proyectos se movieron con
+`git mv`, así que Git los registra como renombres y se conserva la historia de cada archivo.
+
+**Supuesto sobre la letra:** la entrega pide que la carpeta raíz contenga el código fuente y todo lo
+necesario para compilar y ejecutar la aplicación. Se interpreta que se cumple con el código en
+subcarpetas de la raíz y la solución en la raíz, desde donde se compila con
+`dotnet build ObligatorioDA2.slnx`. Si los docentes piden el código directamente en la raíz, se vuelve
+atrás con el mismo movimiento inverso.
+
+**Conceptos del curso:** vista de desarrollo del modelo 4+1 (organización física del código),
+componentes físicos de la solución.
+
+**Evidencia:** commit `chore (ObligatorioDA2.slnx): mueve los proyectos a src y los tests a tests`.
+En local, `dotnet build` en Release sin errores ni advertencias, `dotnet test` con los 1046 tests en
+verde (218 de Dominio, 329 de Servicios, 13 de Fabrica, 301 de WebAPI y 185 de Repositorios) y
+`dotnet format --verify-no-changes` sin cambios.
+
+**Participación de IA:** el integrante pidió la carpeta `src/` y eligió, entre las tres alternativas
+que planteó Claude, separar también `tests/`. Claude movió los proyectos, ajustó la solución y las
+referencias, verificó el build, los tests y el formato, y señaló el riesgo de interpretación de la
+letra que se registra como supuesto. En el primer intento las referencias se editaron con `sed`, que
+falló por el escapado de las barras invertidas; se rehízo con un script de `perl`. El equipo debe
+revisar el supuesto antes del merge.
+
+---
+
+### D-78 — Colección de Postman organizada por recurso y endpoint
 
 **Problema:** la colección (412 requests) tenía una carpeta por recurso con subcarpetas Éxito y Errores
 que mezclaban endpoints; para ubicar los casos de `PUT /torneos/{id}` había que recorrer las dos. El orden
