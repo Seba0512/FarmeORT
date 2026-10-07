@@ -14,6 +14,7 @@ public sealed class Usuario
     private const int LargoMinimoApellido = 3;
     private const int LargoMaximoApellido = 25;
     private const int EdadMinima = 13;
+    private const int LargoMaximoEmail = 254;
 
     private readonly List<SkillDeclarada> _repertorio = [];
 
@@ -162,6 +163,11 @@ public sealed class Usuario
         if(!MailAddress.TryCreate(email, out var direccion) || direccion.Address != email)
         {
             throw new DatosInvalidosException("El email no tiene un formato válido.");
+        }
+
+        if(email.Length > LargoMaximoEmail)
+        {
+            throw new DatosInvalidosException("El email no puede tener más de 254 caracteres.");
         }
     }
 
