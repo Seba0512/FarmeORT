@@ -18,40 +18,9 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
     public IReadOnlyList<Inscripcion> Listar(FiltroInscripciones filtro)
     {
         var consulta = contexto.Inscripciones.Include(i => i.Torneo).Include(i => i.Jugador).AsQueryable();
-        if(filtro.TorneoId != null)
-        {
-            consulta = consulta.Where(i => i.TorneoId == filtro.TorneoId.Value);
-        }
-
-        if(filtro.Estado != null)
-        {
-            consulta = consulta.Where(i => i.Estado == filtro.Estado.Value);
-        }
-
-        if(filtro.JugadorId != null)
-        {
-            consulta = consulta.Where(i => i.JugadorId == filtro.JugadorId.Value);
-        }
-
-        if(filtro.OrganizadorId != null)
-        {
-            consulta = consulta.Where(i => i.Torneo.OrganizadorId == filtro.OrganizadorId.Value);
-        }
-
-        // Las fechas del filtro son días completos: hasta incluye todo ese día.
-        if(filtro.FechaDesde != null)
-        {
-            var desde = filtro.FechaDesde.Value.ToDateTime(TimeOnly.MinValue);
-            consulta = consulta.Where(i => i.Fecha >= desde);
-        }
-
-        // El día máximo ya incluye todos los DateTime representables; no existe un día siguiente.
-        if(filtro.FechaHasta != null && filtro.FechaHasta.Value != DateOnly.MaxValue)
-        {
-            var hasta = filtro.FechaHasta.Value.AddDays(1).ToDateTime(TimeOnly.MinValue);
-            consulta = consulta.Where(i => i.Fecha < hasta);
-        }
-
+        consulta = FiltrarPorTorneoYEstado(consulta, filtro);
+        consulta = RestringirPorRol(consulta, filtro);
+        consulta = FiltrarPorFechas(consulta, filtro.FechaDesde, filtro.FechaHasta);
         return consulta
             .OrderBy(i => i.Id)
             .Skip(filtro.Desplazamiento)
@@ -149,5 +118,60 @@ internal sealed class RepositorioInscripciones(FarmeORTContext contexto) : IRepo
             contexto.ChangeTracker.Clear();
             throw new TorneoModificadoException();
         }
+    }
+
+    private static IQueryable<Inscripcion> FiltrarPorTorneoYEstado(
+        IQueryable<Inscripcion> consulta,
+        FiltroInscripciones filtro)
+    {
+        if(filtro.TorneoId != null)
+        {
+            consulta = consulta.Where(i => i.TorneoId == filtro.TorneoId.Value);
+        }
+
+        if(filtro.Estado != null)
+        {
+            consulta = consulta.Where(i => i.Estado == filtro.Estado.Value);
+        }
+
+        return consulta;
+    }
+
+    // El servicio completa JugadorId u OrganizadorId según el rol de quien consulta (letra 1.6).
+    private static IQueryable<Inscripcion> RestringirPorRol(IQueryable<Inscripcion> consulta, FiltroInscripciones filtro)
+    {
+        if(filtro.JugadorId != null)
+        {
+            consulta = consulta.Where(i => i.JugadorId == filtro.JugadorId.Value);
+        }
+
+        if(filtro.OrganizadorId != null)
+        {
+            consulta = consulta.Where(i => i.Torneo.OrganizadorId == filtro.OrganizadorId.Value);
+        }
+
+        return consulta;
+    }
+
+    // Las fechas del filtro son días completos: hasta incluye todo ese día.
+    private static IQueryable<Inscripcion> FiltrarPorFechas(
+        IQueryable<Inscripcion> consulta,
+        DateOnly? fechaDesde,
+        DateOnly? fechaHasta)
+    {
+        if(fechaDesde != null)
+        {
+            var desde = fechaDesde.Value.ToDateTime(TimeOnly.MinValue);
+            consulta = consulta.Where(i => i.Fecha >= desde);
+        }
+
+        // El día máximo ya incluye todos los DateTime representables; no existe un día siguiente.
+        if(fechaHasta != null && fechaHasta.Value != DateOnly.MaxValue)
+        {
+            var hasta = fechaHasta.Value.AddDays(1).ToDateTime(TimeOnly.MinValue);
+            consulta = consulta.Where(i => i.Fecha < hasta);
+        }
+
+        return consulta;
     }
 }
