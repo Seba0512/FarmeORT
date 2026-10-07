@@ -19,26 +19,8 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
     public IReadOnlyList<Torneo> Listar(FiltroTorneos filtro)
     {
         var consulta = contexto.Torneos.Include(t => t.Organizador).AsQueryable();
-        if(filtro.Estado != null)
-        {
-            consulta = consulta.Where(t => t.Estado == filtro.Estado.Value);
-        }
-
-        if(filtro.ExcluirCancelados)
-        {
-            consulta = consulta.Where(t => t.Estado != EstadoTorneo.Cancelado);
-        }
-
-        if(filtro.FechaDesde != null)
-        {
-            consulta = consulta.Where(t => t.FechaInicio >= filtro.FechaDesde.Value);
-        }
-
-        if(filtro.FechaHasta != null)
-        {
-            consulta = consulta.Where(t => t.FechaInicio <= filtro.FechaHasta.Value);
-        }
-
+        consulta = FiltrarPorEstado(consulta, filtro);
+        consulta = FiltrarPorFechaDeInicio(consulta, filtro.FechaDesde, filtro.FechaHasta);
         if(!string.IsNullOrWhiteSpace(filtro.Nombre))
         {
             var nombre = filtro.Nombre.ToLower();
@@ -80,6 +62,40 @@ internal sealed class RepositorioTorneos(FarmeORTContext contexto) : IRepositori
     {
         return contexto.Torneos.Any(t => t.OrganizadorId == organizadorId
             && t.Estado != EstadoTorneo.Finalizado && t.Estado != EstadoTorneo.Cancelado);
+    }
+
+    // El anónimo no ve los Cancelados aunque los pida por estado (D-36).
+    private static IQueryable<Torneo> FiltrarPorEstado(IQueryable<Torneo> consulta, FiltroTorneos filtro)
+    {
+        if(filtro.Estado != null)
+        {
+            consulta = consulta.Where(t => t.Estado == filtro.Estado.Value);
+        }
+
+        if(filtro.ExcluirCancelados)
+        {
+            consulta = consulta.Where(t => t.Estado != EstadoTorneo.Cancelado);
+        }
+
+        return consulta;
+    }
+
+    private static IQueryable<Torneo> FiltrarPorFechaDeInicio(
+        IQueryable<Torneo> consulta,
+        DateOnly? fechaDesde,
+        DateOnly? fechaHasta)
+    {
+        if(fechaDesde != null)
+        {
+            consulta = consulta.Where(t => t.FechaInicio >= fechaDesde.Value);
+        }
+
+        if(fechaHasta != null)
+        {
+            consulta = consulta.Where(t => t.FechaInicio <= fechaHasta.Value);
+        }
+
+        return consulta;
     }
 
     // Otro torneo puede ocupar el código entre la validación del servicio y el guardado (D-23).
