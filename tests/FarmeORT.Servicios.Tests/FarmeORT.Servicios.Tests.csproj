@@ -12,6 +12,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Moq" Version="4.21.0" />
     <PackageReference Include="MSTest" Version="4.0.2" />
   </ItemGroup>
 
@@ -20,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FarmeORT.Dominio\FarmeORT.Dominio.csproj" />
+    <ProjectReference Include="..\..\src\FarmeORT.Servicios\FarmeORT.Servicios.csproj" />
   </ItemGroup>
 
 </Project>
