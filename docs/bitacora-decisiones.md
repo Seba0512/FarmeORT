@@ -2922,6 +2922,58 @@ revisa y aprueba los datos antes del merge.
 
 ---
 
+### D-77 — Proyectos en `src/` y tests en `tests/`
+
+**Problema:** los 14 proyectos (9 de la aplicación y 5 de test) estaban sueltos en la raíz del
+repositorio, mezclados con `Datos`, `docs`, la configuración obligatoria y los archivos del equipo. Así
+cuesta distinguir el código de la aplicación del resto y separar a simple vista lo que se entrega de
+lo que lo prueba.
+
+**Alternativas consideradas:**
+- Dejar todo en la raíz: no exige cambios, pero la raíz queda con más de 25 entradas.
+- Todo en `src/`, incluidos los tests: las referencias entre proyectos no cambian, pero los tests
+  quedan mezclados con el código de la aplicación.
+- `src/` para la aplicación y `tests/` para los proyectos de test: es la convención habitual en .NET,
+  y solo cambian la solución y la referencia de cada proyecto de test.
+
+**Decisión adoptada:** `src/` contiene `FarmeORT.Dominio`, `DTOs`, `Excepciones`, `Fabrica`,
+`IRepositorios`, `IServicios`, `Repositorios`, `Servicios` y `WebAPI`; `tests/` contiene los cinco
+`FarmeORT.*.Tests`. `ObligatorioDA2.slnx` sigue en la raíz, con las rutas nuevas, y cada proyecto de
+test referencia `..\..\src\FarmeORT.X\FarmeORT.X.csproj`. Las rutas que aparecen en la evidencia de
+las decisiones anteriores (por ejemplo `FarmeORT.Servicios/...`) pasan a estar bajo `src/` o `tests/`.
+
+**Justificación:** la separación deja claro qué assemblies se compilan para la entrega y cuáles solo
+verifican, sin cambiar ningún assembly, namespace ni dependencia. La configuración obligatoria no se
+toca: los workflows solo reciben `solution-name: ObligatorioDA2.slnx`, que sigue en la raíz, y
+MSBuild busca `Directory.Build.props` y `Directory.Build.targets` en las carpetas superiores, así que
+se aplican igual. Las exclusiones de `.runsettings` son patrones de archivo y no dependen de la
+carpeta. El comando de migraciones (`--startup-project ../FarmeORT.WebAPI`, parado en Repositorios)
+sigue valiendo porque los dos proyectos quedan juntos en `src/`. Los proyectos se movieron con
+`git mv`, así que Git los registra como renombres y se conserva la historia de cada archivo.
+
+**Supuesto sobre la letra:** la entrega pide que la carpeta raíz contenga el código fuente y todo lo
+necesario para compilar y ejecutar la aplicación. Se interpreta que se cumple con el código en
+subcarpetas de la raíz y la solución en la raíz, desde donde se compila con
+`dotnet build ObligatorioDA2.slnx`. Si los docentes piden el código directamente en la raíz, se vuelve
+atrás con el mismo movimiento inverso.
+
+**Conceptos del curso:** vista de desarrollo del modelo 4+1 (organización física del código),
+componentes físicos de la solución.
+
+**Evidencia:** commit `chore (ObligatorioDA2.slnx): mueve los proyectos a src y los tests a tests`.
+En local, `dotnet build` en Release sin errores ni advertencias, `dotnet test` con los 1046 tests en
+verde (218 de Dominio, 329 de Servicios, 13 de Fabrica, 301 de WebAPI y 185 de Repositorios) y
+`dotnet format --verify-no-changes` sin cambios.
+
+**Participación de IA:** el integrante pidió la carpeta `src/` y eligió, entre las tres alternativas
+que planteó Claude, separar también `tests/`. Claude movió los proyectos, ajustó la solución y las
+referencias, verificó el build, los tests y el formato, y señaló el riesgo de interpretación de la
+letra que se registra como supuesto. En el primer intento las referencias se editaron con `sed`, que
+falló por el escapado de las barras invertidas; se rehízo con un script de `perl`. El equipo debe
+revisar el supuesto antes del merge.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
