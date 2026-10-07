@@ -14,7 +14,6 @@ internal sealed class ServicioRanking(
     IRepositorioBatallas repositorioBatallas) : IServicioRanking
 {
     private const int CantidadMaxima = 100;
-    private const int CantidadPorDefecto = 10;
 
     public IReadOnlyList<JugadorRankingResponse> Obtener(FiltroRankingRequest filtro, bool esAnonimo)
     {
@@ -88,7 +87,7 @@ internal sealed class ServicioRanking(
 
         if(cantidad < 1)
         {
-            return CantidadPorDefecto;
+            return FiltroRankingRequest.CantidadPorDefecto;
         }
 
         return cantidad;

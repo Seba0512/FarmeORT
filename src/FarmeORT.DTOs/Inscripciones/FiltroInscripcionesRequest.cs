@@ -11,7 +11,7 @@ public sealed class FiltroInscripcionesRequest
 
     public DateOnly? FechaHasta { get; init; }
 
-    public int Limit { get; init; } = 20;
+    public int Limit { get; init; } = Paginado.LimitePorDefecto;
 
     public int Offset { get; init; }
 }

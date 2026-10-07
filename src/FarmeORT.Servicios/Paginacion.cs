@@ -1,10 +1,11 @@
+using FarmeORT.DTOs;
+
 namespace FarmeORT.Servicios;
 
 // Ajusta limit y offset fuera de rango en lugar de rechazarlos, "para no trancar al usuario" (AGENTS.md §7).
 internal static class Paginacion
 {
     private const int LimiteMaximo = 100;
-    private const int LimitePorDefecto = 20;
 
     public static int AjustarLimite(int limite)
     {
@@ -15,7 +16,7 @@ internal static class Paginacion
 
         if(limite < 1)
         {
-            return LimitePorDefecto;
+            return Paginado.LimitePorDefecto;
         }
 
         return limite;
