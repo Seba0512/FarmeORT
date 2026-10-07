@@ -2910,7 +2910,12 @@ lee. Los casos que cambiaron de lugar respecto de un request que modifica estado
 reglas del dominio. Dos quedan con una precondición distinta y la misma respuesta: «asociar una skill
 inactiva» corre con dos obligatorias en lugar de una, y «consulta su inscripción» se hace sobre la
 inscripción ya cancelada. En el primero el dominio controla la skill inactiva antes que el límite de
-dos; en el segundo el test solo compara el id. Falta la ejecución completa con Newman o el Runner contra la API, a cargo del integrante.
+dos; en el segundo el test solo compara el id. El integrante ejecutó la colección completa con el
+Collection Runner de Postman contra la API local (perfil http de la WebAPI, puerto 5294, sobre SQL
+Server): 924 tests aprobados, sin fallos ni errores. Es el mismo total de assertions que la ejecución
+completa anterior a la reorganización (D-75), lo que confirma que los saltos no cortaron la corrida ni
+saltearon ninguna carpeta. Para esa corrida, `baseUrl` se definió en el environment, porque la colección
+trae el puerto 5088 (ver Pendientes).
 
 **Participación de IA:** Claude Code propuso las alternativas y el criterio para ubicar los casos que
 dependen de otro endpoint; el integrante eligió la alternativa 4 y correr él la colección. Claude Code
@@ -2918,7 +2923,9 @@ armó la colección con un script y escribió el comparador de orden y variables
 en Repertorio, Skills obligatorias e Inscripciones el agrupamiento directo dejaba errores con una
 precondición distinta (por ejemplo, declarar una skill inactiva que ya estaba en el repertorio); se
 resolvió ordenando los casos dentro de cada carpeta, después de leer el orden de las validaciones en el
-dominio y los servicios.
+dominio y los servicios. Claude Code no pudo levantar la API desde la sesión porque fallaba la
+aprobación de comandos; el integrante la levantó desde Visual Studio. La primera corrida falló por
+conexión rechazada, porque `baseUrl` seguía en el puerto 5088, y se corrigió en el environment.
 
 ---
 
