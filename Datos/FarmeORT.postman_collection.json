@@ -493,6 +493,11 @@
       "value": ""
     },
     {
+      "key": "rondasInscripcionCuartoId",
+      "value": "",
+      "type": "string"
+    },
+    {
       "key": "rondasJugadoresIds",
       "value": ""
     },
@@ -13508,6 +13513,124 @@
               ]
             },
             {
+              "name": "Inscripciones - torneo 0 → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Sin rango positivo en el DTO (R09 de la especificación): un id no positivo es un torneo que no existe.",
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - torneo -1 → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": -1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Sin rango positivo en el DTO (R09 de la especificación): un id no positivo es un torneo que no existe.",
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
               "name": "Inscripciones - body vacío {} → 400",
               "request": {
                 "method": "POST",
@@ -13560,6 +13683,232 @@
                     "exec": [
                       "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
                       "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - torneo null → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": null\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));",
+                      "pm.test(\"Detalle del campo torneoId\", () => pm.expect(pm.response.json().detalles.join(\" \")).to.include(\"torneoId\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - torneo de tipo incorrecto → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": \"abc\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - JSON mal formado → 400",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": ",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 400\", () => pm.response.to.have.status(400));",
+                      "pm.test(\"Código de error VALIDATION_ERROR\", () => pm.expect(pm.response.json().errorCode).to.eql(\"VALIDATION_ERROR\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - inscripción sin token → 401",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{torneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
                     ]
                   }
                 }
@@ -14689,7 +15038,7 @@
               ]
             },
             {
-              "name": "Inscripciones - jugador vuelve a inscribirse → 201",
+              "name": "Inscripciones - vuelve a inscribirse; los campos redundantes se ignoran → 201",
               "request": {
                 "method": "POST",
                 "header": [
@@ -14725,7 +15074,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"torneoId\": {{torneoId}}\n}",
+                  "raw": "{\n  \"torneoId\": {{torneoId}},\n  \"id\": 999999,\n  \"jugadorId\": {{playerId}},\n  \"estado\": \"Cancelada\"\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -14740,7 +15089,10 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-                      "pm.collectionVariables.set(\"inscripcionActivaId\", pm.response.json().id);"
+                      "const inscripcion = pm.response.json();",
+                      "// El jugador sale del token: el jugadorId, el id y el estado del body no se usan.",
+                      "pm.test(\"Inscripción del jugador del token, Aceptada\", () => { pm.expect(inscripcion.nickname).to.eql(pm.collectionVariables.get(\"skillsJugadorNickname\")); pm.expect(inscripcion.jugadorId).to.not.eql(Number(pm.collectionVariables.get(\"playerId\"))); pm.expect(inscripcion.estado).to.eql(\"Aceptada\"); pm.expect(inscripcion.id).to.not.eql(999999); pm.expect(inscripcion.torneoId).to.eql(Number(pm.collectionVariables.get(\"torneoId\"))); });",
+                      "pm.collectionVariables.set(\"inscripcionActivaId\", inscripcion.id);"
                     ]
                   }
                 }
@@ -14835,6 +15187,93 @@
                     "exec": [
                       "pm.test(\"HTTP 403\", () => pm.response.to.have.status(403));",
                       "pm.test(\"Código de error NOT_REGISTRATION_OWNER\", () => pm.expect(pm.response.json().errorCode).to.eql(\"NOT_REGISTRATION_OWNER\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - cancelar sin token → 401",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{inscripcionActivaId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{inscripcionActivaId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "noauth"
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 401\", () => pm.response.to.have.status(401));",
+                      "pm.test(\"Código de error INVALID_TOKEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"INVALID_TOKEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - cancelar una inscripción inexistente → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/999999/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "999999",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{skillsJugadorToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error REGISTRATION_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"REGISTRATION_NOT_FOUND\"));"
                     ]
                   }
                 }
@@ -16823,7 +17262,8 @@
                   "script": {
                     "type": "text/javascript",
                     "exec": [
-                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));"
+                      "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
+                      "pm.collectionVariables.set(\"rondasInscripcionCuartoId\", pm.response.json().id);"
                     ]
                   }
                 }
@@ -16935,6 +17375,121 @@
                       "const torneo = pm.response.json();",
                       "pm.test(\"Torneo En curso\", () => pm.expect(torneo.estado).to.eql(\"EnCurso\"));",
                       "pm.test(\"Cuadro con la ronda 1\", () => { pm.expect(torneo.rondas.length).to.eql(1); pm.expect(torneo.rondas[0].batallas.length).to.eql(2); });"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - con el torneo en curso no se admiten inscripciones → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{bJugadorSinInscripcionToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": {{bTorneoId}}\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// El quinto jugador declaró las dos obligatorias: el único motivo del rechazo es el estado del torneo.",
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_OPEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_OPEN\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Rondas - con el torneo en curso no se cancela una inscripción → 409",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones/{{rondasInscripcionCuartoId}}/cancelaciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones",
+                    "{{rondasInscripcionCuartoId}}",
+                    "cancelaciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{rondasCuartoToken}}",
+                      "type": "string"
+                    }
+                  ]
+                }
+              },
+              "event": [
+                {
+                  "listen": "prerequest",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.variables.set(\"rondasCuartoToken\", JSON.parse(pm.collectionVariables.get(\"rondasJugadoresTokens\"))[3]);"
+                    ]
+                  }
+                },
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "pm.test(\"HTTP 409\", () => pm.response.to.have.status(409));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_OPEN\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_OPEN\"));"
                     ]
                   }
                 }
@@ -19113,7 +19668,7 @@
               "response": []
             },
             {
-              "name": "Lanzamientos - turno 2 → 201",
+              "name": "Lanzamientos - turno 2; los campos redundantes se ignoran → 201",
               "request": {
                 "method": "POST",
                 "header": [
@@ -19139,7 +19694,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\"skillId\": {{bSkillLibre1Id}}}",
+                  "raw": "{\"skillId\": {{bSkillLibre1Id}}, \"jugadorId\": {{bRivalId}}, \"turno\": 7, \"batallaId\": 2147483647}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -19156,7 +19711,8 @@
                       "const actual = String(pm.collectionVariables.get(\"bJugadorTurnoId\"));",
                       "const primero = String(pm.variables.get(\"bJugador1Id\"));",
                       "const key = actual === primero ? \"bJugador1Token\" : \"bJugador2Token\";",
-                      "pm.variables.set(\"bTurnoToken\", pm.variables.get(key));"
+                      "pm.variables.set(\"bTurnoToken\", pm.variables.get(key));",
+                      "pm.variables.set(\"bRivalId\", pm.variables.get(actual === primero ? \"bJugador2Id\" : \"bJugador1Id\"));"
                     ]
                   }
                 },
@@ -19169,6 +19725,8 @@
                       "const b = pm.response.json();",
                       "pm.test(\"Turno y estado\", () => { pm.expect(b.turno).to.eql(2); pm.expect(b.estado).to.eql(\"Pendiente\"); });",
                       "pm.test(\"Location del historial\", () => pm.expect(pm.response.headers.get(\"Location\")).to.eql(\"/api/v1/batallas/\" + pm.variables.get(\"bBattleId\") + \"/lanzamientos\"));",
+                      "// El lanzador sale del token: el turno pasa al rival que el body nombraba como jugadorId.",
+                      "pm.test(\"Se atribuye al jugador del token\", () => pm.expect(String(b.jugadorTurnoId)).to.eql(String(pm.variables.get(\"bRivalId\"))));",
                       "pm.collectionVariables.set(\"bJugadorTurnoId\", b.jugadorTurnoId);"
                     ]
                   }
@@ -21364,7 +21922,7 @@
               ]
             },
             {
-              "name": "Rondas siguientes - el organizador falla la final → 201",
+              "name": "Rondas siguientes - el organizador falla la final; los campos redundantes se ignoran → 201",
               "request": {
                 "method": "POST",
                 "header": [
@@ -21392,7 +21950,7 @@
                 },
                 "body": {
                   "mode": "raw",
-                  "raw": "{\n  \"ganadorId\": {{rondasFinalGanadorId}},\n  \"comentario\": \"Ganó la final del torneo por abandono del rival.\"\n}",
+                  "raw": "{\n  \"ganadorId\": {{rondasFinalGanadorId}},\n  \"comentario\": \"Ganó la final del torneo por abandono del rival.\",\n  \"estado\": \"Pendiente\",\n  \"cambioEloJugador1\": 500,\n  \"cambioEloJugador2\": -500\n}",
                   "options": {
                     "raw": {
                       "language": "json"
@@ -21417,7 +21975,10 @@
                     "type": "text/javascript",
                     "exec": [
                       "pm.test(\"HTTP 201\", () => pm.response.to.have.status(201));",
-                      "pm.test(\"Final fallada\", () => pm.expect(pm.response.json().estado).to.eql(\"Finalizada\"));"
+                      "const b = pm.response.json();",
+                      "// El estado y los cambios de ELO los calcula la API: los del body se ignoran.",
+                      "pm.test(\"Final fallada\", () => { pm.expect(b.estado).to.eql(\"Finalizada\"); pm.expect(b.ganadorId).to.eql(Number(pm.collectionVariables.get(\"rondasFinalGanadorId\"))); });",
+                      "pm.test(\"ELO calculado por la API (K = 32)\", () => { pm.expect(Math.abs(b.cambioEloJugador1)).to.be.at.most(32); pm.expect(Math.abs(b.cambioEloJugador2)).to.be.at.most(32); });"
                     ]
                   }
                 }
@@ -22326,15 +22887,30 @@
                       "pm.test(\"HTTP 200\", () => pm.response.to.have.status(200));",
                       "const ranking = pm.response.json();",
                       "pm.test(\"Los cuatro participantes, aceptados o eliminados\", () => pm.expect(ranking).to.have.lengthOf(4));",
-                      "// Foro (debate 06): ganadas y perdidas son las globales, no las del torneo (D-72). Se comparan con el ranking general.",
-                      "pm.sendRequest({ url: pm.variables.replaceIn(\"{{baseUrl}}/api/v1/rankings?cantidad=100\"), method: \"GET\", header: { Accept: \"application/json\" } }, (error, respuesta) => {",
-                      "    const general = respuesta.json();",
-                      "    pm.test(\"Cada participante tiene las mismas batallas que en el ranking general\", () => ranking.forEach(jugador => {",
-                      "        const enGeneral = general.find(otro => otro.nickname === jugador.nickname);",
-                      "        pm.expect(enGeneral, jugador.nickname).to.not.be.undefined;",
-                      "        pm.expect(jugador.batallasGanadas).to.eql(enGeneral.batallasGanadas);",
-                      "        pm.expect(jugador.batallasPerdidas).to.eql(enGeneral.batallasPerdidas);",
-                      "    }));",
+                      "// Foro (debate 06): ganadas y perdidas son las globales, no las del torneo (D-72). Los cuatro jugadores se",
+                      "// registran en este run y solo juegan este torneo, así que sus batallas globales son las Finalizadas de este",
+                      "// torneo. No se compara con el ranking general: tiene tope de 100 y, en una base con runs anteriores, un",
+                      "// eliminado con ELO 1184 puede quedar fuera por el desempate por id.",
+                      "pm.sendRequest({",
+                      "    url: pm.variables.replaceIn(\"{{baseUrl}}/api/v1/batallas?torneoId={{bTorneoId}}&estado=Finalizada&limit=100\"),",
+                      "    method: \"GET\",",
+                      "    header: { Accept: \"application/json\", Authorization: \"Bearer \" + pm.collectionVariables.get(\"adminToken\") }",
+                      "}, (error, respuesta) => {",
+                      "    pm.test(\"Cada participante tiene las batallas que jugó\", () => {",
+                      "        pm.expect(error).to.eql(null);",
+                      "        pm.expect(respuesta.code).to.eql(200);",
+                      "        const esperadas = {};",
+                      "        ranking.forEach(jugador => { esperadas[jugador.nickname] = { ganadas: 0, perdidas: 0 }; });",
+                      "        respuesta.json().forEach(batalla => [batalla.jugador1, batalla.jugador2].forEach(jugador => {",
+                      "            if(esperadas[jugador.nickname]) {",
+                      "                esperadas[jugador.nickname][jugador.id === batalla.ganadorId ? \"ganadas\" : \"perdidas\"]++;",
+                      "            }",
+                      "        }));",
+                      "        ranking.forEach(jugador => {",
+                      "            pm.expect(jugador.batallasGanadas, jugador.nickname).to.eql(esperadas[jugador.nickname].ganadas);",
+                      "            pm.expect(jugador.batallasPerdidas, jugador.nickname).to.eql(esperadas[jugador.nickname].perdidas);",
+                      "        });",
+                      "    });",
                       "});",
                       "pm.test(\"Cuenta al menos los dos fallos de B\", () => pm.expect(ranking.reduce((total, jugador) => total + jugador.batallasGanadas, 0)).to.be.at.least(2));"
                     ]

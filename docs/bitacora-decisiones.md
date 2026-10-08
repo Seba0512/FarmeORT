@@ -3033,6 +3033,50 @@ conexión rechazada, porque `baseUrl` seguía en el puerto 5088, y se corrigió 
 
 ---
 
+### D-79 — Colección de evidencia aparte de la colección completa
+
+**Problema:** la letra pide casos elaborados para las funcionalidades con asterisco (1.5, 1.8, 1.9, 2.2 y
+2.5) y un único video de hasta 15 minutos con la ejecución. La colección completa (D-78) tiene 422
+requests, con casos de error y de borde de todos los endpoints. En el video y en el documento de
+evidencia esos casos tapan a los que la letra evalúa especialmente.
+
+**Alternativas consideradas:** (1) grabar la colección completa; (2) recortar la colección completa y
+dejar solo una en `Datos`; (3) una segunda colección, derivada de la completa, para la evidencia.
+
+**Decisión adoptada:** la alternativa 3. `Datos/FarmeORT-Evidencia.postman_collection.json` tiene todos
+los casos de los endpoints con asterisco y, del resto, el caso feliz de cada endpoint más los requests de
+Preparación que generan los datos. `Datos/FarmeORT.postman_collection.json` sigue siendo la colección
+completa, para regresión. La de evidencia agrega un 415 a cada endpoint con asterisco que recibe body
+(body que no es JSON). Los casos de error de otras funcionalidades que estaban en carpetas con asterisco
+no van (por ejemplo, «un torneo finalizado no se cancela»). Las skills inactivas sí van en Repertorio y
+Skills obligatorias, porque son reglas del catálogo (2.2). Corre en orden y sin saltos: el logout
+administrativo es la carpeta final, Cierre.
+
+**Justificación:** el video y el documento muestran lo que la letra pide para cada funcionalidad con
+asterisco, sin superar el límite de tiempo. La colección completa no se pierde: sigue cubriendo los
+errores y bordes de los demás endpoints y sirve para regresión. Derivar la de evidencia con un script, en
+vez de armarla a mano, deja los mismos requests y scripts que ya estaban probados.
+
+**Conceptos del curso:** trazabilidad entre requisitos y pruebas, cobertura de casos de borde e
+inválidos, y separación entre pruebas de regresión y evidencia de aceptación.
+
+**Evidencia:** 232 requests. Un chequeo automático confirmó que ningún request lee una variable que solo
+escribía un request quitado. Las dos colecciones se ejecutaron contra la API local (puerto 5294, SQL
+Server, base con datos de corridas anteriores) con un runner propio en el navegador que ejecuta los
+scripts de la colección. La de evidencia dio 510 assertions sin fallos; la completa, 948 sin fallos. La
+ejecución con el Collection Runner de Postman la hace el integrante para el video.
+
+**Participación de IA:** Claude Code propuso tener una colección aparte y no reemplazar la completa; el
+integrante eligió esa opción. También propuso los 415 y armó la colección con un script. Se descartó una
+primera clasificación automática por endpoint: dejaba bloques a medio armar, por ejemplo los logins de
+jugadores sin su registro. Se pasó a listas explícitas por carpeta. El chequeo de variables encontró que
+el código de la tercera skill lo generaba un request quitado, y se movió a su alta. Como en la sesión no
+había Postman ni Newman, Claude Code escribió un runner mínimo, y su `sendRequest` al principio no mandaba
+el body: la colección completa falló en «logout de la sesión de otro usuario» hasta que se corrigió el
+runner, sin cambiar la colección.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
