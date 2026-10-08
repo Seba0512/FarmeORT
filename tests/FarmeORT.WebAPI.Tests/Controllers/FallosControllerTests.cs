@@ -1,0 +1,70 @@
+using System.ComponentModel.DataAnnotations;
+using System.Reflection;
+using FarmeORT.DTOs.Batallas;
+using FarmeORT.DTOs.Usuarios;
+using FarmeORT.IServicios.Batallas;
+using FarmeORT.IServicios.Sesiones;
+using FarmeORT.WebAPI.Controllers;
+using FarmeORT.WebAPI.Filtros;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using Moq;
+
+namespace FarmeORT.WebAPI.Tests.Controllers;
+
+[TestClass]
+public sealed class FallosControllerTests
+{
+    [TestMethod]
+    [DataRow(null, 10, false)]
+    [DataRow(0, 10, false)]
+    [DataRow(-1, 10, false)]
+    [DataRow(7, -1, false)]
+    [DataRow(7, 0, false)]
+    [DataRow(7, 9, false)]
+    [DataRow(7, 501, false)]
+    [DataRow(7, 10, true)]
+    [DataRow(7, 500, true)]
+    public void FalloRequest_DatosDeBorde_ValidaGanadorYComentario(int? ganadorId, int largo, bool esperado)
+    {
+        var request = new FalloRequest { GanadorId = ganadorId, Comentario = largo < 0 ? null : new string('a', largo) };
+
+        var valido = Validator.TryValidateObject(request, new ValidationContext(request), [], validateAllProperties: true);
+
+        Assert.AreEqual(esperado, valido);
+    }
+
+    [TestMethod]
+    public void Fallar_RequiereAutenticacionYRolOrganizador()
+    {
+        var controller = typeof(FallosController);
+
+        var atributo = controller.GetCustomAttribute<AutorizacionAttribute>();
+
+        Assert.IsNotNull(atributo);
+        CollectionAssert.AreEqual(new[] { Roles.Organizador }, atributo.RolesPermitidos.ToArray());
+    }
+
+    [TestMethod]
+    public void Fallar_DatosValidos_Devuelve201ConLocationYOrganizadorAutenticado()
+    {
+        var servicio = new Mock<IServicioFallos>(MockBehavior.Strict);
+        var request = new FalloRequest { GanadorId = 7, Comentario = "Victoria por abandono." };
+        var response = new BatallaDetalleResponse { Id = 12, Estado = "Finalizada" };
+        servicio.Setup(s => s.Fallar(12, 2, request)).Returns(response);
+        var controller = new FallosController(servicio.Object)
+        {
+            ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() },
+        };
+        controller.HttpContext.Items[ClavesContexto.SesionAutenticada] =
+            new SesionAutenticada { Token = Guid.NewGuid(), UsuarioId = 2, Rol = Roles.Organizador };
+
+        var resultado = controller.Fallar(12, request) as CreatedResult;
+
+        Assert.IsNotNull(resultado);
+        Assert.AreEqual(StatusCodes.Status201Created, resultado.StatusCode);
+        Assert.AreEqual("/api/v1/batallas/12", resultado.Location);
+        Assert.AreSame(response, resultado.Value);
+        servicio.Verify(s => s.Fallar(12, 2, request), Times.Once);
+    }
+}

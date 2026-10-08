@@ -1,0 +1,345 @@
+using FarmeORT.Dominio.Skills;
+using FarmeORT.DTOs.Skills;
+using FarmeORT.Excepciones;
+using FarmeORT.IRepositorios.Skills;
+using FarmeORT.Servicios.Skills;
+using Moq;
+
+namespace FarmeORT.Servicios.Tests.Skills;
+
+[TestClass]
+public sealed class ServicioSkillsTests
+{
+    private const string Codigo = "SIXSEVEN";
+    private const string Nombre = "Six-Seven";
+    private const string Descripcion = "Gesto alternando las manos hacia arriba y abajo.";
+
+    private Mock<IRepositorioSkills> _repositorioSkills = null!;
+    private ServicioSkills _servicio = null!;
+
+    [TestInitialize]
+    public void Inicializar()
+    {
+        _repositorioSkills = new Mock<IRepositorioSkills>(MockBehavior.Strict);
+        _servicio = new ServicioSkills(_repositorioSkills.Object);
+    }
+
+    [TestMethod]
+    public void Crear_DatosValidos_GuardaLaSkillActiva()
+    {
+        ConfigurarAltaValida();
+
+        _servicio.Crear(CrearRequest());
+
+        _repositorioSkills.Verify(
+            r => r.Agregar(It.Is<Skill>(s =>
+                s.Codigo == Codigo
+                && s.Nombre == Nombre
+                && s.Descripcion == Descripcion
+                && s.Categoria == CategoriaSkill.Gestual
+                && s.Dificultad == 2
+                && s.Activa)),
+            Times.Once);
+    }
+
+    [TestMethod]
+    public void Crear_DatosValidos_DevuelveLaSkillCreada()
+    {
+        ConfigurarAltaValida();
+
+        var response = _servicio.Crear(CrearRequest());
+
+        Assert.AreEqual(Codigo, response.Codigo);
+        Assert.AreEqual(Nombre, response.Nombre);
+        Assert.AreEqual(Descripcion, response.Descripcion);
+        Assert.AreEqual(CategoriasSkill.Gestual, response.Categoria);
+        Assert.AreEqual(2, response.Dificultad);
+        Assert.IsTrue(response.Activa);
+    }
+
+    [TestMethod]
+    public void Crear_CodigoExistente_LanzaCodigoSkillYaExisteSinGuardar()
+    {
+        _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(true);
+
+        Assert.ThrowsExactly<CodigoSkillYaExisteException>(() => _servicio.Crear(CrearRequest()));
+        _repositorioSkills.Verify(r => r.Agregar(It.IsAny<Skill>()), Times.Never);
+    }
+
+    [TestMethod]
+    [DataRow("Cocina")]
+    [DataRow("1")]
+    public void Crear_CategoriaInexistente_LanzaDatosInvalidosSinConsultarLaBase(string categoria)
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(CrearRequest(categoria: categoria)));
+
+        Assert.AreEqual("La categoría debe ser Gestual, Vocal, Baile o Meme.", excepcion.Message);
+    }
+
+    [TestMethod]
+    public void Crear_DificultadOmitida_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Crear(CrearRequest(dificultad: null)));
+
+        Assert.AreEqual("La dificultad es obligatoria.", excepcion.Message);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_SkillExistente_DevuelveSusDatos()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Vocal, 4) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+
+        var response = _servicio.ObtenerPorId(3);
+
+        Assert.AreEqual(3, response.Id);
+        Assert.AreEqual(Codigo, response.Codigo);
+        Assert.AreEqual(Nombre, response.Nombre);
+        Assert.AreEqual(Descripcion, response.Descripcion);
+        Assert.AreEqual(CategoriasSkill.Vocal, response.Categoria);
+        Assert.AreEqual(4, response.Dificultad);
+        Assert.IsTrue(response.Activa);
+    }
+
+    [TestMethod]
+    public void ObtenerPorId_SkillInexistente_LanzaSkillNoEncontrada()
+    {
+        _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(() => _servicio.ObtenerPorId(99));
+    }
+
+    [TestMethod]
+    public void Listar_ConFiltros_DevuelveLasSkillsDelRepositorio()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(CategoriaSkill.Gestual, 2, true, "six", 10, 5))).Returns([skill]);
+        var filtro = new FiltroSkillsRequest
+        {
+            Categoria = CategoriasSkill.Gestual,
+            Dificultad = 2,
+            Activa = true,
+            Nombre = "six",
+            Limit = 10,
+            Offset = 5,
+        };
+
+        var skills = _servicio.Listar(filtro);
+
+        Assert.HasCount(1, skills);
+        Assert.AreEqual(3, skills[0].Id);
+        Assert.AreEqual(Codigo, skills[0].Codigo);
+        Assert.AreEqual(CategoriasSkill.Gestual, skills[0].Categoria);
+    }
+
+    [TestMethod]
+    public void Listar_SinFiltros_NoFiltraYUsaLaPaginacionPorDefecto()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        _servicio.Listar(new FiltroSkillsRequest());
+
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
+    }
+
+    [TestMethod]
+    public void Listar_LimitMayorAlMaximo_UsaElMaximo()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 100, 0))).Returns([]);
+
+        _servicio.Listar(new FiltroSkillsRequest { Limit = 600 });
+
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 100, 0)), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(-5)]
+    public void Listar_LimitMenorAUno_UsaElValorPorDefecto(int limit)
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        _servicio.Listar(new FiltroSkillsRequest { Limit = limit });
+
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
+    }
+
+    [TestMethod]
+    public void Listar_OffsetNegativo_EmpiezaDesdeElPrincipio()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        _servicio.Listar(new FiltroSkillsRequest { Offset = -5 });
+
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
+    }
+
+    [TestMethod]
+    public void Listar_CategoriaInexistente_NoFiltraPorCategoria()
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        _servicio.Listar(new FiltroSkillsRequest { Categoria = "Cocina" });
+
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
+    }
+
+    [TestMethod]
+    [DataRow(0)]
+    [DataRow(9)]
+    public void Listar_DificultadFueraDeRango_NoFiltraPorDificultad(int dificultad)
+    {
+        _repositorioSkills.Setup(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0))).Returns([]);
+
+        _servicio.Listar(new FiltroSkillsRequest { Dificultad = dificultad });
+
+        _repositorioSkills.Verify(r => r.Listar(new FiltroSkills(null, null, null, null, 20, 0)), Times.Once);
+    }
+
+    [TestMethod]
+    public void Modificar_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
+    {
+        _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(() => _servicio.Modificar(99, CrearRequest()));
+        _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_DatosValidos_ReemplazaLosDatosYGuarda()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+        var request = new SkillRequest
+        {
+            Codigo = Codigo,
+            Nombre = "Six-Seven Pro",
+            Descripcion = "Versión con giro completo y aplauso final.",
+            Categoria = CategoriasSkill.Baile,
+            Dificultad = 4,
+        };
+
+        var response = _servicio.Modificar(3, request);
+
+        Assert.AreEqual(3, response.Id);
+        Assert.AreEqual(Codigo, response.Codigo);
+        Assert.AreEqual("Six-Seven Pro", response.Nombre);
+        Assert.AreEqual("Versión con giro completo y aplauso final.", response.Descripcion);
+        Assert.AreEqual(CategoriasSkill.Baile, response.Categoria);
+        Assert.AreEqual(4, response.Dificultad);
+        Assert.IsTrue(response.Activa);
+        _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
+    }
+
+    [TestMethod]
+    public void Modificar_CodigoDeOtraSkill_LanzaCodigoSkillYaExisteSinGuardar()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.ExistePorCodigo("TRALALERO")).Returns(true);
+
+        Assert.ThrowsExactly<CodigoSkillYaExisteException>(() => _servicio.Modificar(3, CrearRequest(codigo: "TRALALERO")));
+        _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_SuMismoCodigoConOtrasMayusculas_NoLoConsideraDuplicado()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+
+        var response = _servicio.Modificar(3, CrearRequest(codigo: "SixSeven"));
+
+        Assert.AreEqual("SixSeven", response.Codigo);
+        _repositorioSkills.Verify(r => r.ExistePorCodigo(It.IsAny<string>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void Modificar_CodigoNuevoDisponible_GuardaConElNuevoCodigo()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.ExistePorCodigo("TRALALERO")).Returns(false);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+
+        var response = _servicio.Modificar(3, CrearRequest(codigo: "TRALALERO"));
+
+        Assert.AreEqual("TRALALERO", response.Codigo);
+        _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
+    }
+
+    [TestMethod]
+    public void Modificar_CategoriaInexistente_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.Modificar(3, CrearRequest(categoria: "Cocina")));
+    }
+
+    [TestMethod]
+    public void CambiarEstado_SkillInexistente_LanzaSkillNoEncontradaSinGuardar()
+    {
+        _repositorioSkills.Setup(r => r.ObtenerPorId(99)).Returns((Skill?)null);
+
+        Assert.ThrowsExactly<SkillNoEncontradaException>(() => _servicio.CambiarEstado(99, new SkillEstadoRequest { Activa = false }));
+        _repositorioSkills.Verify(r => r.Actualizar(It.IsAny<Skill>()), Times.Never);
+    }
+
+    [TestMethod]
+    public void CambiarEstado_Desactivar_GuardaLaSkillInactivaYLaDevuelve()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+
+        var response = _servicio.CambiarEstado(3, new SkillEstadoRequest { Activa = false });
+
+        Assert.IsFalse(response.Activa);
+        Assert.IsFalse(skill.Activa);
+        _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
+    }
+
+    [TestMethod]
+    public void CambiarEstado_Activar_GuardaLaSkillActivaYLaDevuelve()
+    {
+        var skill = new Skill(Codigo, Nombre, Descripcion, CategoriaSkill.Gestual, 2) { Id = 3 };
+        skill.Desactivar();
+        _repositorioSkills.Setup(r => r.ObtenerPorId(3)).Returns(skill);
+        _repositorioSkills.Setup(r => r.Actualizar(skill));
+
+        var response = _servicio.CambiarEstado(3, new SkillEstadoRequest { Activa = true });
+
+        Assert.IsTrue(response.Activa);
+        Assert.IsTrue(skill.Activa);
+        _repositorioSkills.Verify(r => r.Actualizar(skill), Times.Once);
+    }
+
+    [TestMethod]
+    public void CambiarEstado_EstadoOmitido_LanzaDatosInvalidosSinConsultarLaBase()
+    {
+        var excepcion = Assert.ThrowsExactly<DatosInvalidosException>(() => _servicio.CambiarEstado(3, new SkillEstadoRequest()));
+
+        Assert.AreEqual("El estado activa es obligatorio.", excepcion.Message);
+    }
+
+    private void ConfigurarAltaValida()
+    {
+        _repositorioSkills.Setup(r => r.ExistePorCodigo(Codigo)).Returns(false);
+        _repositorioSkills.Setup(r => r.Agregar(It.Is<Skill>(s => s.Codigo == Codigo)));
+    }
+
+    private static SkillRequest CrearRequest(
+        string codigo = Codigo,
+        string categoria = CategoriasSkill.Gestual,
+        int? dificultad = 2)
+    {
+        return new SkillRequest
+        {
+            Codigo = codigo,
+            Nombre = Nombre,
+            Descripcion = Descripcion,
+            Categoria = categoria,
+            Dificultad = dificultad,
+        };
+    }
+}

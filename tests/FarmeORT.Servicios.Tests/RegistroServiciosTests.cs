@@ -1,0 +1,60 @@
+using FarmeORT.Dominio.Elo;
+using FarmeORT.Dominio.Rondas;
+using FarmeORT.IServicios.Batallas;
+using FarmeORT.IServicios.Finalizaciones;
+using FarmeORT.IServicios.Inscripciones;
+using FarmeORT.IServicios.Ranking;
+using FarmeORT.IServicios.Repertorio;
+using FarmeORT.IServicios.Rondas;
+using FarmeORT.IServicios.Seguridad;
+using FarmeORT.IServicios.Sesiones;
+using FarmeORT.IServicios.Skills;
+using FarmeORT.IServicios.Torneos;
+using FarmeORT.IServicios.Usuarios;
+using FarmeORT.Servicios.Batallas;
+using FarmeORT.Servicios.Finalizaciones;
+using FarmeORT.Servicios.Inscripciones;
+using FarmeORT.Servicios.Ranking;
+using FarmeORT.Servicios.Repertorio;
+using FarmeORT.Servicios.Rondas;
+using FarmeORT.Servicios.Seguridad;
+using FarmeORT.Servicios.Sesiones;
+using FarmeORT.Servicios.Skills;
+using FarmeORT.Servicios.Torneos;
+using FarmeORT.Servicios.Usuarios;
+using Microsoft.Extensions.DependencyInjection;
+
+namespace FarmeORT.Servicios.Tests;
+
+[TestClass]
+public sealed class RegistroServiciosTests
+{
+    [TestMethod]
+    [DataRow(typeof(IServicioSesiones), typeof(ServicioSesiones))]
+    [DataRow(typeof(IHasheadorContrasenas), typeof(HasheadorContrasenas))]
+    [DataRow(typeof(IGeneradorTokens), typeof(GeneradorTokens))]
+    [DataRow(typeof(IServicioUsuarios), typeof(ServicioUsuarios))]
+    [DataRow(typeof(IServicioSkills), typeof(ServicioSkills))]
+    [DataRow(typeof(IServicioTorneos), typeof(ServicioTorneos))]
+    [DataRow(typeof(IServicioRepertorio), typeof(ServicioRepertorio))]
+    [DataRow(typeof(IServicioSkillsObligatorias), typeof(ServicioSkillsObligatorias))]
+    [DataRow(typeof(IServicioInscripciones), typeof(ServicioInscripciones))]
+    [DataRow(typeof(ICalculadorElo), typeof(CalculadorEloBase))]
+    [DataRow(typeof(IServicioRanking), typeof(ServicioRanking))]
+    [DataRow(typeof(IServicioFallos), typeof(ServicioFallos))]
+    [DataRow(typeof(IServicioBatallas), typeof(ServicioBatallas))]
+    [DataRow(typeof(IServicioRondas), typeof(ServicioRondas))]
+    [DataRow(typeof(IEstrategiaEmparejamiento), typeof(EmparejamientoPorElo))]
+    [DataRow(typeof(IServicioFinalizaciones), typeof(ServicioFinalizaciones))]
+    public void AgregarServicios_InterfazDeServicio_RegistraImplementacionScoped(Type interfaz, Type implementacion)
+    {
+        var servicios = new ServiceCollection();
+
+        servicios.AgregarServicios();
+
+        var registro = servicios.SingleOrDefault(r => r.ServiceType == interfaz);
+        Assert.IsNotNull(registro);
+        Assert.AreEqual(implementacion, registro.ImplementationType);
+        Assert.AreEqual(ServiceLifetime.Scoped, registro.Lifetime);
+    }
+}

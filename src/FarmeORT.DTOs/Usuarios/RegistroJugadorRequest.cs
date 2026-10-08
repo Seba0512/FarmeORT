@@ -1,0 +1,33 @@
+using System.ComponentModel.DataAnnotations;
+
+namespace FarmeORT.DTOs.Usuarios;
+
+public class RegistroJugadorRequest
+{
+    [Required(ErrorMessage = "El nombre es obligatorio.")]
+    [StringLength(50, ErrorMessage = "El nombre no puede tener más de 50 caracteres.")]
+    public string Nombre { get; init; } = string.Empty;
+
+    [Required(ErrorMessage = "El apellido es obligatorio.")]
+    [StringLength(25, MinimumLength = 3, ErrorMessage = "El apellido debe tener entre 3 y 25 caracteres.")]
+    public string Apellido { get; init; } = string.Empty;
+
+    [Required(ErrorMessage = "El email es obligatorio.")]
+    [EmailAddress(ErrorMessage = "El email no tiene un formato válido.")]
+    [StringLength(254, ErrorMessage = "El email no puede tener más de 254 caracteres.")]
+    public string Email { get; init; } = string.Empty;
+
+    [Required(ErrorMessage = "El nickname es obligatorio.")]
+    [RegularExpression("^[a-zA-Z0-9]{3,20}$", ErrorMessage = "El nickname debe ser alfanumérico, sin espacios, de 3 a 20 caracteres.")]
+    public string Nickname { get; init; } = string.Empty;
+
+    [Required(ErrorMessage = "La contraseña es obligatoria.")]
+    [StringLength(25, MinimumLength = 15, ErrorMessage = "La contraseña debe tener entre 15 y 25 caracteres.")]
+    [RegularExpression(
+        "^(?=.*[a-z])(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).*$",
+        ErrorMessage = "La contraseña debe tener al menos una mayúscula, una minúscula, un número y un símbolo.")]
+    public string Contrasena { get; init; } = string.Empty;
+
+    [Required(ErrorMessage = "La fecha de nacimiento es obligatoria.")]
+    public DateOnly? FechaNacimiento { get; init; }
+}
