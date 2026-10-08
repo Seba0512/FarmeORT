@@ -3077,6 +3077,57 @@ runner, sin cambiar la colección.
 
 ---
 
+### D-80 — Guía de instalación de la base y connection string fuera del repositorio
+
+**Problema:** la letra pide una guía de instalación en `Datos`. D-11 y los scripts de D-76 remitían a ella
+para la contraseña del administrador, pero no existía. Además, `appsettings.json` no tiene connection
+string (D-09) y la API no arranca sin él. El build publicado corre en `Production` y no lee
+`appsettings.Development.json`, así que quien corrija no tenía cómo conectarlo.
+
+**Alternativas consideradas:** para el connection string, poner uno sin secreto en `appsettings.json`
+(`.\SQLEXPRESS` con autenticación de Windows), que cambia la configuración que hoy comparten los tres
+integrantes con Docker, o documentar `appsettings.Development.json` para correr desde el código y la
+variable de entorno `ConnectionStrings__FarmeORT` para el build publicado, sin tocar código. Para la
+codificación de los scripts: dejarlos en UTF-8 sin BOM y exigir `-f 65001`, o agregarles el BOM.
+
+**Decisión adoptada:** `Datos/GuiaInstalacion.md` con los requisitos, las dos formas de crear la base
+(script o `dotnet ef database update`), la configuración del connection string para cada forma de correr la
+API, el administrador precargado con su contraseña inicial, los usuarios y torneos de prueba, la
+comprobación y una tabla de problemas frecuentes. No se cambia `appsettings.json`. Los dos scripts pasan a
+UTF-8 con BOM, y sus encabezados apuntan a la guía y a la ruta `src/FarmeORT.Repositorios` de D-77.
+
+**Justificación:** la variable de entorno resuelve el build publicado sin versionar contraseñas ni cambiar
+la configuración de los integrantes. El BOM se agregó porque sin él, y sin `-f 65001`, `sqlcmd` carga los
+nombres con acentos rotos (`LucÃ­a`) sin mostrar ningún error. Con el BOM, `sqlcmd` y SSMS detectan UTF-8
+solos. La guía avisa que `dotnet publish` copia a la salida el `appsettings.Development.json` local: hay que
+borrarlo de `Aplicacion` antes del release para no publicar la contraseña de `sa`.
+
+**Conceptos del curso:** despliegue y configuración por entorno, secretos fuera del código, datos de
+prueba reproducibles.
+
+**Evidencia:** en SQL Server 2025 (Docker), sobre bases descartables:
+- El script con datos y BOM, sin `-f`, carga `Lucía` bien; la versión sin BOM la cargó como `LucÃ­a`.
+- El script vacío corrió dos veces seguidas sin errores.
+- `dotnet ef database update` creó la base y aplicó las 11 migraciones.
+- `dotnet ef migrations script --idempotent` sigue generando el mismo esquema que tienen los scripts.
+- API con `appsettings.Development.json` y el perfil `http` (puerto 5294): login de un jugador 201 y
+  ranking 200.
+- `dotnet publish -c Release` sin connection string: corta al arrancar con
+  `Falta el connection string 'FarmeORT'`. Con `ConnectionStrings__FarmeORT`: ranking 200 y login de una
+  organizadora 201.
+- La contraseña inicial del administrador se verificó contra el hash de la migración con los parámetros de
+  `HasheadorContrasenas`.
+
+Los comandos de SQL Server Express (`.\SQLEXPRESS`, autenticación de Windows) no se pudieron probar porque la
+máquina solo tiene el contenedor.
+
+**Participación de IA:** Claude Code escribió la guía y verificó cada comando. Encontró que los scripts sin
+BOM rompían los acentos y que `dotnet publish` copia el `appsettings.Development.json` local. La contraseña
+del administrador la dio el integrante; Claude Code la comprobó contra el hash antes de escribirla. Se
+descartó cambiar `appsettings.json`, porque eso modificaba la configuración del equipo sin acuerdo.
+
+---
+
 ## Pendientes detectados
 
 ### Detalles de las respuestas de validación (detectados en la prueba manual de `POST /sesiones`)
@@ -3095,8 +3146,8 @@ runner, sin cambiar la colección.
 - Documentar en `AGENTS.md` la convención de D-05 y la excepción de D-08.
 - ~~Reemplazar la migración `InitialCreate` por una con nombre descriptivo después de agregar el
   administrador precargado.~~ Resuelto: `CreaUsuariosYSesiones` (D-11).
-- Explicar en la guía de instalación cómo crear `.env` y `appsettings.Development.json` (D-09) y cuál
-  es la contraseña inicial del administrador (D-11).
+- ~~Explicar en la guía de instalación cómo crear `.env` y `appsettings.Development.json` (D-09) y cuál
+  es la contraseña inicial del administrador (D-11).~~ Resuelto en D-80: `Datos/GuiaInstalacion.md`.
 - ~~Las sesiones no vencen: un token vale hasta que se hace logout. La letra no pide vencimiento, pero el
   mensaje del 401 dice "o expiró". Decidir si se agrega un vencimiento o se ajusta el mensaje.~~ Resuelto en
   D-65: se ajustó el mensaje.
