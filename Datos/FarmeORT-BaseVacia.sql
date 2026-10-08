@@ -1,4 +1,4 @@
-/*
+﻿/*
     FarmeORT - Base de datos vacía (SQL Server)
 
     Crea la base FarmeORT con el esquema de las 11 migraciones de EF Core, desde
@@ -7,12 +7,12 @@
 
     "Vacía" quiere decir sin datos de prueba: solo queda el administrador precargado (Id 1,
     admin@farmeort.com), que la migración CreaUsuariosYSesiones inserta con HasData (D-11). Sin él
-    nadie podría crear usuarios. Su contraseña inicial está en la guía de instalación.
+    nadie podría crear usuarios. Su contraseña inicial está en Datos/GuiaInstalacion.md.
 
     Si la base FarmeORT ya existe, se borra y se vuelve a crear: el script siempre deja el mismo
     estado y se puede correr más de una vez. Correrlo sobre una base con datos los pierde.
 
-    El esquema se generó, parado en FarmeORT.Repositorios, con:
+    El esquema se generó, parado en src/FarmeORT.Repositorios, con:
         dotnet ef migrations script --idempotent --startup-project ../FarmeORT.WebAPI
     --idempotent hace falta aunque la base sea nueva: sin él, el ALTER TABLE que agrega una columna y
     el UPDATE que la completa quedan en el mismo lote y SQL Server rechaza el lote al compilarlo.
@@ -21,6 +21,7 @@
     Ejecución con sqlcmd:
         sqlcmd -S localhost,1433 -U sa -P <contraseña> -C -f 65001 -i Datos/FarmeORT-BaseVacia.sql
     En SSMS o Azure Data Studio: abrir el archivo y ejecutarlo completo (usa separadores GO).
+    Pasos completos (SQL Server Express o Docker) en Datos/GuiaInstalacion.md.
 */
 
 USE [master];
