@@ -1,4 +1,4 @@
-/*
+﻿/*
     FarmeORT - Base de datos con datos de prueba (SQL Server)
 
     Crea la base FarmeORT con el mismo esquema que FarmeORT-BaseVacia.sql (las 11 migraciones de EF
@@ -9,13 +9,14 @@
     Si la base FarmeORT ya existe, se borra y se vuelve a crear: el script siempre deja el mismo
     estado y se puede correr más de una vez. Correrlo sobre una base con datos los pierde.
 
-    El esquema se generó, parado en FarmeORT.Repositorios, con:
+    El esquema se generó, parado en src/FarmeORT.Repositorios, con:
         dotnet ef migrations script --idempotent --startup-project ../FarmeORT.WebAPI
     (el porqué de --idempotent está en FarmeORT-BaseVacia.sql). Si se agrega una migración, hay que regenerarlo en los dos scripts.
 
     Ejecución con sqlcmd:
         sqlcmd -S localhost,1433 -U sa -P <contraseña> -C -f 65001 -i Datos/FarmeORT-BaseConDatos.sql
     En SSMS o Azure Data Studio: abrir el archivo y ejecutarlo completo (usa separadores GO).
+    Pasos completos (SQL Server Express o Docker) en Datos/GuiaInstalacion.md.
 */
 
 USE [master];
