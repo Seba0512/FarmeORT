@@ -13513,6 +13513,124 @@
               ]
             },
             {
+              "name": "Inscripciones - torneo 0 → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Sin rango positivo en el DTO (R09 de la especificación): un id no positivo es un torneo que no existe.",
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
+              "name": "Inscripciones - torneo -1 → 404",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "application/json"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/api/v1/inscripciones",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "api",
+                    "v1",
+                    "inscripciones"
+                  ]
+                },
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{inscSinSkillsToken}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"torneoId\": -1\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "event": [
+                {
+                  "listen": "test",
+                  "script": {
+                    "type": "text/javascript",
+                    "exec": [
+                      "// Sin rango positivo en el DTO (R09 de la especificación): un id no positivo es un torneo que no existe.",
+                      "pm.test(\"HTTP 404\", () => pm.response.to.have.status(404));",
+                      "pm.test(\"Código de error TOURNAMENT_NOT_FOUND\", () => pm.expect(pm.response.json().errorCode).to.eql(\"TOURNAMENT_NOT_FOUND\"));"
+                    ]
+                  }
+                }
+              ]
+            },
+            {
               "name": "Inscripciones - body vacío {} → 400",
               "request": {
                 "method": "POST",
