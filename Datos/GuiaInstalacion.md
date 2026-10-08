@@ -187,8 +187,9 @@ Con la API levantada en `http://localhost:5294`:
 curl -X POST http://localhost:5294/api/v1/sesiones -H "Content-Type: application/json" -d "{\"email\":\"diego.fernandez@farmeort.com\",\"contrasena\":\"FarmeORT.Prueba2026\"}"
 ```
 
-Debe responder `201` con un `token`. En Postman, importar la colección y completar en un environment
-`baseUrl` (`http://localhost:5294`) y `adminContrasena` (la del administrador precargado).
+Debe responder `201` con un `token`. En Postman, importar la colección: ya trae cargadas las variables
+`baseUrl` (`http://localhost:5294`) y `adminContrasena` (la del administrador precargado), así que corre
+con el Collection Runner sin completar nada. Si la API escucha en otro puerto, cambiar `baseUrl`.
 
 ## 8. Problemas frecuentes
 
